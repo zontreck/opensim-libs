@@ -30,6 +30,7 @@ namespace HttpServer
         int TimeoutKeepAlive {get; set; }
         int MAXRequests{get; set; }
 
+        int SendBufferSize(int newSize);
         bool CanSend();
         bool IsSending();
 

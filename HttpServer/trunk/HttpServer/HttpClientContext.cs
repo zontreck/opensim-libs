@@ -156,6 +156,21 @@ namespace HttpServer
             contextID = basecontextID;
         }
 
+        public int SendBufferSize(int newSize)
+        {
+            try
+            {
+                if (newSize > 8192)
+                    _sock.SendBufferSize = 8192;
+
+                return _sock.SendBufferSize;
+            }
+            catch
+            {
+                    return 8192;
+            }
+        }
+
         public bool CanSend()
         {
             if (Available || contextID < 0)

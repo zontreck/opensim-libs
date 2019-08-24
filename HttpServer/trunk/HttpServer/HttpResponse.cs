@@ -260,6 +260,12 @@ namespace HttpServer
             if (Sent)
                 throw new InvalidOperationException("Everything have already been sent.");
 
+            int sendBufferSize;
+            if (RawBufferLen > 8192 || Body.Length > 8192)
+                sendBufferSize = _context.SendBufferSize(65536);
+            else
+                sendBufferSize = 8192;
+
             _context.ReqResponseAboutToSend(requestID);
             if (_context.MAXRequests == 0 || _keepAlive == 0)
             {
@@ -296,8 +302,8 @@ namespace HttpServer
                     while(RawBufferLen > 0)
                     {
                         curlen = RawBufferLen;
-                        if(curlen > 8192)
-                            curlen = 8192;
+                        if(curlen > sendBufferSize)
+                            curlen = sendBufferSize;
                         if (!_context.Send(RawBuffer, RawBufferStart, curlen))
                         {
                             RawBuffer = null;
@@ -316,7 +322,6 @@ namespace HttpServer
                 RawBufferLen = -1;
             }
 
-            var buffer = new byte[8192];
 
             if (Body.Length == 0)
             {
@@ -328,7 +333,9 @@ namespace HttpServer
 
             Body.Flush();
             Body.Seek(0, SeekOrigin.Begin);
-            int bytesRead = Body.Read(buffer, 0, 8192);
+
+            var buffer = new byte[sendBufferSize];
+            int bytesRead = Body.Read(buffer, 0, sendBufferSize);
             while (bytesRead > 0)
             {
                 if (!_context.Send(buffer, 0, bytesRead))
@@ -336,9 +343,8 @@ namespace HttpServer
                     Body.Dispose();
                     return;
                 }
-                bytesRead = Body.Read(buffer, 0, 8192);
+                bytesRead = Body.Read(buffer, 0, sendBufferSize);
             }
-
 
             Body.Dispose();
             Sent = true;
@@ -410,7 +416,7 @@ namespace HttpServer
             if (_headers["Content-Length"] == null)
                 _headers["Content-Length"] = _contentLength == 0 ? Body.Length.ToString() : _contentLength.ToString();
             if (_headers["Content-Type"] == null)
-                _headers["Content-Type"] = ContentType;
+                _headers["Content-Type"] = _contentType ?? DefaultContentType;
             if (_headers["Server"] == null)
                 _headers["Server"] = "Tiny WebServer";
 
@@ -422,12 +428,6 @@ namespace HttpServer
             }
             else
                 _headers["Connection"] = "close";
-
-            if (Body.Length != 0)
-            {
-                if (_headers["Content-Type"] == null)
-                    _headers["Content-Type"] = _contentType ?? DefaultContentType;
-            }
 
             var sb = new StringBuilder();
             sb.AppendFormat("{0} {1} {2}\r\n", _httpVersion, (int)Status,
