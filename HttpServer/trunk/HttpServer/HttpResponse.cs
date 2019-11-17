@@ -260,12 +260,6 @@ namespace HttpServer
             if (Sent)
                 throw new InvalidOperationException("Everything have already been sent.");
 
-            int sendBufferSize;
-            if (RawBufferLen > 8192 || Body.Length > 8192)
-                sendBufferSize = _context.SendBufferSize(65536);
-            else
-                sendBufferSize = 8192;
-
             _context.ReqResponseAboutToSend(requestID);
             if (_context.MAXRequests == 0 || _keepAlive == 0)
             {
@@ -302,8 +296,8 @@ namespace HttpServer
                     while(RawBufferLen > 0)
                     {
                         curlen = RawBufferLen;
-                        if(curlen > sendBufferSize)
-                            curlen = sendBufferSize;
+                        if(curlen > 8192)
+                            curlen = 8192;
                         if (!_context.Send(RawBuffer, RawBufferStart, curlen))
                         {
                             RawBuffer = null;
@@ -334,8 +328,8 @@ namespace HttpServer
             Body.Flush();
             Body.Seek(0, SeekOrigin.Begin);
 
-            var buffer = new byte[sendBufferSize];
-            int bytesRead = Body.Read(buffer, 0, sendBufferSize);
+            var buffer = new byte[8192];
+            int bytesRead = Body.Read(buffer, 0, 8192);
             while (bytesRead > 0)
             {
                 if (!_context.Send(buffer, 0, bytesRead))
@@ -343,7 +337,7 @@ namespace HttpServer
                     Body.Dispose();
                     return;
                 }
-                bytesRead = Body.Read(buffer, 0, sendBufferSize);
+                bytesRead = Body.Read(buffer, 0, 8192);
             }
 
             Body.Dispose();
