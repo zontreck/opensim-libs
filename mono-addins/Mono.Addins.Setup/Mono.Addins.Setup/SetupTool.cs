@@ -356,8 +356,8 @@ namespace Mono.Addins.Setup
 			AddinRepositoryEntry[] addins = service.Repositories.GetAvailableAddins ();
 			bool found = false;
 			foreach (PackageRepositoryEntry addin in addins) {
-				Addin sinfo = registry.GetAddin (addin.Addin.Id);
-				if (!showAll && IsHidden (sinfo))
+				Addin sinfo = registry.GetAddin (addin.Addin.LocalId);
+				if (sinfo != null && !showAll && IsHidden (sinfo))
 					continue;
 				if (sinfo != null && Addin.CompareVersions (sinfo.Version, addin.Addin.Version) == 1) {
 					Console.WriteLine (" - " + addin.Addin.Id + " " + addin.Addin.Version + " (" + addin.Repository.Name + ")");
