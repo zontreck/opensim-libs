@@ -44,8 +44,11 @@
     <PackOnBuild>True</PackOnBuild>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\Mono.Cecil.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
-    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
     <PackageReference Include="NuGet.Build.Packaging" Version="0.2.0" />
     <ProjectReference Include="..\Mono.Addins\Mono.Addins.csproj">
       <Project>{91DD5A2D-9FE3-4C3C-9253-876141874DAD}</Project>

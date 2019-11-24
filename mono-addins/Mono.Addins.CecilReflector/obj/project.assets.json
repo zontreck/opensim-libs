@@ -2,21 +2,6 @@
   "version": 3,
   "targets": {
     ".NETFramework,Version=v4.6": {
-      "Mono.Cecil/0.10.0-beta6": {
-        "type": "package",
-        "compile": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        },
-        "runtime": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        }
-      },
       "NuGet.Build.Packaging/0.2.0": {
         "type": "package",
         "build": {
@@ -39,21 +24,6 @@
       }
     },
     ".NETFramework,Version=v4.6/win": {
-      "Mono.Cecil/0.10.0-beta6": {
-        "type": "package",
-        "compile": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        },
-        "runtime": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        }
-      },
       "NuGet.Build.Packaging/0.2.0": {
         "type": "package",
         "build": {
@@ -76,21 +46,6 @@
       }
     },
     ".NETFramework,Version=v4.6/win-x64": {
-      "Mono.Cecil/0.10.0-beta6": {
-        "type": "package",
-        "compile": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        },
-        "runtime": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        }
-      },
       "NuGet.Build.Packaging/0.2.0": {
         "type": "package",
         "build": {
@@ -113,21 +68,6 @@
       }
     },
     ".NETFramework,Version=v4.6/win-x86": {
-      "Mono.Cecil/0.10.0-beta6": {
-        "type": "package",
-        "compile": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        },
-        "runtime": {
-          "lib/net40/Mono.Cecil.Mdb.dll": {},
-          "lib/net40/Mono.Cecil.Pdb.dll": {},
-          "lib/net40/Mono.Cecil.Rocks.dll": {},
-          "lib/net40/Mono.Cecil.dll": {}
-        }
-      },
       "NuGet.Build.Packaging/0.2.0": {
         "type": "package",
         "build": {
@@ -151,27 +91,6 @@
     }
   },
   "libraries": {
-    "Mono.Cecil/0.10.0-beta6": {
-      "sha512": "AGOyahYE6CGh3dLz/mz6cnj8hABoJm2KcMRHSHMrW75WHgU5YB+5PSQTVWsmQk9RFC4HAGr5ZzLMFFXsbmTi1w==",
-      "type": "package",
-      "path": "mono.cecil/0.10.0-beta6",
-      "files": [
-        "lib/net35/Mono.Cecil.Mdb.dll",
-        "lib/net35/Mono.Cecil.Pdb.dll",
-        "lib/net35/Mono.Cecil.Rocks.dll",
-        "lib/net35/Mono.Cecil.dll",
-        "lib/net40/Mono.Cecil.Mdb.dll",
-        "lib/net40/Mono.Cecil.Pdb.dll",
-        "lib/net40/Mono.Cecil.Rocks.dll",
-        "lib/net40/Mono.Cecil.dll",
-        "lib/netstandard1.3/Mono.Cecil.Mdb.dll",
-        "lib/netstandard1.3/Mono.Cecil.Pdb.dll",
-        "lib/netstandard1.3/Mono.Cecil.Rocks.dll",
-        "lib/netstandard1.3/Mono.Cecil.dll",
-        "mono.cecil.0.10.0-beta6.nupkg.sha512",
-        "mono.cecil.nuspec"
-      ]
-    },
     "NuGet.Build.Packaging/0.2.0": {
       "sha512": "iqo7f9c+oA12IcelLjD232BMxdGR2Dzrqk00C8w7NiB1sbXa8YHsZGCJkt6CEQKR5XYqZ/8f3z0kHTBJ0Gua3Q==",
       "type": "package",
@@ -216,7 +135,6 @@
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.6": [
       "Mono.Addins >= 1.3.7",
-      "Mono.Cecil >= 0.10.0-beta6",
       "NuGet.Build.Packaging >= 0.2.0"
     ]
   },
@@ -260,10 +178,6 @@
     "frameworks": {
       "net46": {
         "dependencies": {
-          "Mono.Cecil": {
-            "target": "Package",
-            "version": "[0.10.0-beta6, )"
-          },
           "NuGet.Build.Packaging": {
             "target": "Package",
             "version": "[0.2.0, )"

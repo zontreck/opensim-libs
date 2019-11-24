@@ -9,15 +9,6 @@
           "build/NuGet.Build.Packaging.targets": {}
         }
       },
-      "SharpZipLib/0.86.0": {
-        "type": "package",
-        "compile": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        },
-        "runtime": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        }
-      },
       "Mono.Addins/1.3.7": {
         "type": "project",
         "framework": ".NETFramework,Version=v4.6",
@@ -38,15 +29,6 @@
         "build": {
           "build/NuGet.Build.Packaging.props": {},
           "build/NuGet.Build.Packaging.targets": {}
-        }
-      },
-      "SharpZipLib/0.86.0": {
-        "type": "package",
-        "compile": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        },
-        "runtime": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
         }
       },
       "Mono.Addins/1.3.7": {
@@ -71,15 +53,6 @@
           "build/NuGet.Build.Packaging.targets": {}
         }
       },
-      "SharpZipLib/0.86.0": {
-        "type": "package",
-        "compile": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        },
-        "runtime": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        }
-      },
       "Mono.Addins/1.3.7": {
         "type": "project",
         "framework": ".NETFramework,Version=v4.6",
@@ -100,15 +73,6 @@
         "build": {
           "build/NuGet.Build.Packaging.props": {},
           "build/NuGet.Build.Packaging.targets": {}
-        }
-      },
-      "SharpZipLib/0.86.0": {
-        "type": "package",
-        "compile": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
-        },
-        "runtime": {
-          "lib/20/ICSharpCode.SharpZipLib.dll": {}
         }
       },
       "Mono.Addins/1.3.7": {
@@ -162,19 +126,6 @@
         "nuget.build.packaging.nuspec"
       ]
     },
-    "SharpZipLib/0.86.0": {
-      "sha512": "5DbS1SlKLMi+WG00Cm0ueYf2oyXJrowETQk8nx96rmdjTuHsA3laPykGV7Sxi0R5Xxfx0Kh/EfacAZ1f6M7y/g==",
-      "type": "package",
-      "path": "sharpziplib/0.86.0",
-      "files": [
-        "lib/11/ICSharpCode.SharpZipLib.dll",
-        "lib/20/ICSharpCode.SharpZipLib.dll",
-        "lib/SL3/SharpZipLib.Silverlight3.dll",
-        "lib/SL4/SharpZipLib.Silverlight4.dll",
-        "sharpziplib.0.86.0.nupkg.sha512",
-        "sharpziplib.nuspec"
-      ]
-    },
     "Mono.Addins/1.3.7": {
       "type": "project",
       "path": "../Mono.Addins/Mono.Addins.csproj",
@@ -184,8 +135,7 @@
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.6": [
       "Mono.Addins >= 1.3.7",
-      "NuGet.Build.Packaging >= 0.2.0",
-      "SharpZipLib >= 0.86.0"
+      "NuGet.Build.Packaging >= 0.2.0"
     ]
   },
   "packageFolders": {
@@ -231,10 +181,6 @@
           "NuGet.Build.Packaging": {
             "target": "Package",
             "version": "[0.2.0, )"
-          },
-          "SharpZipLib": {
-            "target": "Package",
-            "version": "[0.86.0, )"
           }
         }
       }
