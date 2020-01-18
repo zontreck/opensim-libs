@@ -35,14 +35,14 @@ namespace HttpServer.Parser
         /// <returns>offset to continue from.</returns>
         private int AddToBody(byte[] buffer, int offset, int count)
         {
-			// got all bytes we need, or just a few of them?
+            // got all bytes we need, or just a few of them?
             int bytesUsed = count > _bodyBytesLeft ? _bodyBytesLeft : count;
             _bodyArgs.Buffer = buffer;
             _bodyArgs.Offset = offset;
-			_bodyArgs.Count = bytesUsed;
+            _bodyArgs.Count = bytesUsed;
             BodyBytesReceived(this, _bodyArgs);
 
-			_bodyBytesLeft -= bytesUsed;
+            _bodyBytesLeft -= bytesUsed;
             if (_bodyBytesLeft == 0)
             {
                 // got a complete request.
@@ -65,16 +65,16 @@ namespace HttpServer.Parser
             CurrentState = RequestParserState.FirstLine;
         }
 
-    	/// <summary>
-    	/// Gets or sets the log writer.
-    	/// </summary>
-    	public ILogWriter LogWriter
-    	{
-			get { return _log; }
-			set { _log = value ?? NullLogWriter.Instance; }
-    	}
+        /// <summary>
+        /// Gets or sets the log writer.
+        /// </summary>
+        public ILogWriter LogWriter
+        {
+            get { return _log; }
+            set { _log = value ?? NullLogWriter.Instance; }
+        }
 
-    	/// <summary>
+        /// <summary>
         /// Parse request line
         /// </summary>
         /// <param name="value"></param>
@@ -196,8 +196,8 @@ namespace HttpServer.Parser
 
             for (int currentPos = offset; currentPos < endOfBufferPos; ++currentPos)
             {
-                var ch = (char) buffer[currentPos];
-                char nextCh = endOfBufferPos > currentPos + 1 ? (char) buffer[currentPos + 1] : char.MinValue;
+                var ch = (char)buffer[currentPos];
+                char nextCh = endOfBufferPos > currentPos + 1 ? (char)buffer[currentPos + 1] : char.MinValue;
 
                 if (ch == '\r')
                     ++currentLine;
@@ -219,10 +219,10 @@ namespace HttpServer.Parser
                         }
                         if (startPos != -1 && (ch == '\r' || ch == '\n'))
                         {
-                        	int size = GetLineBreakSize(buffer, currentPos);
+                            int size = GetLineBreakSize(buffer, currentPos);
                             OnFirstLine(Encoding.UTF8.GetString(buffer, startPos, currentPos - startPos));
                             CurrentState = CurrentState + 1;
-                        	currentPos += size - 1;
+                            currentPos += size - 1;
                             handledBytes = currentPos + size - 1;
                             startPos = -1;
                         }
@@ -230,7 +230,7 @@ namespace HttpServer.Parser
                     case RequestParserState.HeaderName:
                         if (ch == '\r' || ch == '\n')
                         {
-                        	currentPos += GetLineBreakSize(buffer, currentPos);
+                            currentPos += GetLineBreakSize(buffer, currentPos);
                             if (_bodyBytesLeft == 0)
                             {
                                 CurrentState = RequestParserState.FirstLine;
@@ -284,112 +284,112 @@ namespace HttpServer.Parser
                             CurrentState = CurrentState + 1;
                         }
                         break;
-					case RequestParserState.Between:
-                		{
-                			if (ch == ' ' || ch == '\t')
-                				continue;
-                			int newLineSize = GetLineBreakSize(buffer, currentPos);
-							if (newLineSize > 0 && currentPos + newLineSize < endOfBufferPos &&
-                			    char.IsWhiteSpace((char) buffer[currentPos + newLineSize]))
-                			{
-                				++currentPos;
-                				continue;
-                			}
-                			startPos = currentPos;
-                			CurrentState = CurrentState + 1;
-                			handledBytes = currentPos;
-                			continue;
-                		}
-                	case RequestParserState.HeaderValue:
+                    case RequestParserState.Between:
+                    {
+                        if (ch == ' ' || ch == '\t')
+                            continue;
+                        int newLineSize = GetLineBreakSize(buffer, currentPos);
+                        if (newLineSize > 0 && currentPos + newLineSize < endOfBufferPos &&
+                            char.IsWhiteSpace((char)buffer[currentPos + newLineSize]))
                         {
-                            if (ch != '\r' && ch != '\n')
-                                continue;
-                        	int newLineSize = GetLineBreakSize(buffer, currentPos);
-                            if (startPos == -1)
-                                continue; // allow new lines before start of value
-
-                            if (_curHeaderName == string.Empty)
-                                throw new BadRequestException("Missing header on line " + currentLine);
-                            if (startPos == -1)
-                            {
-                                _log.Write(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
-                                throw new BadRequestException("Missing header value for '" + _curHeaderName);
-                            }
-                            if (currentPos - startPos > 8190)
-                            {
-                                _log.Write(this, LogPrio.Warning, "Too large header value on line " + currentLine);
-                                throw new BadRequestException("Too large header value on line " + currentLine);
-                            }
-
-                            // Header fields can be extended over multiple lines by preceding each extra line with at
-                            // least one SP or HT.
-                            if (endOfBufferPos > currentPos + newLineSize 
-								&& (buffer[currentPos + newLineSize] == ' ' || buffer[currentPos + newLineSize] == buffer['\t']))
-                            {
-                                if (startPos != -1)
-                                    _curHeaderValue = Encoding.UTF8.GetString(buffer, startPos, currentPos - startPos);
-
-                                _log.Write(this, LogPrio.Trace, "Header value is on multiple lines.");
-                                CurrentState = RequestParserState.Between;
-                                startPos = -1;
-                                currentPos += newLineSize - 1;
-                                handledBytes = currentPos + newLineSize - 1;
-                                continue;
-                            }
-
-                            _curHeaderValue += Encoding.UTF8.GetString(buffer, startPos, currentPos - startPos);
-                            _log.Write(this, LogPrio.Trace, "Header [" + _curHeaderName + ": " + _curHeaderValue + "]");
-                            OnHeader(_curHeaderName, _curHeaderValue);
-
-                            startPos = -1;
-                            CurrentState = RequestParserState.HeaderName;
-                            _curHeaderValue = string.Empty;
-                            _curHeaderName = string.Empty;
                             ++currentPos;
-                            handledBytes = currentPos + 1;
-
-                            // Check if we got a colon so we can cut header name, or crlf for end of header.
-                            bool canContinue = false;
-                            for (int j = currentPos; j < endOfBufferPos; ++j)
-                            {
-                                if (buffer[j] != ':' && buffer[j] != '\r' && buffer[j] != '\n') continue;
-                                canContinue = true;
-                                break;
-                            }
-                            if (!canContinue)
-                            {
-                                _log.Write(this, LogPrio.Trace, "Cant continue, no colon.");
-                                return currentPos + 1;
-                            }
+                            continue;
                         }
-                        break;
+                        startPos = currentPos;
+                        CurrentState = CurrentState + 1;
+                        handledBytes = currentPos;
+                        continue;
+                    }
+                    case RequestParserState.HeaderValue:
+                    {
+                        if (ch != '\r' && ch != '\n')
+                            continue;
+                        int newLineSize = GetLineBreakSize(buffer, currentPos);
+                        if (startPos == -1)
+                            continue; // allow new lines before start of value
+
+                        if (_curHeaderName == string.Empty)
+                            throw new BadRequestException("Missing header on line " + currentLine);
+                        if (startPos == -1)
+                        {
+                            _log.Write(this, LogPrio.Warning, "Missing header value for '" + _curHeaderName);
+                            throw new BadRequestException("Missing header value for '" + _curHeaderName);
+                        }
+                        if (currentPos - startPos > 8190)
+                        {
+                            _log.Write(this, LogPrio.Warning, "Too large header value on line " + currentLine);
+                            throw new BadRequestException("Too large header value on line " + currentLine);
+                        }
+
+                        // Header fields can be extended over multiple lines by preceding each extra line with at
+                        // least one SP or HT.
+                        if (endOfBufferPos > currentPos + newLineSize
+                            && (buffer[currentPos + newLineSize] == ' ' || buffer[currentPos + newLineSize] == '\t'))
+                        {
+                            if (startPos != -1)
+                                _curHeaderValue = Encoding.UTF8.GetString(buffer, startPos, currentPos - startPos);
+
+                            _log.Write(this, LogPrio.Trace, "Header value is on multiple lines.");
+                            CurrentState = RequestParserState.Between;
+                            startPos = -1;
+                            currentPos += newLineSize - 1;
+                            handledBytes = currentPos + newLineSize - 1;
+                            continue;
+                        }
+
+                        _curHeaderValue += Encoding.UTF8.GetString(buffer, startPos, currentPos - startPos);
+                        _log.Write(this, LogPrio.Trace, "Header [" + _curHeaderName + ": " + _curHeaderValue + "]");
+                        OnHeader(_curHeaderName, _curHeaderValue);
+
+                        startPos = -1;
+                        CurrentState = RequestParserState.HeaderName;
+                        _curHeaderValue = string.Empty;
+                        _curHeaderName = string.Empty;
+                        ++currentPos;
+                        handledBytes = currentPos + 1;
+
+                        // Check if we got a colon so we can cut header name, or crlf for end of header.
+                        bool canContinue = false;
+                        for (int j = currentPos; j < endOfBufferPos; ++j)
+                        {
+                            if (buffer[j] != ':' && buffer[j] != '\r' && buffer[j] != '\n') continue;
+                            canContinue = true;
+                            break;
+                        }
+                        if (!canContinue)
+                        {
+                            _log.Write(this, LogPrio.Trace, "Cant continue, no colon.");
+                            return currentPos + 1;
+                        }
+                    }
+                    break;
                 }
             }
 
             return handledBytes;
         }
 
-		int GetLineBreakSize(byte[] buffer, int offset)
-		{
-			if (buffer[offset] == '\r')
+        int GetLineBreakSize(byte[] buffer, int offset)
+        {
+            if (buffer[offset] == '\r')
             {
-                if(buffer.Length > offset + 1 && buffer[offset + 1] == '\n')
-				    return 2;
+                if (buffer.Length > offset + 1 && buffer[offset + 1] == '\n')
+                    return 2;
                 else
                     throw new BadRequestException("Got invalid linefeed.");
             }
-			else if (buffer[offset] == '\n')
+            else if (buffer[offset] == '\n')
             {
-                if(buffer.Length == offset + 1)
-				    return 1;   // linux line feed
-                if(buffer[offset + 1] != '\r')
-   				    return 1;   // linux line feed
+                if (buffer.Length == offset + 1)
+                    return 1;   // linux line feed
+                if (buffer[offset + 1] != '\r')
+                    return 1;   // linux line feed
                 else
                     return 2;   // win line feed
             }
             else
-				return 0;
-		}
+                return 0;
+        }
 
         /// <summary>
         /// A request have been successfully parsed.
