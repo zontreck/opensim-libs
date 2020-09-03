@@ -4,60 +4,28 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HttpServer
 {
-    /// <summary>
-    /// Response that is sent back to the web browser / client.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// A response can be sent if different ways. The easiest one is
-    /// to just fill the Body stream with content, everything else
-    /// will then be taken care of by the framework. The default content-type
-    /// is text/html, you should change it if you send anything else.
-    /// </para><para>
-    /// The second and slightly more complex way is to send the response
-    /// as parts. Start with sending the header using the SendHeaders method and 
-    /// then you can send the body using SendBody method, but do not forget
-    /// to set <see cref="ContentType"/> and <see cref="ContentLength"/> before doing so.
-    /// </para>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// // Example using response body.
-    /// class MyModule : HttpModule
-    /// {
-    /// 		public override bool Process(IHttpRequest request, IHttpResponse response, IHttpSession session)
-    /// 		{
-    /// 			StreamWriter writer = new StreamWriter(response.Body);
-    /// 			writer.WriteLine("Hello dear World!");
-    /// 			writer.Flush();
-    /// 
-    /// 			// return true to tell webserver that we've handled the url
-    /// 			return true;
-    /// 		}
-    /// }
-    /// </code>
-    /// </example>
-    /// todo: add two examples, using SendHeaders/SendBody and just the Body stream.
     public class HttpResponse : IHttpResponse
     {
         private const string DefaultContentType = "text/html;charset=UTF-8";
-        private readonly IHttpClientContext _context;
+        private readonly IHttpClientContext m_context;
         private readonly ResponseCookies _cookies = new ResponseCookies();
-        private readonly NameValueCollection _headers = new NameValueCollection();
+        private readonly NameValueCollection m_headers = new NameValueCollection();
         private string _httpVersion;
-        private Stream _body = new MemoryStream();
+        private Stream _body;
         private long _contentLength;
         private string _contentType;
-        private bool _contentTypeChangedByCode;
         private Encoding _encoding = Encoding.UTF8;
         private int _keepAlive = 60;
         public uint requestID { get; private set; }
         public byte[] RawBuffer { get; set; }
         public int RawBufferStart { get; set; }
         public int RawBufferLen { get; set; }
+
+        internal byte[] m_headerBytes = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IHttpResponse"/> class.
@@ -72,10 +40,10 @@ namespace HttpServer
 
             _httpVersion = request.HttpVersion;
             if (string.IsNullOrEmpty(_httpVersion))
-                throw new ArgumentException("HttpVersion in IHttpRequest cannot be empty.");
+                _httpVersion = "HTTP/1.0";
 
             Status = HttpStatusCode.OK;
-            _context = context;
+            m_context = context;
             m_Connetion = request.Connection;
             requestID = request.ID;
             RawBufferStart = -1;
@@ -93,7 +61,7 @@ namespace HttpServer
             Check.NotEmpty(httpVersion, "httpVersion");
 
             Status = HttpStatusCode.OK;
-            _context = context;
+            m_context = context;
             _httpVersion = httpVersion;
             m_Connetion = connectionType;
         }
@@ -104,10 +72,11 @@ namespace HttpServer
             set { return; }
         }
 
-        internal bool ContentTypeChangedByCode
+        private int m_priority = 0;
+        public int Priority
         {
-            get { return _contentTypeChangedByCode; }
-            set { _contentTypeChangedByCode = value; }
+            get { return m_priority;}
+            set { m_priority = (value > 0 && m_priority < 3)? value : 0;}
         }
 
         #region IHttpResponse Members
@@ -119,7 +88,12 @@ namespace HttpServer
         /// </summary>
         public Stream Body
         {
-            get { return _body; }
+            get
+            { 
+                if(_body == null)
+                    _body = new MemoryStream();
+                return _body;
+            }
             set { _body = value; }
         }
 
@@ -201,11 +175,7 @@ namespace HttpServer
         public string ContentType
         {
             get { return _contentType; }
-            set
-            {
-                _contentType = value;
-                _contentTypeChangedByCode = true;
-            }
+            set { _contentType = value; }
         }
 
         /// <summary>
@@ -248,35 +218,35 @@ namespace HttpServer
                     throw new ArgumentException("Invalid new line sequence, should be \\r\\n (crlf).");
             }
 
-            _headers[name] = value;
+            m_headers[name] = value;
         }
 
         /// <summary>
         /// Send headers and body to the browser.
         /// </summary>
         /// <exception cref="InvalidOperationException">If content have already been sent.</exception>
-        public void Send()
+        public void SendOri()
         {
             if (Sent)
                 throw new InvalidOperationException("Everything have already been sent.");
 
-            _context.ReqResponseAboutToSend(requestID);
-            if (_context.MAXRequests == 0 || _keepAlive == 0)
+            m_context.ReqResponseAboutToSend(requestID);
+            if (m_context.MAXRequests == 0 || _keepAlive == 0)
             {
                 Connection = ConnectionType.Close;
-                _context.TimeoutKeepAlive = 0;
+                m_context.TimeoutKeepAlive = 0;
             }
             else
             {
                 if (_keepAlive > 0)
-                    _context.TimeoutKeepAlive = _keepAlive * 1000;
+                    m_context.TimeoutKeepAlive = _keepAlive * 1000;
             }
 
             if (!HeadersSent)
             {
                 if (!SendHeaders())
                 {
-                    Body.Dispose();
+                    _body.Dispose();
                     Sent = true;
                     return;
                 }
@@ -292,6 +262,7 @@ namespace HttpServer
                     if (RawBufferLen + RawBufferStart > RawBuffer.Length)
                         RawBufferLen = RawBuffer.Length - RawBufferStart;
 
+                    /*
                     int curlen;
                     while(RawBufferLen > 0)
                     {
@@ -309,6 +280,20 @@ namespace HttpServer
                         RawBufferLen -= curlen;
                         RawBufferStart += curlen;
                     }
+                    */
+                    if(RawBufferLen > 0)
+                    {
+                        if (!m_context.Send(RawBuffer, RawBufferStart, RawBufferLen))
+                        {
+                            RawBuffer = null;
+                            RawBufferStart = -1;
+                            RawBufferLen = -1;
+                            if(_body != null)
+                                _body.Dispose();
+                            Sent = true;
+                            return;
+                        }
+                    }
                 }
 
                 RawBuffer = null;
@@ -316,34 +301,26 @@ namespace HttpServer
                 RawBufferLen = -1;
             }
 
-
-            if (Body.Length == 0)
+            if(_body != null && _body.Length > 0)
             {
-                Body.Dispose();
-                Sent = true;
-                _context.ReqResponseSent(requestID, Connection);
-                return;
-            }
+                _body.Flush();
+                _body.Seek(0, SeekOrigin.Begin);
 
-            Body.Flush();
-            Body.Seek(0, SeekOrigin.Begin);
-
-            var buffer = new byte[8192];
-            int bytesRead = Body.Read(buffer, 0, 8192);
-            while (bytesRead > 0)
-            {
-                if (!_context.Send(buffer, 0, bytesRead))
+                var buffer = new byte[8192];
+                int bytesRead = _body.Read(buffer, 0, 8192);
+                while (bytesRead > 0)
                 {
-                    Body.Dispose();
-                    return;
+                    if (!m_context.Send(buffer, 0, bytesRead))
+                        break;
+                    bytesRead = _body.Read(buffer, 0, 8192);
                 }
-                bytesRead = Body.Read(buffer, 0, 8192);
-            }
 
-            Body.Dispose();
+                _body.Dispose();
+            }
             Sent = true;
-            _context.ReqResponseSent(requestID, Connection);
+            m_context.ReqResponseSent(requestID, Connection);
         }
+
 
         /// <summary>
         /// Make sure that you have specified <see cref="ContentLength"/> and sent the headers first.
@@ -362,10 +339,10 @@ namespace HttpServer
             if (!HeadersSent)
                 throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-            bool sent = _context.Send(buffer, offset, count);
+            bool sent = m_context.Send(buffer, offset, count);
             Sent = true;
             if (sent)
-                _context.ReqResponseSent(requestID, Connection);
+                m_context.ReqResponseSent(requestID, Connection);
             return sent;
         }
 
@@ -384,9 +361,9 @@ namespace HttpServer
             if (!HeadersSent)
                 throw new InvalidOperationException("Send headers, and remember to specify ContentLength first.");
 
-            bool sent = _context.Send(buffer);
+            bool sent = m_context.Send(buffer);
             if (sent)
-                _context.ReqResponseSent(requestID, Connection);
+                m_context.ReqResponseSent(requestID, Connection);
             Sent = true;
             return sent;
         }
@@ -405,32 +382,42 @@ namespace HttpServer
 
             HeadersSent = true;
 
-            if (_headers["Date"] == null)
-                _headers["Date"] = DateTime.Now.ToString("r");
-            if (_headers["Content-Length"] == null)
-                _headers["Content-Length"] = _contentLength == 0 ? Body.Length.ToString() : _contentLength.ToString();
-            if (_headers["Content-Type"] == null)
-                _headers["Content-Type"] = _contentType ?? DefaultContentType;
-            if (_headers["Server"] == null)
-                _headers["Server"] = "Tiny WebServer";
-
-            int keepaliveS = _context.TimeoutKeepAlive / 1000;
-            if (Connection == ConnectionType.KeepAlive && keepaliveS > 0 && _context.MAXRequests > 0)
+            if (m_headers["Date"] == null)
+                m_headers["Date"] = DateTime.Now.ToString("r");
+            if (m_headers["Content-Length"] == null)
             {
-                _headers["Keep-Alive"] = "timeout=" + keepaliveS + ", max=" + _context.MAXRequests;
-                _headers["Connection"] = "Keep-Alive";
+                int len = (int)_contentLength;
+                if(len == 0)
+                {
+                    if(_body != null)
+                        len = (int)_body.Length;
+                    if(RawBuffer != null)
+                        len += RawBufferLen;
+                }
+                m_headers["Content-Length"] = len.ToString();
+            }
+            if (m_headers["Content-Type"] == null)
+                m_headers["Content-Type"] = _contentType ?? DefaultContentType;
+            if (m_headers["Server"] == null)
+                m_headers["Server"] = "Tiny WebServer";
+
+            int keepaliveS = m_context.TimeoutKeepAlive / 1000;
+            if (Connection == ConnectionType.KeepAlive && keepaliveS > 0 && m_context.MAXRequests > 0)
+            {
+                m_headers["Keep-Alive"] = "timeout=" + keepaliveS + ", max=" + m_context.MAXRequests;
+                m_headers["Connection"] = "Keep-Alive";
             }
             else
-                _headers["Connection"] = "close";
+                m_headers["Connection"] = "close";
 
             var sb = new StringBuilder();
             sb.AppendFormat("{0} {1} {2}\r\n", _httpVersion, (int)Status,
                             string.IsNullOrEmpty(Reason) ? Status.ToString() : Reason);
 
-            for (int i = 0; i < _headers.Count; ++i)
+            for (int i = 0; i < m_headers.Count; ++i)
             {
-                string headerName = _headers.AllKeys[i];
-                string[] values = _headers.GetValues(i);
+                string headerName = m_headers.AllKeys[i];
+                string[] values = m_headers.GetValues(i);
                 if (values == null) continue;
                 foreach (string value in values)
                     sb.AppendFormat("{0}: {1}\r\n", headerName, value);
@@ -441,9 +428,215 @@ namespace HttpServer
 
             sb.Append("\r\n");
 
-            _headers.Clear();
+            m_headers.Clear();
 
-            return _context.Send(Encoding.GetBytes(sb.ToString()));
+            return m_context.Send(Encoding.GetBytes(sb.ToString()));
+        }
+
+        public byte[] GetHeaders()
+        {
+            HeadersSent = true;
+
+            var sb = new StringBuilder();
+            if(string.IsNullOrWhiteSpace(_httpVersion))
+                sb.AppendFormat("HTTP1/0 {0} {1}\r\n", (int)Status,
+                                string.IsNullOrEmpty(Reason) ? Status.ToString() : Reason);
+            else
+                sb.AppendFormat("{0} {1} {2}\r\n", _httpVersion, (int)Status,
+                                string.IsNullOrEmpty(Reason) ? Status.ToString() : Reason);
+
+            if (m_headers["Date"] == null)
+                sb.AppendFormat("Date: {0}\r\n", DateTime.Now.ToString("r"));
+            if (m_headers["Content-Length"] == null)
+            {
+                long len = _contentLength;
+                if (len == 0)
+                {
+                    len = Body.Length;
+                    if (RawBuffer != null && RawBufferLen > 0)
+                        len += RawBufferLen;
+                }
+                sb.AppendFormat("Content-Length: {0}\r\n", len);
+            }
+            if (m_headers["Content-Type"] == null)
+                sb.AppendFormat("Content-Type: {0}\r\n", _contentType ?? DefaultContentType);
+            if (m_headers["Server"] == null)
+                sb.Append("Server: OSWebServer\r\n");
+
+            int keepaliveS = m_context.TimeoutKeepAlive / 1000;
+            if (Connection == ConnectionType.KeepAlive && keepaliveS > 0 && m_context.MAXRequests > 0)
+            {
+                sb.AppendFormat("Keep-Alive:timeout={0}, max={1}\r\n", keepaliveS, m_context.MAXRequests);
+                sb.Append("Connection: Keep-Alive\r\n");
+            }
+            else
+                sb.Append("Connection: close\r\n");
+
+            if (m_headers["Connection"] != null)
+                m_headers["Connection"] = null;
+            if (m_headers["Keep-Alive"] != null)
+                m_headers["Keep-Alive"] = null;
+
+            for (int i = 0; i < m_headers.Count; ++i)
+            {
+                string headerName = m_headers.AllKeys[i];
+                string[] values = m_headers.GetValues(i);
+                if (values == null) continue;
+                foreach (string value in values)
+                    sb.AppendFormat("{0}: {1}\r\n", headerName, value);
+            }
+
+            foreach (ResponseCookie cookie in Cookies)
+                sb.AppendFormat("Set-Cookie: {0}\r\n", cookie);
+
+            sb.Append("\r\n");
+
+            m_headers.Clear();
+
+            return Encoding.GetBytes(sb.ToString());
+        }
+
+        public void Send()
+        {
+            if (Sent)
+                throw new InvalidOperationException("Everything have already been sent.");
+
+            if (m_context.MAXRequests == 0 || _keepAlive == 0)
+            {
+                Connection = ConnectionType.Close;
+                m_context.TimeoutKeepAlive = 0;
+            }
+            else
+            {
+                if (_keepAlive > 0)
+                    m_context.TimeoutKeepAlive = _keepAlive * 1000;
+            }
+
+            m_headerBytes = GetHeaders();
+            if (RawBuffer != null)
+            {
+                if (RawBufferStart < 0 || RawBufferStart > RawBuffer.Length)
+                    return;
+
+                if (RawBufferLen < 0)
+                    RawBufferLen = RawBuffer.Length;
+
+                if (RawBufferLen + RawBufferStart > RawBuffer.Length)
+                    RawBufferLen = RawBuffer.Length - RawBufferStart;
+
+                int tlen = m_headerBytes.Length + RawBufferLen;
+                if(RawBufferLen > 0 && tlen < 16384)
+                {
+                    byte[] tmp = new byte[tlen];
+                    Array.Copy(m_headerBytes, tmp, m_headerBytes.Length);
+                    Array.Copy(RawBuffer, RawBufferStart, tmp, m_headerBytes.Length, RawBufferLen);
+                    m_headerBytes = null;
+                    RawBuffer = tmp;
+                    RawBufferStart = 0;
+                    RawBufferLen = tlen;
+                }
+            }
+            m_context.StartSendResponse(this);
+        }
+
+        public async Task SendNextAsync(int bytesLimit)
+        {
+            if (m_headerBytes != null)
+            {
+                if(!await m_context.SendAsync(m_headerBytes, 0, m_headerBytes.Length).ConfigureAwait(false))
+                {
+                    if(_body != null)
+                        _body.Dispose();
+                    RawBuffer = null;
+                    Sent = true;
+                    return;
+                }
+                bytesLimit -= m_headerBytes.Length;
+                m_headerBytes = null;
+                if(bytesLimit <= 0)
+                {
+                    m_context.ContinueSendResponse();
+                    return;
+                }
+            }
+
+            if (RawBuffer != null)
+            {
+                if (RawBufferLen > 0)
+                {
+                    bool sendRes;
+                    if(RawBufferLen > bytesLimit)
+                    {
+                        sendRes = await m_context.SendAsync(RawBuffer, RawBufferStart, bytesLimit).ConfigureAwait(false);
+                        RawBufferLen -= bytesLimit;
+                        RawBufferStart += bytesLimit;
+                    }
+                    else
+                    {
+                        sendRes = await m_context.SendAsync(RawBuffer, RawBufferStart, RawBufferLen).ConfigureAwait(false);
+                        RawBufferLen = 0;
+                    }
+
+                    if (!sendRes)
+                    {
+                        RawBuffer = null;
+                        if(_body != null)
+                            Body.Dispose();
+                        Sent = true;
+                        return;
+                    }
+                }
+                if (RawBufferLen <= 0)
+                    RawBuffer = null;
+                else
+                {
+                    m_context.ContinueSendResponse();
+                    return;
+                }
+            }
+
+            if (_body != null && _body.Length != 0)
+            {
+                _body.Flush();
+                _body.Seek(0, SeekOrigin.Begin);
+
+                RawBuffer = new byte[_body.Length];
+                RawBufferLen = _body.Read(RawBuffer, 0, (int)_body.Length);
+                _body.Dispose();
+
+                if(RawBufferLen > 0)
+                {
+                    bool sendRes;
+                    if (RawBufferLen > bytesLimit)
+                    {
+                        sendRes = await m_context.SendAsync(RawBuffer, RawBufferStart, bytesLimit).ConfigureAwait(false);
+                        RawBufferLen -= bytesLimit;
+                        RawBufferStart += bytesLimit;
+                    }
+                    else
+                    {
+                        sendRes = await m_context.SendAsync(RawBuffer, RawBufferStart, RawBufferLen).ConfigureAwait(false);
+                        RawBufferLen = 0;
+                    }
+
+                    if (!sendRes)
+                    {
+                        RawBuffer = null;
+                        Sent = true;
+                        return;
+                    }
+                }
+                if (RawBufferLen > 0)
+                {
+                    m_context.ContinueSendResponse();
+                    return;
+                }
+            }
+
+            if (_body != null)
+                _body.Dispose();
+            Sent = true;
+            m_context.ReqResponseSent(requestID, Connection);
         }
 
         /// <summary>
@@ -456,7 +649,7 @@ namespace HttpServer
         public void Redirect(Uri uri)
         {
             Status = HttpStatusCode.Redirect;
-            _headers["location"] = uri.ToString();
+            m_headers["location"] = uri.ToString();
         }
 
         /// <summary>
@@ -469,17 +662,14 @@ namespace HttpServer
         public void Redirect(string url)
         {
             Status = HttpStatusCode.Redirect;
-            _headers["location"] = url;
+            m_headers["location"] = url;
         }
 
+        public void Clear()
+        {
+            if(Body != null && Body.CanRead)
+                Body.Dispose();
+        }
         #endregion
-
-        /*
-         * HTTP/1.1 200 OK
-Date: Sun, 16 Mar 2008 08:01:36 GMT
-Server: Apache/2.2.6 (Win32) PHP/5.2.4
-Content-Length: 685
-Connection: close
-Content-Type: text/html;charset=UTF-8*/
     }
 }

@@ -4,11 +4,11 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using HttpServer.Exceptions;
 using HttpServer.Parser;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-
 
 namespace HttpServer
 {
@@ -26,17 +26,17 @@ namespace HttpServer
 
         static private int basecontextID;
 
-        private readonly byte[] _buffer;
-        private int _bytesLeft;
+        private readonly byte[] m_ReceiveBuffer;
+        private int m_ReceiveBytesLeft;
         private ILogWriter _log;
-        private readonly IHttpRequestParser _parser;
-        private readonly int _bufferSize;
-        private IHttpRequest _currentRequest;
+        private readonly IHttpRequestParser m_parser;
+        private readonly int m_bufferSize;
         private HashSet<uint> requestsInServiceIDs;
-        private Socket _sock;
+        private Socket m_sock;
 
         public bool Available = true;
         public bool StreamPassedOff = false;
+
         public int MonitorStartMS = 0;
         public int MonitorKeepaliveMS = 0;
         public bool TriggerKeepalive = false;
@@ -48,14 +48,16 @@ namespace HttpServer
         public int m_TimeoutKeepAlive = MAXKEEPALIVE; // 400 seconds before keepalive timeout
         // public int TimeoutKeepAlive = 120000; // 400 seconds before keepalive timeout
 
-        public int m_MAXRequests = MAXREQUESTS;
+        public int m_maxRequests = MAXREQUESTS;
 
         public bool FirstRequestLineReceived;
         public bool FullRequestReceived;
         public bool FullRequestProcessed;
 
-        private bool gotResponseClose = false;
         private bool isSendingResponse = false;
+
+        private HttpRequest m_currentRequest;
+        private HttpResponse m_currentResponse;
 
         public int contextID { get; private set; }
         public int TimeoutKeepAlive
@@ -63,24 +65,16 @@ namespace HttpServer
             get { return m_TimeoutKeepAlive; }
             set
             {
-                if (value > MAXKEEPALIVE)
-                    m_TimeoutKeepAlive = MAXKEEPALIVE;
-                else
-                    m_TimeoutKeepAlive = value;
+                m_TimeoutKeepAlive = (value > MAXKEEPALIVE) ? MAXKEEPALIVE : value;
             }
         }
 
         public int MAXRequests
         {
-            get { return m_MAXRequests; }
+            get { return m_maxRequests; }
             set
             {
-                if (value > MAXREQUESTS)
-                    m_MAXRequests = MAXREQUESTS;
-                else if (value <= 0)
-                    m_MAXRequests = 0;
-                else
-                    m_MAXRequests = value;
+                m_maxRequests = value > MAXREQUESTS ? MAXREQUESTS : value;
             }
         }
 
@@ -91,14 +85,13 @@ namespace HttpServer
 
         public bool StopMonitoring;
 
-
         /// <summary>
         /// Context have been started (a new client have connected)
         /// </summary>
-        public event EventHandler Started = delegate { };
+        public event EventHandler Started;
 
         /// <summary>
-		/// Initializes a new instance of the <see cref="HttpClientContext"/> class.
+        /// Initializes a new instance of the <see cref="HttpClientContext"/> class.
         /// </summary>
         /// <param name="secured">true if the connection is secured (SSL/TLS)</param>
         /// <param name="remoteEndPoint">client that connected.</param>
@@ -108,7 +101,7 @@ namespace HttpServer
         /// <exception cref="SocketException">If <see cref="Socket.BeginReceive(byte[],int,int,SocketFlags,AsyncCallback,object)"/> fails</exception>
         /// <exception cref="ArgumentException">Stream must be writable and readable.</exception>
         public HttpClientContext(bool secured, IPEndPoint remoteEndPoint,
-                                    Stream stream, IRequestParserFactory parserFactory, int bufferSize, Socket sock)
+                                    Stream stream, IRequestParserFactory parserFactory, Socket sock)
         {
             Check.Require(remoteEndPoint, "remoteEndPoint");
             Check.NotEmpty(remoteEndPoint.Address.ToString(), "remoteEndPoint.Address");
@@ -119,21 +112,21 @@ namespace HttpServer
             if (!stream.CanWrite || !stream.CanRead)
                 throw new ArgumentException("Stream must be writable and readable.");
 
-            _bufferSize = 8192;
             RemoteAddress = remoteEndPoint.Address.ToString();
             RemotePort = remoteEndPoint.Port.ToString();
             _log = NullLogWriter.Instance;
-            _parser = parserFactory.CreateParser(_log);
-            _parser.RequestCompleted += OnRequestCompleted;
-            _parser.RequestLineReceived += OnRequestLine;
-            _parser.HeaderReceived += OnHeaderReceived;
-            _parser.BodyBytesReceived += OnBodyBytesReceived;
-            _currentRequest = new HttpRequest(this);
-            Available = false;
+            m_parser = parserFactory.CreateParser(_log);
+            m_parser.RequestCompleted += OnRequestCompleted;
+            m_parser.RequestLineReceived += OnRequestLine;
+            m_parser.HeaderReceived += OnHeaderReceived;
+            m_parser.BodyBytesReceived += OnBodyBytesReceived;
+            m_currentRequest = new HttpRequest(this);
             IsSecured = secured;
             _stream = stream;
-            _sock = sock;
-            _buffer = new byte[bufferSize];
+            m_sock = sock;
+
+            m_bufferSize = 8196;
+            m_ReceiveBuffer = new byte[m_bufferSize];
             requestsInServiceIDs = new HashSet<uint>();
 
             SSLCommonName = "";
@@ -149,34 +142,19 @@ namespace HttpServer
                 }
             }
 
-            basecontextID++;
-            if (basecontextID < 0)
+            ++basecontextID;
+            if (basecontextID <= 0)
                 basecontextID = 1;
 
             contextID = basecontextID;
         }
 
-        public int SendBufferSize(int newSize)
-        {
-            try
-            {
-                if (newSize > 8192)
-                    _sock.SendBufferSize = 8192;
-
-                return _sock.SendBufferSize;
-            }
-            catch
-            {
-                    return 8192;
-            }
-        }
-
         public bool CanSend()
         {
-            if (Available || contextID < 0)
+            if (contextID < 0)
                 return false;
 
-            if (Stream == null || _sock == null || !_sock.Connected)
+            if (Stream == null || m_sock == null || !m_sock.Connected)
                 return false;
 
             return true;
@@ -189,7 +167,7 @@ namespace HttpServer
         /// <param name="e">Bytes</param>
         protected virtual void OnBodyBytesReceived(object sender, BodyEventArgs e)
         {
-            _currentRequest.AddToBody(e.Buffer, e.Offset, e.Count);
+            m_currentRequest.AddToBody(e.Buffer, e.Offset, e.Count);
         }
 
         /// <summary>
@@ -204,39 +182,22 @@ namespace HttpServer
                 lock (requestsInServiceIDs)
                 {
                     if (requestsInServiceIDs.Count == 0)
-                        Respond("HTTP/1.1", HttpStatusCode.Continue, "Please continue mate.");
+                        Respond("HTTP/1.1", HttpStatusCode.Continue, "Please continue.");
                 }
             }
-
-            _currentRequest.AddHeader(e.Name, e.Value);
+            m_currentRequest.AddHeader(e.Name, e.Value);
         }
 
         private void OnRequestLine(object sender, RequestLineEventArgs e)
         {
-            _currentRequest.Method = e.HttpMethod;
-            _currentRequest.HttpVersion = e.HttpVersion;
-            _currentRequest.UriPath = e.UriPath;
-            _currentRequest.AddHeader("remote_addr", RemoteAddress);
-            _currentRequest.AddHeader("remote_port", RemotePort);
+            m_currentRequest.Method = e.HttpMethod;
+            m_currentRequest.HttpVersion = e.HttpVersion;
+            m_currentRequest.UriPath = e.UriPath;
+            m_currentRequest.AddHeader("remote_addr", RemoteAddress);
+            m_currentRequest.AddHeader("remote_port", RemotePort);
             FirstRequestLineReceived = true;
-        }
-
-        /// <summary>
-        /// Overload to specify own type.
-        /// </summary>
-        /// <remarks>
-        /// Must be specified before the context is being used.
-        /// </remarks>
-        protected IHttpRequest CurrentRequest
-        {
-            get
-            {
-                return _currentRequest;
-            }
-            set
-            {
-                _currentRequest = value;
-            }
+            TriggerKeepalive = false;
+            MonitorKeepaliveMS = 0;
         }
 
         /// <summary>
@@ -247,16 +208,8 @@ namespace HttpServer
         /// </remarks>
         public virtual void Start()
         {
-            try
-            {
-                _stream.BeginRead(_buffer, 0, _bufferSize, OnReceive, null);
-            }
-            catch (IOException err)
-            {
-                LogWriter.Write(this, LogPrio.Debug, err.ToString());
-            }
-
-            Started(this, EventArgs.Empty);
+            ReceiveLoop();
+            Started?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -274,11 +227,14 @@ namespace HttpServer
             {
                 Stream.Close();
                 Stream = null;
-                _sock = null;
+                m_sock = null;
             }
-            _currentRequest.Clear();
+
+            m_currentRequest?.Clear();
+            m_currentRequest = null;
+            m_currentResponse?.Clear();
+            m_currentResponse = null;
             requestsInServiceIDs.Clear();
-            _bytesLeft = 0;
 
             FirstRequestLineReceived = false;
             FullRequestReceived = false;
@@ -287,17 +243,18 @@ namespace HttpServer
             StopMonitoring = true;
             MonitorKeepaliveMS = 0;
             TriggerKeepalive = false;
-            gotResponseClose = false;
+
             isSendingResponse = false;
 
+            m_ReceiveBytesLeft = 0;
+
             contextID = -100;
-            _parser.Clear();
+            m_parser.Clear();
         }
 
         public void Close()
         {
             Cleanup();
-            Available = true;
         }
 
         /// <summary>
@@ -327,7 +284,7 @@ namespace HttpServer
             set
             {
                 _log = value ?? NullLogWriter.Instance;
-                _parser.LogWriter = _log;
+                m_parser.LogWriter = _log;
             }
         }
 
@@ -370,7 +327,7 @@ namespace HttpServer
                         Stream.Close();
                         Stream = null;
                     }
-                    _sock = null;
+                    m_sock = null;
                 }
                 catch { }
 
@@ -404,38 +361,24 @@ namespace HttpServer
                     Disconnect(SocketError.ConnectionReset);
                     return;
                 }
-                _bytesLeft += bytesRead;
-                if (_bytesLeft > _buffer.Length)
+
+                m_ReceiveBytesLeft += bytesRead;
+                if (m_ReceiveBytesLeft > m_ReceiveBuffer.Length)
                 {
-#if DEBUG
-                    throw new BadRequestException("Too large HTTP header: " + Encoding.UTF8.GetString(_buffer, 0, bytesRead));
-#else
-                    throw new BadRequestException("Too large HTTP header: " + _bytesLeft);
-#endif
+                    throw new BadRequestException("HTTP header Too large: " + m_ReceiveBytesLeft);
                 }
 
-#if DEBUG
-#pragma warning disable 219
-                string temp = Encoding.ASCII.GetString(_buffer, 0, _bytesLeft);
-                LogWriter.Write(this, LogPrio.Trace, "Received: " + temp);
-#pragma warning restore 219
-#endif
-                int offset = _parser.Parse(_buffer, 0, _bytesLeft);
+                int offset = m_parser.Parse(m_ReceiveBuffer, 0, m_ReceiveBytesLeft);
                 if (Stream == null)
                     return; // "Connection: Close" in effect.
 
                 // try again to see if we can parse another message (check parser to see if it is looking for a new message)
                 int nextOffset;
-                int nextBytesleft = _bytesLeft - offset;
-                //                while (_parser.CurrentState == RequestParserState.FirstLine && offset != 0 && _bytesLeft - offset > 0)
+                int nextBytesleft = m_ReceiveBytesLeft - offset;
+
                 while (offset != 0 && nextBytesleft > 0)
                 {
-#if DEBUG
-                    temp = Encoding.ASCII.GetString(_buffer, offset, nextBytesleft);
-                    LogWriter.Write(this, LogPrio.Trace, "Processing: " + temp);
-#endif
-
-                    nextOffset = _parser.Parse(_buffer, offset, nextBytesleft);
+                    nextOffset = m_parser.Parse(m_ReceiveBuffer, offset, nextBytesleft);
 
                     if (Stream == null)
                         return; // "Connection: Close" in effect.
@@ -444,22 +387,115 @@ namespace HttpServer
                         break;
 
                     offset = nextOffset;
-                    nextBytesleft = _bytesLeft - offset;
+                    nextBytesleft = m_ReceiveBytesLeft - offset;
                 }
 
                 // copy unused bytes to the beginning of the array
-                if (offset > 0 && _bytesLeft > offset)
-                    Buffer.BlockCopy(_buffer, offset, _buffer, 0, _bytesLeft - offset);
+                if (offset > 0 && m_ReceiveBytesLeft > offset)
+                    Buffer.BlockCopy(m_ReceiveBuffer, offset, m_ReceiveBuffer, 0, m_ReceiveBytesLeft - offset);
 
-                _bytesLeft -= offset;
+                m_ReceiveBytesLeft -= offset;
                 if (Stream != null && Stream.CanRead)
+                {
                     if (!StreamPassedOff)
-                        Stream.BeginRead(_buffer, _bytesLeft, _buffer.Length - _bytesLeft, OnReceive, null);
+                        Stream.BeginRead(m_ReceiveBuffer, m_ReceiveBytesLeft, m_ReceiveBuffer.Length - m_ReceiveBytesLeft, OnReceive, null);
                     else
                     {
                         _log.Write(this, LogPrio.Warning, "Could not read any more from the socket.");
                         Disconnect(SocketError.Success);
                     }
+                }
+            }
+            catch (BadRequestException err)
+            {
+                LogWriter.Write(this, LogPrio.Warning, "Bad request, responding with it. Error: " + err);
+                try
+                {
+                    Respond("HTTP/1.0", HttpStatusCode.BadRequest, err.Message);
+                }
+                catch (Exception err2)
+                {
+                    LogWriter.Write(this, LogPrio.Fatal, "Failed to reply to a bad request. " + err2);
+                }
+                Disconnect(SocketError.NoRecovery);
+            }
+            catch (IOException err)
+            {
+                LogWriter.Write(this, LogPrio.Debug, "Failed to end receive: " + err.Message);
+                if (err.InnerException is SocketException)
+                    Disconnect((SocketError)((SocketException)err.InnerException).ErrorCode);
+                else
+                    Disconnect(SocketError.ConnectionReset);
+            }
+            catch (ObjectDisposedException err)
+            {
+                LogWriter.Write(this, LogPrio.Debug, "Failed to end receive : " + err.Message);
+                Disconnect(SocketError.NotSocket);
+            }
+            catch (NullReferenceException err)
+            {
+                LogWriter.Write(this, LogPrio.Debug, "Failed to end receive : NullRef: " + err.Message);
+                Disconnect(SocketError.NoRecovery);
+            }
+            catch (Exception err)
+            {
+                LogWriter.Write(this, LogPrio.Debug, "Failed to end receive: " + err.Message);
+                Disconnect(SocketError.NoRecovery);
+            }
+        }
+
+        private async void ReceiveLoop()
+        {
+            m_ReceiveBytesLeft = 0;
+            try
+            {
+                while(true)
+                {
+                    if (_stream == null || !_stream.CanRead)
+                        return;
+
+                    int bytesRead = await _stream.ReadAsync(m_ReceiveBuffer, m_ReceiveBytesLeft, m_ReceiveBuffer.Length - m_ReceiveBytesLeft).ConfigureAwait(false);
+
+                    if (bytesRead == 0)
+                    {
+                        Disconnect(SocketError.ConnectionReset);
+                        return;
+                    }
+
+                    m_ReceiveBytesLeft += bytesRead;
+                    if (m_ReceiveBytesLeft > m_ReceiveBuffer.Length)
+                        throw new BadRequestException("HTTP header Too large: " + m_ReceiveBytesLeft);
+
+                    int offset = m_parser.Parse(m_ReceiveBuffer, 0, m_ReceiveBytesLeft);
+                    if (Stream == null)
+                        return; // "Connection: Close" in effect.
+
+                    // try again to see if we can parse another message (check parser to see if it is looking for a new message)
+                    int nextOffset;
+                    int nextBytesleft = m_ReceiveBytesLeft - offset;
+
+                    while (offset != 0 && nextBytesleft > 0)
+                    {
+                        nextOffset = m_parser.Parse(m_ReceiveBuffer, offset, nextBytesleft);
+
+                        if (Stream == null)
+                            return; // "Connection: Close" in effect.
+
+                        if (nextOffset == 0)
+                            break;
+
+                        offset = nextOffset;
+                        nextBytesleft = m_ReceiveBytesLeft - offset;
+                    }
+
+                    // copy unused bytes to the beginning of the array
+                    if (offset > 0 && m_ReceiveBytesLeft > offset)
+                        Buffer.BlockCopy(m_ReceiveBuffer, offset, m_ReceiveBuffer, 0, m_ReceiveBytesLeft - offset);
+
+                    m_ReceiveBytesLeft -= offset;
+                    if (StreamPassedOff)
+                        return; //?
+                }
             }
             catch (BadRequestException err)
             {
@@ -505,12 +541,12 @@ namespace HttpServer
             MonitorKeepaliveMS = 0;
 
             // load cookies if they exist
-            RequestCookies cookies = _currentRequest.Headers["cookie"] != null
-                ? new RequestCookies(_currentRequest.Headers["cookie"])
+            RequestCookies cookies = m_currentRequest.Headers["cookie"] != null
+                ? new RequestCookies(m_currentRequest.Headers["cookie"])
                 : new RequestCookies(String.Empty);
-            _currentRequest.SetCookies(cookies);
+            m_currentRequest.SetCookies(cookies);
 
-            _currentRequest.Body.Seek(0, SeekOrigin.Begin);
+            m_currentRequest.Body.Seek(0, SeekOrigin.Begin);
 
             FullRequestReceived = true;
 
@@ -518,15 +554,15 @@ namespace HttpServer
             lock (requestsInServiceIDs)
             {
                 nreqs = requestsInServiceIDs.Count;
-                requestsInServiceIDs.Add(_currentRequest.ID);
-                if (m_MAXRequests > 0)
-                    m_MAXRequests--;
+                requestsInServiceIDs.Add(m_currentRequest.ID);
+                if (m_maxRequests > 0)
+                    m_maxRequests--;
             }
 
             // for now pipeline requests need to be serialized by opensim
-            RequestReceived(this, new RequestEventArgs(_currentRequest));
+            RequestReceived(this, new RequestEventArgs(m_currentRequest));
 
-            _currentRequest = new HttpRequest(this);
+            m_currentRequest = new HttpRequest(this);
 
             int nreqsnow;
             lock (requestsInServiceIDs)
@@ -544,16 +580,41 @@ namespace HttpServer
             isSendingResponse = true;
         }
 
+        public void StartSendResponse(HttpResponse response)
+        {
+            isSendingResponse = true;
+            m_currentResponse = response;
+            ContextTimeoutManager.EnqueueSend(this, response.Priority);
+        }
+
+        public bool TrySendResponse(int bytesLimit)
+        {
+            if(m_currentResponse == null)
+                return false;
+            if (m_currentResponse.Sent)
+                return false;
+
+            if(!CanSend())
+                return false;
+
+            m_currentResponse?.SendNextAsync(bytesLimit);
+            return false;
+        }
+
+        public void ContinueSendResponse()
+        {
+            if(m_currentResponse == null)
+                return;
+            ContextTimeoutManager.EnqueueSend(this, m_currentResponse.Priority);
+        }
+
         public void ReqResponseSent(uint requestID, ConnectionType ctype)
         {
-            if (ctype == ConnectionType.Close)
-                gotResponseClose = true;
-            else
-            {
-                // breakpoint
-            }
+            isSendingResponse = false;
+            m_currentResponse?.Clear();
+            m_currentResponse = null;
 
-            bool doclose = gotResponseClose;
+            bool doclose = ctype == ConnectionType.Close;
             lock (requestsInServiceIDs)
             {
                 requestsInServiceIDs.Remove(requestID);
@@ -564,7 +625,6 @@ namespace HttpServer
                 }
             }
 
-            isSendingResponse = false;
             if (doclose)
                 Disconnect(SocketError.Success);
             else
@@ -605,7 +665,7 @@ namespace HttpServer
             byte[] buffer = Encoding.ASCII.GetBytes(response);
 
             Send(buffer);
-            if (_currentRequest.Connection == ConnectionType.Close)
+            if (m_currentRequest.Connection == ConnectionType.Close)
                 FullRequestProcessed = true;
 
         }
@@ -657,44 +717,54 @@ namespace HttpServer
 
         public bool Send(byte[] buffer, int offset, int size)
         {
-            // add some trivial checks required by opensim until another fix is possible
-            // this are needed because opensim doesn't have access to stream state
-            // and in its current state it will try to send to closed streams.
-            if (Stream == null || _sock == null || !_sock.Connected)
+            if (Stream == null || m_sock == null || !m_sock.Connected)
                 return false;
 
+            if (offset + size > buffer.Length)
+                throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
+
+            bool ok = true;
             lock (sendLock) // can't have overlaps here
             {
-                bool ok = true;
-                if (offset + size > buffer.Length)
-                    throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
                 try
                 {
-                    // we are supposed to block so do block
-                    if (_sock.Poll(30000000, SelectMode.SelectWrite) && Stream != null && _sock != null)
-                        Stream.Write(buffer, offset, size);
-                    else
-                        ok = false;
+                    Stream.Write(buffer, offset, size);
                 }
-                //                catch(IOException e)
                 catch
                 {
-                    // code to handle recoverable errors
-
-                    //var socketExept = e.InnerException as SocketException;
-                    //if (socketExept != null)
-                    //{
-                    //var errcode = socketExept.ErrorCode;
-                    //}
                     ok = false;
-                    //                    throw e; // let it still be visible
                 }
 
                 if (!ok && Stream != null)
                     Disconnect(SocketError.NoRecovery);
-
                 return ok;
             }
+        }
+
+        public async Task<bool> SendAsync(byte[] buffer, int offset, int size)
+        {
+            if (Stream == null || m_sock == null || !m_sock.Connected)
+                return false;
+
+            if (offset + size > buffer.Length)
+                throw new ArgumentOutOfRangeException("offset", offset, "offset + size is beyond end of buffer.");
+
+            bool ok = true;
+            ContextTimeoutManager.ContextEnterActiveSend();
+            try
+            {
+                await Stream.WriteAsync(buffer, offset, size).ConfigureAwait(false);
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            ContextTimeoutManager.ContextLeaveActiveSend();
+
+            if (!ok && Stream != null)
+                Disconnect(SocketError.NoRecovery);
+            return ok;
         }
 
         /// <summary>
@@ -712,13 +782,13 @@ namespace HttpServer
         public HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing()
         {
             StreamPassedOff = true;
-            _parser.RequestCompleted -= OnRequestCompleted;
-            _parser.RequestLineReceived -= OnRequestLine;
-            _parser.HeaderReceived -= OnHeaderReceived;
-            _parser.BodyBytesReceived -= OnBodyBytesReceived;
-            _parser.Clear();
+            m_parser.RequestCompleted -= OnRequestCompleted;
+            m_parser.RequestLineReceived -= OnRequestLine;
+            m_parser.HeaderReceived -= OnHeaderReceived;
+            m_parser.BodyBytesReceived -= OnBodyBytesReceived;
+            m_parser.Clear();
 
-            return new HTTPNetworkContext() { Socket = _sock, Stream = _stream as NetworkStream };
+            return new HTTPNetworkContext() { Socket = m_sock, Stream = _stream as NetworkStream };
         }
 
         public void Dispose()

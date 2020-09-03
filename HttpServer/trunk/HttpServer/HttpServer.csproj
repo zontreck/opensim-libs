@@ -120,7 +120,6 @@
     <Compile Include="IHttpRequestParser.cs" />
     <Compile Include="IHttpResponse.cs" />
     <Compile Include="ILogWriter.cs" />
-    <Compile Include="LocklessQueue.cs" />
     <Compile Include="Method.cs" />
     <Compile Include="Parser\BodyEventArgs.cs" />
     <Compile Include="Parser\HeaderEventArgs.cs" />

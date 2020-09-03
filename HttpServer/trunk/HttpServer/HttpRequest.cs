@@ -15,7 +15,7 @@ namespace HttpServer
         /// <summary>
         /// Chars used to split an URL path into multiple parts.
         /// </summary>
-        public static readonly char[] UriSplitters = new[] {'/'};
+        public static readonly char[] UriSplitters = new[] { '/' };
         public static uint baseID = 0;
 
         private readonly NameValueCollection _headers = new NameValueCollection();
@@ -29,8 +29,8 @@ namespace HttpServer
         private string _method = string.Empty;
         private HttpInput _queryString = HttpInput.Empty;
         private Uri _uri = HttpHelper.EmptyUri;
-        private string _uriPath; 
-        public readonly IHttpClientContext _context;     
+        private string _uriPath;
+        public readonly IHttpClientContext _context;
 
         public HttpRequest(IHttpClientContext pContext)
         {
@@ -38,14 +38,14 @@ namespace HttpServer
             _context = pContext;
         }
 
-        public uint ID {get; private set;}
+        public uint ID { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="HttpRequest"/> is secure.
         /// </summary>
         public bool Secure { get; internal set; }
 
-        public IHttpClientContext Context { get { return _context; }}
+        public IHttpClientContext Context { get { return _context; } }
         /// <summary>
         /// Path and query (will be merged with the host header) and put in Uri
         /// </summary>
@@ -61,15 +61,15 @@ namespace HttpServer
                 {
                     _queryString = HttpHelper.ParseQueryString(_uriPath.Substring(pos + 1));
                     _param.SetQueryString(_queryString);
-                	string path = _uriPath.Substring(0, pos);
-                	_uriPath = System.Web.HttpUtility.UrlDecode(path) + "?" + _uriPath.Substring(pos + 1);
+                    string path = _uriPath.Substring(0, pos);
+                    _uriPath = System.Web.HttpUtility.UrlDecode(path) + "?" + _uriPath.Substring(pos + 1);
                     UriParts = value.Substring(0, pos).Split(UriSplitters, StringSplitOptions.RemoveEmptyEntries);
                 }
                 else
                 {
-					_uriPath = System.Web.HttpUtility.UrlDecode(_uriPath);
-					UriParts = value.Split(UriSplitters, StringSplitOptions.RemoveEmptyEntries);
-				}
+                    _uriPath = System.Web.HttpUtility.UrlDecode(_uriPath);
+                    UriParts = value.Split(UriSplitters, StringSplitOptions.RemoveEmptyEntries);
+                }
             }
         }
 
@@ -257,7 +257,7 @@ namespace HttpServer
             request.Uri = _uri;
 
             var buffer = new byte[_body.Length];
-            _body.Read(buffer, 0, (int) _body.Length);
+            _body.Read(buffer, 0, (int)_body.Length);
             request.Body = new MemoryStream();
             request.Body.Write(buffer, 0, buffer.Length);
             request.Body.Seek(0, SeekOrigin.Begin);
@@ -299,16 +299,16 @@ namespace HttpServer
             Cookies = cookies;
         }
 
-    	/// <summary>
-    	/// Create a response object.
-    	/// </summary>
-    	/// <returns>A new <see cref="IHttpResponse"/>.</returns>
-    	public IHttpResponse CreateResponse(IHttpClientContext context)
-    	{
-    		return new HttpResponse(context, this);
-    	}
+        /// <summary>
+        /// Create a response object.
+        /// </summary>
+        /// <returns>A new <see cref="IHttpResponse"/>.</returns>
+        public IHttpResponse CreateResponse(IHttpClientContext context)
+        {
+            return new HttpResponse(context, this);
+        }
 
-    	/// <summary>
+        /// <summary>
         /// Called during parsing of a <see cref="IHttpRequest"/>.
         /// </summary>
         /// <param name="name">Name of the header, should not be URL encoded</param>
@@ -372,7 +372,7 @@ namespace HttpServer
                 case "expect":
                     if (value.Contains("100-continue"))
                     {
-                        
+
                     }
                     _headers.Add(name, value);
                     break;
@@ -420,7 +420,7 @@ namespace HttpServer
         /// </summary>
         public void Clear()
         {
-            if(_body != null && _body.CanRead)
+            if (_body != null && _body.CanRead)
                 _body.Dispose();
             _body = null;
             _contentLength = 0;
@@ -432,7 +432,7 @@ namespace HttpServer
             _connection = ConnectionType.KeepAlive;
             IsAjax = false;
             _form.Clear();
-          }
+        }
 
         #endregion
     }

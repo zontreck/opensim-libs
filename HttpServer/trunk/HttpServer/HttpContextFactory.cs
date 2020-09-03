@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Security;
@@ -14,8 +15,7 @@ namespace HttpServer
     /// </summary>
     public class HttpContextFactory : IHttpContextFactory
     {
-        private readonly int _bufferSize;
-        private readonly Dictionary<int, HttpClientContext> _activeContexts = new Dictionary<int, HttpClientContext>();
+        private readonly ConcurrentDictionary<int, HttpClientContext> m_activeContexts = new ConcurrentDictionary<int, HttpClientContext>();
         private readonly IRequestParserFactory _factory;
         private readonly ILogWriter _logWriter;
 
@@ -25,12 +25,11 @@ namespace HttpServer
         /// <param name="writer">The writer.</param>
         /// <param name="bufferSize">Amount of bytes to read from the incoming socket stream.</param>
         /// <param name="factory">Used to create a request parser.</param>
-        public HttpContextFactory(ILogWriter writer, int bufferSize, IRequestParserFactory factory)
+        public HttpContextFactory(ILogWriter writer, IRequestParserFactory factory)
         {
             _logWriter = writer;
-            _bufferSize = bufferSize;
             _factory = factory;
-            ContextTimeoutManager.StartMonitoring();
+            ContextTimeoutManager.Start();
         }
 
         ///<summary>
@@ -58,8 +57,7 @@ namespace HttpServer
             context.RemotePort = endPoint.Port.ToString();
             context.RemoteAddress = endPoint.Address.ToString();
             ContextTimeoutManager.StartMonitoringContext(context);
-            lock (_activeContexts)
-                _activeContexts[context.contextID] = context;
+            m_activeContexts[context.contextID] = context;
             context.Start();
             return context;
         }
@@ -73,7 +71,7 @@ namespace HttpServer
         /// <returns>A new context (always).</returns>
         protected virtual HttpClientContext CreateNewContext(bool isSecured, IPEndPoint endPoint, Stream stream, Socket sock)
         {
-            return new HttpClientContext(isSecured, endPoint, stream, _factory, _bufferSize, sock);
+            return new HttpClientContext(isSecured, endPoint, stream, _factory, sock);
         }
 
         private void OnRequestReceived(object sender, RequestEventArgs e)
@@ -83,15 +81,11 @@ namespace HttpServer
 
         private void OnFreeContext(object sender, DisconnectedEventArgs e)
         {
-            var imp = (HttpClientContext)sender;
-            if (imp.contextID < 0)
+            var imp = sender as HttpClientContext;
+            if (imp == null || imp.contextID < 0)
                 return;
 
-            lock (_activeContexts)
-            {
-                if (_activeContexts.ContainsKey(imp.contextID))
-                    _activeContexts.Remove(imp.contextID);
-            }
+            m_activeContexts.TryRemove(imp.contextID, out HttpClientContext dummy);
 
             imp.Close();
         }
@@ -169,7 +163,7 @@ namespace HttpServer
         /// </summary>
         public void Shutdown()
         {
-            ContextTimeoutManager.StopMonitoring();
+            ContextTimeoutManager.Stop();
         }
     }
 

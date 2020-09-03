@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace HttpServer
 {
@@ -30,7 +31,6 @@ namespace HttpServer
         int TimeoutKeepAlive {get; set; }
         int MAXRequests{get; set; }
 
-        int SendBufferSize(int newSize);
         bool CanSend();
         bool IsSending();
 
@@ -81,6 +81,7 @@ namespace HttpServer
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         bool Send(byte[] buffer, int offset, int size);
+        Task<bool> SendAsync(byte[] buffer, int offset, int size);
 
         /// <summary>
         /// Closes the streams and disposes of the unmanaged resources
@@ -102,9 +103,11 @@ namespace HttpServer
 
         HTTPNetworkContext GiveMeTheNetworkStreamIKnowWhatImDoing();
 
+        void StartSendResponse(HttpResponse response);
+        void ContinueSendResponse();
         void ReqResponseAboutToSend(uint requestID);
         void ReqResponseSent(uint requestID, ConnectionType connection);
-        
+        bool TrySendResponse(int limit);
     }
     public class HTTPNetworkContext
     {

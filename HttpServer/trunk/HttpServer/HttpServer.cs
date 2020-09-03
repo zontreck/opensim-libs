@@ -461,9 +461,7 @@ namespace HttpServer
             if (!_components.Contains(typeof(IRequestParserFactory)))
                 _components.Add<IRequestParserFactory, RequestParserFactory>();
             if (!_components.Contains(typeof(IHttpContextFactory)))
-                _components.AddInstance<IHttpContextFactory>(new HttpContextFactory(LogWriter, 16384,
-                                                                                    _components.Get
-                                                                                        <IRequestParserFactory>()));
+                _components.AddInstance<IHttpContextFactory>(new HttpContextFactory(LogWriter, _components.Get<IRequestParserFactory>()));
 
 			// the special folder does not exist on mono
 			string tempPath = Environment.GetFolderPath(Environment.SpecialFolder.InternetCache);

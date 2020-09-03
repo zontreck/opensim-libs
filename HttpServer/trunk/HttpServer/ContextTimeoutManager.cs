@@ -27,11 +27,11 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace HttpServer
 {
@@ -44,45 +44,73 @@ namespace HttpServer
         /// Use a Thread or a Timer to monitor the ugly
         /// </summary>
         private static Thread m_internalThread = null;
-//        private static readonly LocklessQueue<HttpClientContext> m_contexts = new LocklessQueue<HttpClientContext>();
+        private static object m_threadLock = new object();
         private static ConcurrentQueue<HttpClientContext> m_contexts = new ConcurrentQueue<HttpClientContext>();
+        private static ConcurrentQueue<HttpClientContext> m_highPrio = new ConcurrentQueue<HttpClientContext>();
+        private static ConcurrentQueue<HttpClientContext> m_midPrio = new ConcurrentQueue<HttpClientContext>();
+        private static ConcurrentQueue<HttpClientContext> m_lowPrio = new ConcurrentQueue<HttpClientContext>();
+        private static AutoResetEvent m_processWaitEven = new AutoResetEvent(false);
         private static bool m_shuttingDown;
-        private static int m_monitorMS = 1000;
+
+        private static int m_ActiveSendingCount;
+        private static double m_lastTimeOutCheckTime = 0;
+        private static double m_lastSendCheckTime = 0;
+
+        const int m_maxBandWidth = 10485760; //80Mbps
+        const int m_maxConcurrenSend = 32;
 
         static ContextTimeoutManager()
         {
+            TimeStampClockPeriod = 1.0 / (double)Stopwatch.Frequency;
+            TimeStampClockPeriodMS = 1e3 / (double)Stopwatch.Frequency;
         }
 
-        public static void StartMonitoring()
+        public static void Start()
         {
-            if(m_internalThread != null)
-                return;
-            m_internalThread = new Thread(ThreadRunProcess);
-            m_internalThread.Priority = ThreadPriority.Normal;
-            m_internalThread.IsBackground = true;
-            m_internalThread.CurrentCulture = new CultureInfo("en-US", false);
-            m_internalThread.Name = "HttpServer Timeout Checker";
-            m_internalThread.Start();
+            lock (m_threadLock)
+            {
+                if (m_internalThread != null)
+                    return;
+
+                m_lastTimeOutCheckTime = GetTimeStampMS();
+                m_internalThread = new Thread(ThreadRunProcess);
+                m_internalThread.Priority = ThreadPriority.Normal;
+                m_internalThread.IsBackground = true;
+                m_internalThread.CurrentCulture = new CultureInfo("en-US", false);
+                m_internalThread.Name = "HttpServerMain";
+                m_internalThread.Start();
+            }
         }
 
-        public static void StopMonitoring()
+        public static void Stop()
         {
             m_shuttingDown = true;
             m_internalThread.Join();
             ProcessShutDown();
         }
 
-        private static void TimerCallbackCheck(object o)
-        {
-            ProcessContextTimeouts();
-        }
-
-        private static void ThreadRunProcess(object o)
+        private static void ThreadRunProcess()
         {
             while (!m_shuttingDown)
             {
-                ProcessContextTimeouts();
-                Thread.Sleep(m_monitorMS);
+                m_processWaitEven.WaitOne(100);
+
+                if(m_shuttingDown)
+                    return;
+
+                double now = GetTimeStampMS();
+                if(m_contexts.Count > 0)
+                {
+                    ProcessSendQueues(now);
+
+                    if (now - m_lastTimeOutCheckTime > 1000)
+                    {
+                        ProcessContextTimeouts();
+                        m_lastTimeOutCheckTime = now;
+                    }
+                }
+                else
+                    m_lastTimeOutCheckTime = now;
             }
         }
 
@@ -103,21 +131,90 @@ namespace HttpServer
                         catch { }
                     }
                 }
+                m_processWaitEven.Dispose();
+                m_processWaitEven = null;
             }
-            catch (NullReferenceException)
-            {
-                // Lockless queue so something is null or disposed
-            }
-            catch (ObjectDisposedException)
-            {
-                // Lockless queue so something is null or disposed
-            }
-            catch (Exception)
+            catch
             {
                 // We can't let this crash.
             }
         }
 
+        public static void ProcessSendQueues(double now)
+        {
+            int inqueues = m_highPrio.Count + m_midPrio.Count + m_lowPrio.Count;
+            if(inqueues == 0)
+                return;
+
+            double dt = now - m_lastSendCheckTime;
+            m_lastSendCheckTime = now;
+
+            int totalSending = m_ActiveSendingCount;
+
+            int curConcurrentLimit = m_maxConcurrenSend - totalSending;
+            if(curConcurrentLimit <= 0)
+                return;
+
+            if(curConcurrentLimit > inqueues)
+                curConcurrentLimit = inqueues;
+
+            if (dt > 0.1)
+                dt = 0.1;
+
+            dt /= curConcurrentLimit;
+            int curbytesLimit = (int)(m_maxBandWidth * dt);
+            if(curbytesLimit < 8192)
+                curbytesLimit = 8192;
+
+            HttpClientContext ctx;
+            int sent;
+            while (curConcurrentLimit > 0)
+            {
+                sent = 0;
+                while (m_highPrio.TryDequeue(out ctx))
+                {
+                    if(TrySend(ctx, curbytesLimit))
+                        m_highPrio.Enqueue(ctx);
+
+                    if (m_shuttingDown)
+                        return;
+                    --curConcurrentLimit;
+                    if (++sent == 4)
+                        break;
+                }
+
+                sent = 0;
+                while(m_midPrio.TryDequeue(out ctx))
+                {
+                    if(TrySend(ctx, curbytesLimit))
+                        m_midPrio.Enqueue(ctx);
+
+                    if (m_shuttingDown)
+                        return;
+                    --curConcurrentLimit;
+                    if (++sent >= 2)
+                        break;
+                }
+
+                if (m_lowPrio.TryDequeue(out ctx))
+                {
+                    --curConcurrentLimit;
+                    if(TrySend(ctx, curbytesLimit))
+                        m_lowPrio.Enqueue(ctx);
+                }
+
+                if (m_shuttingDown)
+                    return;
+            }
+        }
+
+        private static bool TrySend(HttpClientContext ctx, int bytesLimit)
+        {
+            if(!ctx.CanSend())
+                return false;
+
+            return ctx.TrySendResponse(bytesLimit);
+        }
 
         /// <summary>
         /// Causes the watcher to immediately check the connections. 
@@ -128,65 +225,29 @@ namespace HttpServer
             {
                 for (int i = 0; i < m_contexts.Count; i++)
                 {
-                    HttpClientContext context = null;
-                    if (m_contexts.TryDequeue(out context))
+                    if (m_shuttingDown)
+                        return;
+                    if (m_contexts.TryDequeue(out HttpClientContext context))
                     {
-                        SocketError disconnectError = SocketError.InProgress;
-                        bool disconnect;
-                        if (!ContextTimedOut(context, out disconnectError, out disconnect))
-                        {
+                        if (!ContextTimedOut(context, out SocketError disconnectError))
                             m_contexts.Enqueue(context);
-                        }
-                        else
-                        {
-                            if (disconnect)
-                            {
-                                context.Disconnect(disconnectError);
-                            }
-                        }
+                        else if(disconnectError != SocketError.InProgress)
+                            context.Disconnect(disconnectError);
                     }
                 }
             }
-            catch (NullReferenceException)
-            {
-                // Lockless queue so something is null or disposed
-            }
-            catch (ObjectDisposedException)
-            {
-                // Lockless queue so something is null or disposed
-            }
-            catch (Exception)
+            catch
             {
                 // We can't let this crash.
             }
         }
 
-        private static bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError, out bool disconnect)
+        private static bool ContextTimedOut(HttpClientContext context, out SocketError disconnectError)
         {
-            disconnect = false;
             disconnectError = SocketError.InProgress;
 
             // First our error conditions
-            if (context == null)
-                return true;
-
-            if (context.Available)
-                return true;
-
-            // Next our special use conditions
-            // Special case when multiple client contexts are being responded to by a single thread
-            //if (context.EndWhenDone)
-            //{
-            //    stopMonitoring = true;
-            //    return true;
-            //}
-
-            // Special case for websockets
-            if (context.StreamPassedOff)
-                return true;
-
-            // Now for the case when the context has the stop monitoring bool set
-            if (context.StopMonitoring)
+            if (context.contextID < 0 || context.StopMonitoring || context.StreamPassedOff)
                 return true;
 
             // Now we start checking for actual timeouts
@@ -197,13 +258,11 @@ namespace HttpServer
                 if (EnvironmentTickCountAdd(context.TimeoutFirstLine, context.MonitorStartMS) <= EnvironmentTickCount())
                 {
                     disconnectError = SocketError.TimedOut;
-                    disconnect = true;
                     context.MonitorStartMS = 0;
                     return true;
                 }
             }
 
-            //
             if (!context.FullRequestReceived)
             {
                 if (EnvironmentTickCountAdd(context.TimeoutRequestReceived, context.MonitorStartMS) <= EnvironmentTickCount())
@@ -220,7 +279,6 @@ namespace HttpServer
                 if (EnvironmentTickCountAdd(context.TimeoutFullRequestProcessed, context.MonitorStartMS) <= EnvironmentTickCount())
                 {
                     disconnectError = SocketError.TimedOut;
-                    disconnect = true;
                     context.MonitorStartMS = 0;
                     return true;
                 }
@@ -240,7 +298,6 @@ namespace HttpServer
             {
                 disconnectError = SocketError.TimedOut;
                 context.MonitorStartMS = 0;
-                disconnect = true;
                 context.MonitorKeepaliveMS = 0;
                 return true;
             }
@@ -254,6 +311,35 @@ namespace HttpServer
             m_contexts.Enqueue(context);
         }
 
+        public static void EnqueueSend(HttpClientContext context, int priority)
+        {
+            switch(priority)
+            {
+                case 0:
+                    m_highPrio.Enqueue(context);
+                    break;
+                case 1:
+                    m_midPrio.Enqueue(context);
+                    break;
+                case 2:
+                    m_lowPrio.Enqueue(context);
+                    break;
+                default:
+                    return;
+            }
+            m_processWaitEven.Set();
+        }
+
+        public static void ContextEnterActiveSend()
+        {
+            Interlocked.Increment(ref m_ActiveSendingCount);
+        }
+
+        public static void ContextLeaveActiveSend()
+        {
+            Interlocked.Decrement(ref m_ActiveSendingCount);
+        }
+
         /// <summary>
         /// Environment.TickCount is an int but it counts all 32 bits so it goes positive
         /// and negative every 24.9 days. This trims down TickCount so it doesn't wrap
@@ -261,11 +347,11 @@ namespace HttpServer
         /// This trims it to a 12 day interval so don't let your frame time get too long.
         /// </summary>
         /// <returns></returns>
-        public static Int32 EnvironmentTickCount()
+        public static int EnvironmentTickCount()
         {
             return Environment.TickCount & EnvironmentTickCountMask;
         }
-        const Int32 EnvironmentTickCountMask = 0x3fffffff;
+        const int EnvironmentTickCountMask = 0x3fffffff;
 
         /// <summary>
         /// Environment.TickCount is an int but it counts all 32 bits so it goes positive
@@ -275,9 +361,9 @@ namespace HttpServer
         /// <param name="newValue"></param>
         /// <param name="prevValue"></param>
         /// <returns>subtraction of passed prevValue from current Environment.TickCount</returns>
-        public static Int32 EnvironmentTickCountSubtract(Int32 newValue, Int32 prevValue)
+        public static int EnvironmentTickCountSubtract(Int32 newValue, Int32 prevValue)
         {
-            Int32 diff = newValue - prevValue;
+            int diff = newValue - prevValue;
             return (diff >= 0) ? diff : (diff + EnvironmentTickCountMask + 1);
         }
 
@@ -289,37 +375,39 @@ namespace HttpServer
         /// <param name="newValue"></param>
         /// <param name="prevValue"></param>
         /// <returns>subtraction of passed prevValue from current Environment.TickCount</returns>
-        public static Int32 EnvironmentTickCountAdd(Int32 newValue, Int32 prevValue)
+        public static int EnvironmentTickCountAdd(Int32 newValue, Int32 prevValue)
         {
-            Int32 ret = newValue + prevValue;
+            int ret = newValue + prevValue;
             return (ret >= 0) ? ret : (ret + EnvironmentTickCountMask + 1);
         }
-        /// <summary>
-        /// Environment.TickCount is an int but it counts all 32 bits so it goes positive
-        /// and negative every 24.9 days. Subtracts the passed value (previously fetched by
-        /// 'EnvironmentTickCount()') and accounts for any wrapping.
-        /// </summary>
-        /// <returns>subtraction of passed prevValue from current Environment.TickCount</returns>
-        public static Int32 EnvironmentTickCountSubtract(Int32 prevValue)
+
+        public static double TimeStampClockPeriodMS;
+        public static double TimeStampClockPeriod;
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static double GetTimeStamp()
         {
-            return EnvironmentTickCountSubtract(EnvironmentTickCount(), prevValue);
+            return Stopwatch.GetTimestamp() * TimeStampClockPeriod;
         }
 
-        // Returns value of Tick Count A - TickCount B accounting for wrapping of TickCount
-        // Assumes both tcA and tcB came from previous calls to Util.EnvironmentTickCount().
-        // A positive return value indicates A occured later than B
-        public static Int32 EnvironmentTickCountCompare(Int32 tcA, Int32 tcB)
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static double GetTimeStampMS()
         {
-            // A, B and TC are all between 0 and 0x3fffffff
-            int tc = EnvironmentTickCount();
-
-            if (tc - tcA >= 0)
-                tcA += EnvironmentTickCountMask + 1;
-
-            if (tc - tcB >= 0)
-                tcB += EnvironmentTickCountMask + 1;
-
-            return tcA - tcB;
+            return Stopwatch.GetTimestamp() * TimeStampClockPeriodMS;
         }
+
+        // doing math in ticks is usefull to avoid loss of resolution
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static long GetTimeStampTicks()
+        {
+            return Stopwatch.GetTimestamp();
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static double TimeStampTicksToMS(long ticks)
+        {
+            return ticks * TimeStampClockPeriodMS;
+        }
+
     }
 }
