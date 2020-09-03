@@ -39,7 +39,7 @@ namespace Warp3D
         private int
         bkgrd, c, s, lutID, //lutID is position in LUT (diffuse,envmap,specular)
         x1, x2, x3, x4, y1, y2, y3, z1, z2, z3, z4,
-        x, y, z, dx, dy, dz, offset, boffset, pos, temp,
+        x, y, z, dx, dy, dz, offset, pos, temp,
         xL, xR, xBase, zBase, xMax, dxL, dxR, dzBase,
 
         nx1, nx2, nx3, nx4, ny1, ny2, ny3, ny4,
@@ -673,7 +673,7 @@ namespace Warp3D
                     for (x = a.x; x <= b.x; x++)
                     {
                         y2 = y >> 16;
-                        boffset = y2 * width;
+                        int boffset = y2 * width;
                         if (warp_Math.inrange(x, 0, width - 1) && warp_Math.inrange(y2, 0, height - 1))
                         {
                             offset = boffset + x;
@@ -707,7 +707,7 @@ namespace Warp3D
                     for (y = a.y; y <= b.y; y++)
                     {
                         x2 = x >> 16;
-                        boffset = y2 * width;
+                        int boffset = y * width;
                         if (warp_Math.inrange(x2, 0, width - 1) && warp_Math.inrange(y, 0, height - 1))
                         {
                             offset = boffset + x2;
