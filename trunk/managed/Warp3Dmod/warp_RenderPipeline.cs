@@ -125,21 +125,26 @@ namespace Warp3D
 
                 obj.projectedmaxMips = (int)Math.Ceiling((Math.Log(maxx) * log2inv));
                 obj.cacheMaterialData();
-                rasterizer.loadFastMaterial(obj);
-
-                for(int i = 0; i < obj.triangles; ++i)
+                if (objmaterial.opaque)
                 {
-                    t = obj.fasttriangle[i];
-                    t.project(normalProjection);
-                    t.clipFrustrum(w, h);
-                    if(!t.visible)
-                        continue;
-                    if(objmaterial.opaque)
+                    rasterizer.loadFastMaterial(obj);
+                    for (int i = 0; i < obj.triangles; ++i)
                     {
-                        rasterizer.render(t);
-                        continue;
+                        t = obj.fasttriangle[i];
+                        t.project(normalProjection);
+                        if (t.clipFrustrum(w, h))
+                            rasterizer.render(t);
                     }
-                    transparentQueue.Add(t);
+                }
+                else
+                {
+                    for (int i = 0; i < obj.triangles; ++i)
+                    {
+                        t = obj.fasttriangle[i];
+                        t.project(normalProjection);
+                        if (t.clipFrustrum(w, h))
+                            transparentQueue.Add(t);
+                    }
                 }
             }
 
@@ -148,10 +153,10 @@ namespace Warp3D
             warp_Triangle[] tri;
             obj = null;
             tri = getTransparentQueue();
-            transparentQueue.Clear();
             if(tri != null)
             {
-                for(int i = 0; i < tri.GetLength(0); i++)
+                transparentQueue.Clear();
+                for (int i = 0; i < tri.GetLength(0); i++)
                 {
                     if(obj != tri[i].parent)
                     {
@@ -181,14 +186,16 @@ namespace Warp3D
         {
             if(transparentQueue.Count == 0)
                 return null;
-            IEnumerator enumerator = transparentQueue.GetEnumerator();
+
+            IComparer comp = new tridistZDescCompare();
+            transparentQueue.Sort(comp);
             warp_Triangle[] tri = new warp_Triangle[transparentQueue.Count];
-
             int id = 0;
-            while(enumerator.MoveNext())
-                tri[id++] = (warp_Triangle)enumerator.Current;
+            for(int i = 0; i < transparentQueue.Count; ++i)
+                tri[id++] = (warp_Triangle)transparentQueue[i];
 
-            return sortTriangles(tri, 0, tri.GetLength(0) - 1);
+            //return sortTriangles(tri, 0, tri.GetLength(0) - 1);
+            return tri;
         }
 
         private warp_Triangle[] sortTriangles(warp_Triangle[] tri, int L, int R)
@@ -245,6 +252,19 @@ namespace Warp3D
             rasterizer = null;
             transparentQueue.Clear();
             transparentQueue = null;
+        }
+    }
+
+    public class tridistZDescCompare : IComparer
+    {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        int IComparer.Compare(object x, object y)
+        {
+            float a = ((warp_Triangle)x).distZ;
+            float b = ((warp_Triangle)y).distZ;
+            if( a == b )
+                return 0;
+            return a < b ? 1 : -1;
         }
     }
 }

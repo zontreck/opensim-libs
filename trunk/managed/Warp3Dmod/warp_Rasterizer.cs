@@ -39,7 +39,7 @@ namespace Warp3D
         private int
         bkgrd, c, s, lutID, //lutID is position in LUT (diffuse,envmap,specular)
         x1, x2, x3, x4, y1, y2, y3, z1, z2, z3, z4,
-        x, y, z, dx, dy, dz, offset, pos, temp,
+        x, y, z, dx, dy, dz, offset, boffset, pos, temp,
         xL, xR, xBase, zBase, xMax, dxL, dxR, dzBase,
 
         nx1, nx2, nx3, nx4, ny1, ny2, ny3, ny4,
@@ -91,7 +91,7 @@ namespace Warp3D
             diffuse = lm.diffuse;
             specular = lm.specular;
             lightmapLoaded = true;
-            ready = lightmapLoaded && materialLoaded;
+            ready = materialLoaded;
         }
 
         // Material loader
@@ -148,7 +148,7 @@ namespace Warp3D
             if (material.wireframe)
                 mode |= W;
             materialLoaded = true;
-            ready = lightmapLoaded && materialLoaded;
+            ready = lightmapLoaded;
         }
 
         public void loadFastMaterial(warp_Object obj)
@@ -169,7 +169,7 @@ namespace Warp3D
 
             mode = obj.fastmode;
             materialLoaded = true;
-            ready = lightmapLoaded && materialLoaded;
+            ready = lightmapLoaded;
         }
 
         public void render(warp_Triangle tri)
@@ -185,7 +185,7 @@ namespace Warp3D
             if ((mode & W) != 0)
             {
                 drawWireframe(tri, color);
-                if ((mode & W) == 0)
+                if ((mode & ~W) == 0)
                 {
                     return;
                 }
@@ -241,7 +241,8 @@ namespace Warp3D
             int dy21 = y2 - y1;
             int dy31 = y3 - y1;
 
-            x4 = x1 + (x3 - x1) * dy21 / dy31;
+            float tf = dy21 / dy31;
+            x4 = x1 + (int)((x3 - x1) * tf);
 
             dx = (x4 - x2) >> 8;
             if (dx == 0)
@@ -271,8 +272,6 @@ namespace Warp3D
             ny4 = ny1 + ((ny3 - ny1) >> 8) * temp;
             ny2 = p2.ny;
             dny = (ny4 - ny2) / dx;
-
-            float tf = (float)dy21 / (float)dy31;
 
             tx1 = p1.tx * tw;
             tx3 = p3.tx * tw;
@@ -674,14 +673,15 @@ namespace Warp3D
                     for (x = a.x; x <= b.x; x++)
                     {
                         y2 = y >> 16;
+                        boffset = y2 * width;
                         if (warp_Math.inrange(x, 0, width - 1) && warp_Math.inrange(y2, 0, height - 1))
                         {
-                            offset = y2 * width;
-                            if (z < zB[x + offset])
+                            offset = boffset + x;
+                            if (z < zB[offset])
                             {
                                 {
-                                    sp[x + offset] = color;
-                                    zB[x + offset] = z;
+                                    sp[offset] = color;
+                                    zB[offset] = z;
                                 }
                             }
                         }
@@ -707,14 +707,15 @@ namespace Warp3D
                     for (y = a.y; y <= b.y; y++)
                     {
                         x2 = x >> 16;
+                        boffset = y2 * width;
                         if (warp_Math.inrange(x2, 0, width - 1) && warp_Math.inrange(y, 0, height - 1))
                         {
-                            offset = y * width;
-                            if (z < zB[x2 + offset])
+                            offset = boffset + x2;
+                            if (z < zB[offset])
                             {
                                 {
-                                    sp[x2 + offset] = color;
-                                    zB[x2 + offset] = z;
+                                    sp[offset] = color;
+                                    zB[offset] = z;
                                 }
                             }
                         }

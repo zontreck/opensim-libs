@@ -59,14 +59,19 @@ namespace Warp3D
             return true;
         }
 
-        public bool AddPlane( string name, float size  )
+        public bool AddPlane(string name, float size)
+        {
+            return AddPlane(name, size, true);
+        }
+
+        public bool AddPlane(string name, float size, bool doubleSide)
         {
             if ( _scene == null )
             {
                 return false;
             }
 
-            warp_Object o = warp_ObjectFactory.SIMPLEPLANE(size, true);
+            warp_Object o = warp_ObjectFactory.SIMPLEPLANE(size, doubleSide);
 
             if ( o == null )
             {

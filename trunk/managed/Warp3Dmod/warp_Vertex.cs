@@ -146,14 +146,10 @@ namespace Warp3D
             float nx = 0;
             float ny = 0;
             float nz = 0;
-            IEnumerator enumerator = neighbor.GetEnumerator();
-
-            warp_Triangle tri;
-            warp_Vector wn;
-            while(enumerator.MoveNext())
+            for(int i = 0; i < neighbor.Count; ++i)
             {
-                tri = (warp_Triangle)enumerator.Current;
-                wn = tri.getWeightedNormal();
+                warp_Triangle tri = neighbor[i];
+                warp_Vector wn = tri.rawNorm;
                 nx += wn.x;
                 ny += wn.y;
                 nz += wn.z;
