@@ -499,6 +499,8 @@ namespace BulletXNA.BulletDynamics
             {
                 BulletGlobals.g_streamWriter.WriteLine("PredictUnconstraintMotion [{0}][{1}]", length, timeStep);
             }
+
+            /* the used parallel lib was never pushed it would also be totally obsolete
             Parallel.For(3,0, length, delegate(int i)
                                         {
                                             RigidBody body = m_nonStaticRigidBodies[i];
@@ -512,12 +514,22 @@ namespace BulletXNA.BulletDynamics
                                                 body.SetInterpolationWorldTransform(ref temp);
                                             }
                                         });
+            */
+
             //for (int i = 0; i < length;i++)
             for (int i = 0; i < m_nonStaticRigidBodies.Count;i++ )
             {
-               
+                RigidBody body = m_nonStaticRigidBodies[i];
+                if (!body.IsStaticOrKinematicObject())
+                {
+                    body.IntegrateVelocities(timeStep);
+                    //dampingF
+                    body.ApplyDamping(timeStep);
+                    IndexedMatrix temp;
+                    body.PredictIntegratedTransform(timeStep, out temp);
+                    body.SetInterpolationWorldTransform(ref temp);
                 }
-            
+            }
             BulletGlobals.StopProfile();
         }
 

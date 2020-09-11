@@ -304,7 +304,6 @@ namespace Warp3D
                 ny2 = ny4;
             }
 
-
             dy = dy21;
             if (y2 >= 0 && dy > 0)
             {
