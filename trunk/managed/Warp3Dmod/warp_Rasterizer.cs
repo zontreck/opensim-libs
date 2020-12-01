@@ -241,7 +241,7 @@ namespace Warp3D
             int dy21 = y2 - y1;
             int dy31 = y3 - y1;
 
-            float tf = dy21 / dy31;
+            float tf = (float)dy21 / dy31;
             x4 = x1 + (int)((x3 - x1) * tf);
 
             dx = (x4 - x2) >> 8;

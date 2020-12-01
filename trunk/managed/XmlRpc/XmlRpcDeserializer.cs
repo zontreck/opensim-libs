@@ -11,8 +11,8 @@ namespace Nwc.XmlRpc
     /// <summary>Parser context, we maintain contexts in a stack to avoiding recursion. </summary>
     struct Context
     {
-        public String Name;
-        public Object Container;
+        public string Name;
+        public object Container;
     }
 
     /// <summary>Basic XML-RPC data deserializer.</summary>
@@ -23,15 +23,15 @@ namespace Nwc.XmlRpc
     {
         private static DateTimeFormatInfo _dateFormat = new DateTimeFormatInfo();
 
-        private Object _container;
+        private object _container;
         private Stack _containerStack;
 
         /// <summary>Protected reference to last text.</summary>
-        protected String _text;
+        protected string _text;
         /// <summary>Protected reference to last deserialized value.</summary>
-        protected Object _value;
+        protected object _value;
         /// <summary>Protected reference to last name field.</summary>
-        protected String _name;
+        protected string _name;
 
 
         /// <summary>Basic constructor.</summary>
@@ -44,7 +44,7 @@ namespace Nwc.XmlRpc
         /// <summary>Static method that parses XML data into a response using the Singleton.</summary>
         /// <param name="xmlData"><c>StreamReader</c> containing an XML-RPC response.</param>
         /// <returns><c>Object</c> object resulting from the deserialization.</returns>
-        virtual public Object Deserialize(TextReader xmlData)
+        virtual public object Deserialize(TextReader xmlData)
         {
             return null;
         }
@@ -82,7 +82,10 @@ namespace Nwc.XmlRpc
                     switch(reader.Name)
                     {
                         case BASE64:
-                            _value = Convert.FromBase64String(_text);
+                            if(string.IsNullOrEmpty(_text))
+                                _value = new byte[0];
+                            else
+                                _value = Convert.FromBase64String(_text);
                             break;
                         case BOOLEAN:
                             int val = Int16.Parse(_text);
@@ -143,7 +146,7 @@ namespace Nwc.XmlRpc
         /// request using the Singleton.</summary>
         /// <param name="xmlData"><c>String</c> containing an XML-RPC request.</param>
         /// <returns><c>XmlRpcRequest</c> object resulting from the parse.</returns>
-        public Object Deserialize(String xmlData)
+        public object Deserialize(string xmlData)
         {
             StringReader sr = new StringReader(xmlData);
             return Deserialize(sr);

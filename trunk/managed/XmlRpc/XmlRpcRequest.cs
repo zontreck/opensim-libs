@@ -11,7 +11,7 @@ namespace Nwc.XmlRpc
     /// <summary>Class supporting the request side of an XML-RPC transaction.</summary>
     public class XmlRpcRequest
     {
-        private String m_methodName = null;
+        private string m_methodName = null;
         private Encoding m_encoding = new UTF8Encoding();
         private XmlRpcRequestSerializer _serializer = new XmlRpcRequestSerializer();
         private XmlRpcResponseDeserializer _deserializer = new XmlRpcResponseDeserializer();
@@ -25,11 +25,16 @@ namespace Nwc.XmlRpc
             _params = new ArrayList();
         }
 
+        public XmlRpcRequest(Encoding enc)
+        {
+            _params = new ArrayList();
+            m_encoding = enc;
+        }
         /// <summary>Instantiate an <c>XmlRpcRequest</c> for a specified method and parameters.</summary>
         /// <param name="methodName"><c>String</c> designating the <i>object.method</i> on the server the request
         /// should be directed to.</param>
         /// <param name="parameters"><c>ArrayList</c> of XML-RPC type parameters to invoke the request with.</param>
-        public XmlRpcRequest(String methodName, IList parameters)
+        public XmlRpcRequest(string methodName, IList parameters)
         {
             MethodName = methodName;
             _params = parameters;
@@ -45,7 +50,7 @@ namespace Nwc.XmlRpc
         }
 
         /// <summary><c>String</c> conntaining the method name, both object and method, that the request will be sent to.</summary>
-        public virtual String MethodName
+        public virtual string MethodName
         {
             get
             {
@@ -58,7 +63,7 @@ namespace Nwc.XmlRpc
         }
 
         /// <summary><c>String</c> object name portion of the method name.</summary>
-        public String MethodNameObject
+        public string MethodNameObject
         {
             get
             {
@@ -72,7 +77,7 @@ namespace Nwc.XmlRpc
         }
 
         /// <summary><c>String</c> method name portion of the object.method name.</summary>
-        public String MethodNameMethod
+        public string MethodNameMethod
         {
             get
             {
@@ -89,7 +94,7 @@ namespace Nwc.XmlRpc
         /// <param name="url"><c>String</c> The url of the XML-RPC server.</param>
         /// <returns><c>Object</c> The value returned from the method invocation on the server.</returns>
         /// <exception cref="XmlRpcException">If an exception generated on the server side.</exception>
-        public Object Invoke(String url, RemoteCertificateValidationCallback certCallBack = null)
+        public object Invoke(string url, RemoteCertificateValidationCallback certCallBack = null)
         {
             XmlRpcResponse res = Send(url, 100000, certCallBack);
 
@@ -102,7 +107,7 @@ namespace Nwc.XmlRpc
         /// <summary>Send the request to the server.</summary>
         /// <param name="url"><c>String</c> The url of the XML-RPC server.</param>
         /// <returns><c>XmlRpcResponse</c> The response generated.</returns>
-        public XmlRpcResponse Send(String url, int timeout = 100000, RemoteCertificateValidationCallback certCallBack = null)
+        public XmlRpcResponse Send(string url, int timeout = 100000, RemoteCertificateValidationCallback certCallBack = null)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             if (request == null)
@@ -131,7 +136,7 @@ namespace Nwc.XmlRpc
 
         /// <summary>Produce <c>String</c> representation of the object.</summary>
         /// <returns><c>String</c> representation of the object.</returns>
-        override public String ToString()
+        override public string ToString()
         {
             return _serializer.Serialize(this);
         }

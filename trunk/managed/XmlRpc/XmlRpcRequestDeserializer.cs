@@ -28,7 +28,7 @@ namespace Nwc.XmlRpc
         {
             using(XmlTextReader reader = new XmlTextReader(xmlData))
             {
-                XmlRpcRequest request = new XmlRpcRequest();
+                XmlRpcRequest request = new XmlRpcRequest(reader.Encoding);
                 bool done = false;
 
                 lock(this)
