@@ -34,8 +34,6 @@ namespace Warp3D
         private const int T = 8;  // TEXTURED
         private int SHADED = 0;
 
-       
-
         private int
             y, z, dx, dy, dz, offset,
             xL, xR, xBase, zBase, xMax, dxL, dxR, dzBase,

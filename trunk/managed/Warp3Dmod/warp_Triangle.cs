@@ -30,7 +30,7 @@ namespace Warp3D
 
         public bool clipFrustrum(int w, int h)
         {
-            if (n2.z < 0.00001f)
+            if (n2.z < -0.6f)
                 return false;
 
             return (p1.clipcode & p2.clipcode & p3.clipcode) == 0;
