@@ -292,25 +292,40 @@ namespace Warp3D
             warp_Matrix om = new warp_Matrix();
             om.scale(size.x, size.y, size.z);
             om.transform(rotation);
+
+            float xmax;
+            float ymax;
+
+            if (defaultCamera.isOrthographic)
+            {
+                xmax = Math.Abs(om.m00);
+                ymax = Math.Abs(om.m22);
+                if (xmax < 1f || ymax < 1f)
+                    return -1;
+                return xmax * ymax / (width * height);
+            }
+
             om.m03 = pos.x;
             om.m13 = pos.y;
             om.m23 = pos.z;
+            warp_Vector side;
+            warp_Vector v;
+            float xmin;
+            float ymin;
 
             warp_Matrix m = warp_Matrix.multiply(defaultCamera.getMatrix(), matrix);
             om.transform(m);
 
-            float xmin, xmax;
-            float ymin, ymax;
             float zmin;
-            warp_Vector side = new warp_Vector(-0.5f, -0.5f, -0.5f);
-            warp_Vector v = side.transform(om);
+            side = new warp_Vector(-1f, -1f, -1f);
+            v = side.transform(om);
             xmin = v.x;
             xmax = xmin;
             ymin = v.y;
             ymax = ymin;
             zmin = v.z;
 
-            side.x = 0.5f;
+            side.x = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -323,8 +338,8 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = -0.5f;
-            side.y = 0.5f;
+            side.x = -1f;
+            side.y = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -337,7 +352,7 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = 0.5f;
+            side.x = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -350,9 +365,9 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = -0.5f;
-            side.y = -0.5f;
-            side.z = 0.5f;
+            side.x = -1f;
+            side.y = -1f;
+            side.z = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -365,7 +380,7 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = 0.5f;
+            side.x = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -378,8 +393,8 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = -0.5f;
-            side.y = 0.5f;
+            side.x = -1f;
+            side.y = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -392,7 +407,7 @@ namespace Warp3D
             if (zmin > v.z)
                 zmin = v.z;
 
-            side.x = 0.5f;
+            side.x = 1f;
             v = side.transform(om);
             if (xmin > v.x)
                 xmin = v.x;
@@ -404,16 +419,11 @@ namespace Warp3D
                 ymax = v.y;
             if (zmin > v.z)
                 zmin = v.z;
+
 
             xmax -= xmin;
             ymax -= ymin;
 
-            if (!defaultCamera.isOrthographic)
-            {
-                float fact = 1.0f / ((zmin > 0.1) ? zmin : 0.1f);
-                xmax *= fact;
-                ymax *= fact;
-            }
             if (xmax < 1f || ymax < 1f)
                 return -1;
             return xmax * ymax / (width * height);

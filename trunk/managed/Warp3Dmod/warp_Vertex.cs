@@ -55,11 +55,13 @@ namespace Warp3D
             this.v = v;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public warp_Vertex(warp_Vector ppos)
         {
             pos = ppos.getClone();
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public warp_Vertex(warp_Vector ppos, float u, float v)
         {
             pos = ppos.getClone();
@@ -107,12 +109,14 @@ namespace Warp3D
             ny = ((int)(n2.y * 127 + 127)) << 16;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void setUV(float u, float v)
         {
             this.u = u;
             this.v = v;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void clipFrustrum(int w, int h)
         {
             // View plane clipping
@@ -179,18 +183,21 @@ namespace Warp3D
                     n=new warp_Vector(nx,ny,nz).normalize();
                 }
         */
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void scaleTextureCoordinates(float fx, float fy)
         {
             u *= fx;
             v *= fy;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void moveTextureCoordinates(float fx, float fy)
         {
             u += fx;
             v += fy;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public warp_Vertex getClone()
         {
             warp_Vertex newVertex = new warp_Vertex();
@@ -202,11 +209,13 @@ namespace Warp3D
             return newVertex;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public bool equals(warp_Vertex v)
         {
             return ((pos.x == v.pos.x) && (pos.y == v.pos.y) && (pos.z == v.pos.z));
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public bool equals(warp_Vertex v, float tolerance)
         {
             return Math.Abs(warp_Vector.sub(pos, v.pos).length()) < tolerance;

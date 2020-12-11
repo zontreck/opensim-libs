@@ -33,6 +33,7 @@ namespace Warp3D
             return this;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public warp_Vector reverse()
         // Reverses the vector
         {
@@ -42,6 +43,7 @@ namespace Warp3D
             return this;
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public float length()
         // Lenght of this vector
         {
@@ -90,30 +92,35 @@ namespace Warp3D
             y = r * warp_Math.sin(theta);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector getNormal(warp_Vector a, warp_Vector b)
         // returns the normal vector of the plane defined by the two vectors
         {
             return vectorProduct(a, b).normalize();
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector getNormal(warp_Vector a, warp_Vector b, warp_Vector c)
         // returns the normal vector of the plane defined by the two vectors
         {
             return vectorProduct(a, b, c).normalize();
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector vectorProduct(warp_Vector a, warp_Vector b)
         // returns a x b
         {
             return new warp_Vector(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector vectorProduct(warp_Vector a, warp_Vector b, warp_Vector c)
         // returns (b-a) x (c-a)
         {
             return vectorProduct(sub(b, a), sub(c, a));
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float vectorsCos(warp_Vector a, warp_Vector b)
         // returns the angle between 2 vectors
         {
@@ -122,30 +129,35 @@ namespace Warp3D
             return (a.x * b.x + a.y * b.y + a.z * b.z);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float Dot(warp_Vector a, warp_Vector b)
         // returns the angle between 2 vectors
         {
             return (a.x * b.x + a.y * b.y + a.z * b.z);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector add(warp_Vector a, warp_Vector b)
         // adds 2 vectors
         {
             return new warp_Vector(a.x + b.x, a.y + b.y, a.z + b.z);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector sub(warp_Vector a, warp_Vector b)
         // substracts 2 vectors
         {
             return new warp_Vector(a.x - b.x, a.y - b.y, a.z - b.z);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static warp_Vector scale(float f, warp_Vector a)
         // substracts 2 vectors
         {
             return new warp_Vector(f * a.x, f * a.y, f * a.z);
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static float len(warp_Vector a)
         // length of vector
         {
@@ -165,6 +177,7 @@ namespace Warp3D
 		}
 */
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public warp_Vector getClone()
         {
             return new warp_Vector(x, y, z);
