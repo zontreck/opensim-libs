@@ -295,7 +295,7 @@ namespace Warp3D
 
             float xmax;
             float ymax;
-
+            /*
             if (defaultCamera.isOrthographic)
             {
                 xmax = Math.Abs(om.m00);
@@ -304,7 +304,7 @@ namespace Warp3D
                     return -1;
                 return xmax * ymax / (width * height);
             }
-
+            */
             om.m03 = pos.x;
             om.m13 = pos.y;
             om.m23 = pos.z;
