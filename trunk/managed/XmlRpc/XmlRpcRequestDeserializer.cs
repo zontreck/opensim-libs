@@ -21,13 +21,14 @@ namespace Nwc.XmlRpc
             }
         }
 
-        /// <summary>Static method that parses XML data into a request using the Singleton.</summary>
+        /// <summary>Static method that parses XML data into a request.</summary>
         /// <param name="xmlData"><c>StreamReader</c> containing an XML-RPC request.</param>
         /// <returns><c>XmlRpcRequest</c> object resulting from the parse.</returns>
         override public Object Deserialize(TextReader xmlData)
         {
             using(XmlTextReader reader = new XmlTextReader(xmlData))
             {
+                reader.DtdProcessing = DtdProcessing.Ignore;
                 XmlRpcRequest request = new XmlRpcRequest(reader.Encoding);
                 bool done = false;
 

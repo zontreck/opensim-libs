@@ -25,10 +25,10 @@ using System.Runtime.CompilerServices;
 #elif (NET_COMPACT_1_0)
 [assembly: AssemblyTitle("Nini for .NET Compact Framework 1.0")]
 #else
-[assembly: AssemblyTitle("Nini")]
+[assembly: AssemblyTitle("Nini (OpenSim)")]
 #endif
 
-[assembly: AssemblyDescription(".NET Configuration Library - http://nini.sourceforge.net/")]
+[assembly: AssemblyDescription(".NET (OpenSim) Configuration Library - http://nini.sourceforge.net/")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Brent R. Matzelle")]
 [assembly: AssemblyProduct("Nini")]
@@ -42,7 +42,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyKeyFile(@"..\..\Nini.key")]
 #endif
 
-[assembly: System.Reflection.AssemblyVersion("1.1.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.1.0.1")]
 
 [assembly:CLSCompliant(true)] // Required for CLS compliance
 

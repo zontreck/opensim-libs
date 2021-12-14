@@ -32,6 +32,7 @@ namespace Nwc.XmlRpc
         {
             using(XmlTextReader reader = new XmlTextReader(xmlData))
             {
+                reader.DtdProcessing = DtdProcessing.Ignore;
                 XmlRpcResponse response = new XmlRpcResponse();
                 bool done = false;
 

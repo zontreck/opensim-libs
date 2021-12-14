@@ -77,6 +77,7 @@ namespace Nini.Config
 		/// <include file='DotNetConfigSource.xml' path='//Method[@name="LoadXmlReader"]/docs/*' />
 		public void Load (XmlReader reader)
 		{
+            reader.Settings.DtdProcessing = DtdProcessing.Ignore;
 			configDoc = new XmlDocument ();
 			configDoc.Load (reader);
 			PerformLoad (configDoc);
