@@ -148,8 +148,7 @@ namespace Nwc.XmlRpc
         /// <returns><c>XmlRpcRequest</c> object resulting from the parse.</returns>
         public object Deserialize(string xmlData)
         {
-            StringReader sr = new StringReader(xmlData);
-            return Deserialize(sr);
+            return Deserialize(new StringReader(xmlData));
         }
 
         /// <summary>Pop a Context of the stack, an Array or Struct has closed.</summary>

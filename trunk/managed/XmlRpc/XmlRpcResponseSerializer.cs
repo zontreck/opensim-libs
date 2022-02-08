@@ -27,7 +27,7 @@ namespace Nwc.XmlRpc
         /// <param name="output">An <c>XmlTextWriter</c> stream to write data to.</param>
         /// <param name="obj">An <c>Object</c> to serialize.</param>
         /// <seealso cref="XmlRpcResponse"/>
-        override public void Serialize(XmlTextWriter output,Object obj)
+        override public void Serialize(XmlTextWriter output, Object obj)
         {
             XmlRpcResponse response = (XmlRpcResponse)obj;
 
