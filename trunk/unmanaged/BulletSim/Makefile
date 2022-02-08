@@ -25,8 +25,8 @@ endif
 
 # Linux build.
 ifeq ($(UNAME), Linux)
-TARGET = libBulletSim.so
-CFLAGS = -I$(IDIR) -fPIC -g
+TARGET = libBulletSim-$(UNAMEPROCESSOR).so
+CFLAGS = -I$(IDIR) -fPIC -g -fpermissive
 LFLAGS = $(WRAPMEMCPY) -shared -Wl,-soname,$(TARGET) -o $(TARGET)
 endif
 

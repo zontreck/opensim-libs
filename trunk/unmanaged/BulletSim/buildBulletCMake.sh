@@ -33,7 +33,8 @@ if [[ "$UNAME" == "Darwin" ]] ; then
             -DCMAKE_VERBOSE_MAKEFILE="on" \
             -DCMAKE_BUILD_TYPE=Release
 else
-    if [[ "$MACH" == "x86_64" ]] ; then
+    if [[ "$MACH" == "x86_64" ]] 
+    then
         cmake .. -G "Unix Makefiles" \
                 -DBUILD_BULLET2_DEMOS=off \
                 -DBUILD_BULLET3=on \
@@ -46,6 +47,31 @@ else
                 -DBUILD_PYBULLET=off \
                 -DBUILD_SHARED_LIBS=off \
                 -DBUILD_UNIT_TESTS=off \
+                -DINSTALL_EXTRA_LIBS=on \
+                -DINSTALL_LIBS=on \
+                -DCMAKE_CXX_FLAGS="-fPIC" \
+                -DCMAKE_BUILD_TYPE=Release
+    elif [[ "$MACH" == "aarch64" ]] 
+    then
+        cmake .. -G "Unix Makefiles" \
+                -DBUILD_BULLET2_DEMOS=off \
+                -DBUILD_BULLET3=on \
+                -DBUILD_CLSOCKET=off \
+                -DBUILD_CPU_DEMOS=off \
+                -DBUILD_ENET=off \
+                -DBUILD_EXTRAS=on \
+		-DBUILD_BULLET_ROBOTICS_GUI_EXTRA=off \
+		-DBUILD_BULLET_ROBOTICS_EXTRA=off \
+                -DBUILD_DEMOS=off \
+                -DBUILD_OPENGL_DEMOS=off \
+                -DBUILD_PYBULLET=off \
+                -DBUILD_SHARED_LIBS=off \
+                -DBUILD_UNIT_TESTS=off \
+		-DENABLE_VHACD=off \
+		-DUSE_GRAPHICAL_BENCHMARK=off \
+		-DBUILD_EGL=off \
+		-DBUILD_OPENGL3_DEMOS=off \
+		-DBUILD_BULLET2_DEMOS=off \
                 -DINSTALL_EXTRA_LIBS=on \
                 -DINSTALL_LIBS=on \
                 -DCMAKE_CXX_FLAGS="-fPIC" \
@@ -78,7 +104,8 @@ make -j4
 cd "$STARTDIR"
 mkdir -p lib
 cd "${BULLET}"
-cp */*/*.a */*/*/*.a ../lib
+cp */*/*/*.a ../lib
+#cp */*/*.a */*/*/*.a ../lib
 
 cd "$STARTDIR"
 mkdir -p include
