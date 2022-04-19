@@ -30,14 +30,35 @@
 #undef dNormalize3
 #undef dNormalize4
 
-// this may be called for vectors `a' with extremely small magnitude, for
-// example the result of a cross product on two nearly perpendicular vectors.
-// we must be robust to these small vectors. to prevent numerical error,
-// first find the component a[i] with the largest magnitude and then scale
-// all the components by 1/a[i]. then we can compute the length of `a' and
-// scale the components by 1/l. this has been verified to work with vectors
-// containing the smallest representable numbers.
+/*
+#if defined(__AVX__)
+int _dSafeNormalize3(dVector3 a)
+{
+    __m128 ma,mb,mc;
+    mb = _mm_loadu_ps(a);
 
+    ma = _mm_dp_ps(mb, mb, 0x71);
+    dReal l = (dReal)_mm_cvtss_f32(ma);
+    if (l > dEpsilon)
+    {
+        mc = _mm_set_ss(1.0f);
+
+        ma = _mm_sqrt_ss(ma);
+        ma = _mm_div_ss(mc, ma);
+
+        ma = _mm_insert_ps(ma,ma,0x0E);
+        ma = _mm_shuffle_ps(ma,ma, 0x40);
+        ma = _mm_mul_ps(ma, mb);
+        _mm_storeu_ps(a, ma);
+        return 1;
+    }
+    a[0] = 1;	// if all a's are zero, this is where we'll end up.
+    a[1] = 0;	// return a default unit length vector.
+    a[2] = 0;
+    return 0;
+}
+#else
+*/
 int _dSafeNormalize3 (dVector3 a)
 {
     dIASSERT(a);
@@ -54,6 +75,7 @@ int _dSafeNormalize3 (dVector3 a)
     a[2] = 0;
     return 0;
 }
+//#endif
 
 /* OLD VERSION */
 /*
@@ -90,7 +112,7 @@ int _dSafeNormalize4 (dVector4 a)
 {
     dAASSERT (a);
     dReal l = dCalcVectorLengthSquare4(a);
-    if (l > 0) {
+    if (l > dEpsilon) {
         l = dRecipSqrt(l);
         dScaleVector4(a, l);
         return 1;

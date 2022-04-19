@@ -32,7 +32,7 @@ quaternions have the format: (s,vx,vy,vz) where (vx,vy,vz) is the
 #include "odemath.h"
 
 
-#define _R(i,j) R[(i)*4+(j)]
+#define _R(i,j) R[4*(i)+(j)]
 
 #define SET_3x3_IDENTITY \
     _R(0,0) = REAL(1.0); \
@@ -237,24 +237,33 @@ void dRfromQ (dMatrix3 R, const dQuaternion q)
 {
     dAASSERT (q && R);
     // q = (s,vx,vy,vz)
-    dReal qq1 = 2 * q[1] * q[1];
-    dReal qq2 = 2 * q[2] * q[2];
-    dReal qq3 = 2 * q[3] * q[3];
+    dReal x2 = q[1] + q[1];
+    dReal y2 = q[2] + q[2];
+    dReal z2 = q[3] + q[3];
 
-    _R(0,0) = 1 - qq2 - qq3;
-    _R(0,1) = 2 * (q[1] * q[2] - q[0] * q[3]);
-    _R(0,2) = 2 * (q[1] * q[3] + q[0] * q[2]);
-    _R(0,3) = REAL(0.0);
+    dReal yy2 = q[2] * y2;
+    dReal zz2 = q[3] * z2;
+    _R(0,0) = 1.0f - yy2 - zz2;
+    dReal xy2 = q[1] * y2;
+    dReal wz2 = q[0] * z2;
+    _R(0,1) = xy2 - wz2;
+    dReal xz2 = q[1] * z2;
+    dReal wy2 = q[0] * y2;
+    _R(0,2) = xz2 + wy2;
+    _R(0, 3) = REAL(0.0);
 
-    _R(1,0) = 2 * (q[1] * q[2] + q[0] * q[3]);
-    _R(1,1) = 1 - qq1 - qq3;
-    _R(1,2) = 2 * (q[2] * q[3] - q[0] * q[1]);
-    _R(1,3) = REAL(0.0);
+    _R(1, 0) = xy2 + wz2;
+    dReal xx2 = q[1] * x2;
+    _R(1,1) = 1.0f - xx2 - zz2;
+    dReal wx2 = q[0] * x2;
+    dReal yz2 = q[2] * z2;
+    _R(1,2) = yz2 - wx2;
+    _R(1, 3) = REAL(0.0);
 
-    _R(2,0) = 2 * (q[1] * q[3] - q[0] * q[2]);
-    _R(2,1) = 2 * (q[2] * q[3] + q[0] * q[1]);
-    _R(2,2) = 1 - qq1 - qq2;
-    _R(2,3) = REAL(0.0);
+    _R(2, 0) = xz2 - wy2;
+    _R(2, 1) = yz2 + wx2;
+    _R(2,2) = 1.0f - xx2 - yy2;
+    _R(2, 3) = REAL(0.0);
 }
 
 
