@@ -344,7 +344,6 @@ int sCylinderBoxData::_cldTestSeparatingAxes()
     m_nContacts = 0;
 
     dVector3  vAxis = {REAL(0.0),REAL(0.0),REAL(0.0),REAL(0.0)};
-
     // Epsilon value for checking axis vector length 
     const dReal fEpsilon = REAL(1e-6);
 

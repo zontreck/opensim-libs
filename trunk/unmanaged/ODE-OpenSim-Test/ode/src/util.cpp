@@ -641,7 +641,7 @@ void dxStepBody (dxBody *b, dReal h)
     }
 
     // normalize the quaternion and convert it to a rotation matrix
-    dNormalize4 (b->q);
+    dSafeNormalize4(b->q);
     dQtoR (b->q, b->posr.R);
 
     // notify all attached geoms that this body has moved
