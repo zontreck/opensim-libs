@@ -49,7 +49,7 @@ dxGeom (space,1)
     dAASSERT (_radius >= 0 && _length >= 0);
     type = dCapsuleClass;
     radius = _radius;
-    lz = _length;
+    halfLenZ = _length * REAL(0.5);
     updateZeroSizedFlag(!_radius/* || !_length -- zero length capsule is not a zero sized capsule*/);
 }
 
@@ -59,10 +59,9 @@ void dxCapsule::computeAABB()
     dVector3 vrot;
     const dMatrix3& R = final_posr->R;
     const dVector3& pos = final_posr->pos;
-    dReal hlz = lz * REAL(0.5);
 
     dGetMatrixColumn3(vrot, R, 2);   
-    dScaleVector3r4(vrot, hlz);
+    dScaleVector3r4(vrot, halfLenZ);
     dFabsVector3r4(vrot);
 
     dReal range = vrot[0] + radius;
@@ -91,7 +90,7 @@ void dGeomCapsuleSetParams (dGeomID g, dReal radius, dReal length)
     dAASSERT (radius >= 0 && length >= 0);
     dxCapsule *c = (dxCapsule*) g;
     c->radius = radius;
-    c->lz = length;
+    c->halfLenZ = REAL(0.5) * length;
     c->updateZeroSizedFlag(!radius/* || !length -- zero length capsule is not a zero sized capsule*/);
     dGeomMoved (g);
 }
@@ -102,7 +101,7 @@ void dGeomCapsuleGetParams (dGeomID g, dReal *radius, dReal *length)
     dUASSERT (g && g->type == dCapsuleClass,"argument not a ccylinder");
     dxCapsule *c = (dxCapsule*) g;
     *radius = c->radius;
-    *length = c->lz;
+    *length = REAL(2.0) * c->halfLenZ;
 }
 
 
@@ -126,7 +125,7 @@ dReal dGeomCapsulePointDepth (dGeomID g, dReal x, dReal y, dReal z)
     dGetMatrixColumn3(vrot, R, 2);
 
     dReal beta = dCalcVectorDot3(a, vrot);
-    dReal lz2 = c->lz * REAL(0.5);
+    dReal lz2 = c->halfLenZ;
     if (beta < -lz2)
         beta = -lz2;
     else if (beta > lz2)
@@ -162,7 +161,7 @@ int dCollideCapsuleSphere (dxGeom *o1, dxGeom *o2, int flags,
     dSubtractVectors3r4(diff, spherepos, pos);
     // find the point on the cylinder axis that is closest to the sphere
     dReal alpha = dCalcVectorDot3(diff, vrot);
-    dReal lz2 = ccyl->lz * REAL(0.5);
+    dReal lz2 = ccyl->halfLenZ;
     if (alpha > lz2)
         alpha = lz2;
     if (alpha < -lz2)
@@ -183,50 +182,37 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
     dIASSERT (o2->type == dBoxClass);
     dIASSERT ((flags & NUMC_MASK) >= 1);
 
-    dVector3 p1, p2, vradius;
-    dxCapsule *cyl = (dxCapsule*) o1;
-    dxBox *box = (dxBox*) o2;
-
-    contact->g1 = o1;
-    contact->g2 = o2;
-    contact->side1 = -1;
-    contact->side2 = -1;
+    dVector3 p1, p2, vaxis;
 
     // get p1,p2 = cylinder axis endpoints, get radius
 
     dReal *pos = o1->final_posr->pos;
     dReal *cR = o1->final_posr->R;
 
-    dReal clen = cyl->lz * REAL(0.5);
+    dReal clen = ((dxCapsule*)o1)->halfLenZ;
+    dReal radius = ((dxCapsule*)o1)->radius;
 
-    dGetMatrixColumn3(vradius, cR, 2);
-    dScaleVector3r4(vradius, clen);
+    dGetMatrixColumn3(vaxis, cR, 2);
+    dScaleVector3r4(vaxis, clen);
 
-    dAddVectors3r4(p1, pos, vradius);
-    dSubtractVectors3r4(p2, pos, vradius);
-
-    dReal radius = cyl->radius;
+    dAddVectors3r4(p1, pos, vaxis);
+    dSubtractVectors3r4(p2, pos, vaxis);
 
     // copy out box center, rotation matrix, and side array
     dReal *c = o2->final_posr->pos;
     dReal *R = o2->final_posr->R;
-    const dReal *side = box->halfside;
+    const dReal *side = ((dxBox*)o2)->halfside;
 
     // get the closest point between the cylinder axis and the box
     dVector3 pl,pb;
     dClosestLineBoxPoints(p1, p2, c, R, side, pl, pb);
 
     // if the capsule is penetrated further than radius 
-    //  then pl and pb are equal (up to mindist) -> unknown normal
+    //  then pl and pb are equal -> unknown normal
     // use normal vector of closest box surface
-#ifdef dSINGLE
-    dReal mindist = REAL(1e-6);
-#else
-    dReal mindist = REAL(1e-15);
-#endif
 
     dSubtractVectors3r4(p2, pl, pb);   
-    if (dCalcVectorLengthSquare3(p2) < mindist)
+    if (dCalcVectorLengthSquare3(p2) < dEpsilon)
     {
         // consider capsule as box
         dVector3 normal;
@@ -250,8 +236,16 @@ int dCollideCapsuleBox (dxGeom *o1, dxGeom *o2, int flags,
     else
     {
         // generate contact point
-        return dCollideSpheres (pl, radius, pb, 0, contact);
+        if (dCollideSpheres(pl, radius, pb, 0, contact))
+        {
+            contact->g1 = o1;
+            contact->g2 = o2;
+            contact->side1 = -1;
+            contact->side2 = -1;
+            return 1;
+        }
     }
+    return 0;
 }
 
 int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
@@ -266,19 +260,17 @@ int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
     dVector3 a1, a2, b1, b2;
     dVector3 tt;
 
-    const dReal tolerance = REAL(1e-5);
-
-    dxCapsule *cyl1 = (dxCapsule*) o1;
-    dxCapsule *cyl2 = (dxCapsule*) o2;
-
     contact->g1 = o1;
     contact->g2 = o2;
     contact->side1 = -1;
     contact->side2 = -1;
 
     // copy out some variables, for convenience
-    dReal lz1 = cyl1->lz * REAL(0.5);
-    dReal lz2 = cyl2->lz * REAL(0.5);
+    dReal lz1 = ((dxCapsule*)o1)->halfLenZ;
+    dReal radius1 = ((dxCapsule*)o1)->radius;
+    dReal lz2 = ((dxCapsule*)o2)->halfLenZ;
+    dReal radius2 = ((dxCapsule*)o2)->radius;
+
     dReal *pos1 = o1->final_posr->pos;
     dReal *pos2 = o2->final_posr->pos;
 
@@ -295,7 +287,7 @@ int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
     dVector3 sphere1, sphere2;
     dReal a1a2 = dCalcVectorDot3(axis1, axis2);
     dReal det = REAL(1.0) - a1a2 * a1a2;
-    if (det < tolerance)
+    if (det < dEpsilon)
     {
         // the cylinder axes (almost) parallel, so we will generate up to two
         // contacts. alpha1 and alpha2 (line position parameters) are related by:
@@ -323,13 +315,13 @@ int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
                 // not made, fall back on the one-contact strategy.
                 dAddScaledVector3r4(sphere1, pos1, axis1, lo);
                 dAddScaledVector3r4(sphere2, pos2, axis2, lo + k);
-                int n1 = dCollideSpheres(sphere1, cyl1->radius, sphere2, cyl2->radius, contact);
+                int n1 = dCollideSpheres(sphere1, radius1, sphere2, radius2, contact);
                 if (n1)
                 {
                     dAddScaledVector3r4(sphere1, pos1, axis1, hi);
                     dAddScaledVector3r4(sphere2, pos2, axis2, hi + k);
                     dContactGeom *c2 = CONTACT(contact,skip);
-                    int n2 = dCollideSpheres(sphere1, cyl1->radius, sphere2, cyl2->radius, c2);
+                    int n2 = dCollideSpheres(sphere1, radius1, sphere2, radius2, c2);
                     if (n2)
                     {
                         c2->g1 = o1;
@@ -346,7 +338,7 @@ int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
             dReal alpha1 = (lo + hi) * REAL(0.5);
             dAddScaledVector3r4(sphere1, pos1, axis1, alpha1);
             dAddScaledVector3r4(sphere2, pos2, axis2, alpha1 + k);
-            return dCollideSpheres (sphere1, cyl1->radius, sphere2, cyl2->radius, contact);
+            return dCollideSpheres (sphere1, radius1, sphere2, radius2, contact);
         }
     }
 
@@ -361,7 +353,7 @@ int dCollideCapsuleCapsule (dxGeom *o1, dxGeom *o2,
     dSubtractVectors3r4(b2, pos2, tt);
 
     dClosestLineSegmentPoints(a1, a2, b1, b2, sphere1, sphere2);
-    return dCollideSpheres(sphere1, cyl1->radius, sphere2, cyl2->radius, contact);
+    return dCollideSpheres(sphere1, radius1, sphere2, radius2, contact);
 }
 
 int dCollideCapsulePlane(dxGeom *o1, dxGeom *o2, int flags,
@@ -374,38 +366,39 @@ int dCollideCapsulePlane(dxGeom *o1, dxGeom *o2, int flags,
 
     dVector3 p, vrot;
 
-    dxCapsule *ccyl = (dxCapsule*) o1;
-    dxPlane *plane = (dxPlane*) o2;
+    dVector3& planeNorm = *(dVector3*)((dxPlane*)o2)->p;
+    dReal planeOffset = ((dxPlane*)o2)->p[3];
 
     dReal *pos = o1->final_posr->pos;
     dReal *cR = o1->final_posr->R;
 
+    dReal capRadius = ((dxCapsule*)o1)->radius;
+
     dGetMatrixColumn3(vrot, cR, 2);
     // collide the deepest capping sphere with the plane
-    dReal sign = (dCalcVectorDot3(plane->p, vrot) > 0) ? REAL(-1.0) : REAL(1.0);
-    
-    dReal lzsign = ccyl->lz * REAL(0.5) * sign;
-    dAddScaledVector3r4(p, pos, vrot, lzsign);
+    dReal lzsign = (dCalcVectorDot3(planeNorm, vrot) > 0) ? -(((dxCapsule*)o1)->halfLenZ) : ((dxCapsule*)o1)->halfLenZ;
 
-    dReal k = dCalcVectorDot3 (p, plane->p);
-    dReal depth = plane->p[3] - k + ccyl->radius;
+    dAddScaledVector3r4(p, pos, vrot, lzsign);
+    dReal k = dCalcVectorDot3 (p, planeNorm);
+    dReal depth = planeOffset - k + capRadius;
     if (depth < 0)
         return 0;
-    dCopyVector3r4(contact->normal, plane->p);
-    dAddScaledVector3r4(contact->pos, p, plane->p, -ccyl->radius);
+
+    dCopyVector3r4(contact->normal, planeNorm);
+    dAddScaledVector3r4(contact->pos, p, planeNorm, -capRadius);
     contact->depth = depth;
 
     int ncontacts = 1;
     if ((flags & NUMC_MASK) >= 2) {
         // collide the other capping sphere with the plane
         dAddScaledVector3r4(p, pos, vrot, -lzsign);
-        k = dCalcVectorDot3 (p, plane->p);
-        depth = plane->p[3] - k + ccyl->radius;
+        k = dCalcVectorDot3 (p, planeNorm);
+        depth = planeOffset - k + capRadius;
         if (depth >= 0)
         {
             dContactGeom *c2 = CONTACT(contact,skip);
-            dCopyVector3r4(c2->normal, plane->p);
-            dAddScaledVector3r4(contact->pos, p, plane->p, -ccyl->radius);
+            dCopyVector3r4(c2->normal, planeNorm);
+            dAddScaledVector3r4(contact->pos, p, planeNorm, -capRadius);
             c2->depth = depth;
             ncontacts = 2;
         }
