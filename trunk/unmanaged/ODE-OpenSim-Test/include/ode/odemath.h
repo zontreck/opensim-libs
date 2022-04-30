@@ -143,13 +143,9 @@ ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dAddVectors3(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] + b[0];
-    const dReal res_1 = a[1] + b[1];
-    const dReal res_2 = a[2] + b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[0] + b[0];
+    res[1] = a[1] + b[1];
+    res[2] = a[2] + b[2];
 }
 #endif
 
@@ -166,13 +162,9 @@ ODE_PURE_INLINE void dAddVectors3r4(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dAddVectors3r4(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] + b[0];
-    const dReal res_1 = a[1] + b[1];
-    const dReal res_2 = a[2] + b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[0] + b[0];
+    res[1] = a[1] + b[1];
+    res[2] = a[2] + b[2];
 }
 #endif
 
@@ -189,13 +181,9 @@ ODE_PURE_INLINE void dSubtractVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a)
 {
-    const dReal res_0 = res[0] - a[0];
-    const dReal res_1 = res[1] - a[1];
-    const dReal res_2 = res[2] - a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] -= a[0];
+    res[1] -= a[1];
+    res[2] -= a[2];
 }
 #endif
 
@@ -213,13 +201,9 @@ ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *
 #else
 ODE_PURE_INLINE void dSubtractVectors3(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] - b[0];
-    const dReal res_1 = a[1] - b[1];
-    const dReal res_2 = a[2] - b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[0] - b[0];
+    res[1] = a[1] - b[1];
+    res[2] = a[2] - b[2];
 }
 #endif
 
@@ -236,16 +220,11 @@ ODE_PURE_INLINE void dSubtractVector3r4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dSubtractVector3r4(dReal *res, const dReal *a)
 {
-    const dReal res_0 = res[0] - a[0];
-    const dReal res_1 = res[1] - a[1];
-    const dReal res_2 = res[2] - a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] -= a[0];
+    res[1] -= a[1];
+    res[2] -= a[2];
 }
 #endif
-
 
 #if defined(__AVX__)
 ODE_PURE_INLINE void dSubtractVectors3r4(dReal *res, const dReal *a, const dReal *b)
@@ -260,13 +239,9 @@ ODE_PURE_INLINE void dSubtractVectors3r4(dReal *res, const dReal *a, const dReal
 #else
 ODE_PURE_INLINE void dSubtractVectors3r4(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] - b[0];
-    const dReal res_1 = a[1] - b[1];
-    const dReal res_2 = a[2] - b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[0] - b[0];
+    res[1] = a[1] - b[1];
+    res[2] = a[2] - b[2];
 }
 #endif
 
@@ -375,11 +350,9 @@ ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal 
 #else
 ODE_PURE_INLINE void dAddScaledVectors3(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
 {
-    const dReal res_0 = a_scale * a[0] + b_scale * b[0];
-    const dReal res_1 = a_scale * a[1] + b_scale * b[1];
-    const dReal res_2 = a_scale * a[2] + b_scale * b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a_scale * a[0] + b_scale * b[0];
+    res[1] = a_scale * a[1] + b_scale * b[1];
+    res[2] = a_scale * a[2] + b_scale * b[2];
 }
 #endif
 #if defined(__AVX__)
@@ -402,11 +375,9 @@ ODE_PURE_INLINE void dAddScaledVectors3r4(dReal *res, const dReal *a, const dRea
 #else
 ODE_PURE_INLINE void dAddScaledVectors3r4(dReal *res, const dReal *a, const dReal *b, dReal a_scale, dReal b_scale)
 {
-    const dReal res_0 = a_scale * a[0] + b_scale * b[0];
-    const dReal res_1 = a_scale * a[1] + b_scale * b[1];
-    const dReal res_2 = a_scale * a[2] + b_scale * b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a_scale * a[0] + b_scale * b[0];
+    res[1] = a_scale * a[1] + b_scale * b[1];
+    res[2] = a_scale * a[2] + b_scale * b[2];
 }
 #endif
 
@@ -428,11 +399,9 @@ ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal *
 #else
 ODE_PURE_INLINE void dAddScaledVector3(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
 {
-    const dReal res_0 = a[0] + b_scale * b[0];
-    const dReal res_1 = a[1] + b_scale * b[1];
-    const dReal res_2 = a[2] + b_scale * b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] + b_scale * b[0];
+    res[1] = a[1] + b_scale * b[1];
+    res[2] = a[2] + b_scale * b[2];
 }
 #endif
 
@@ -453,11 +422,9 @@ ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal
 #else
 ODE_PURE_INLINE void dAddScaledVector3r4(dReal *res, const dReal *a, const dReal *b, dReal b_scale)
 {
-    const dReal res_0 = a[0] + b_scale * b[0];
-    const dReal res_1 = a[1] + b_scale * b[1];
-    const dReal res_2 = a[2] + b_scale * b[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] + b_scale * b[0];
+    res[1] = a[1] + b_scale * b[1];
+    res[2] = a[2] + b_scale * b[2];
 }
 #endif
 
@@ -474,13 +441,11 @@ ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 #else
 ODE_PURE_INLINE void dScaleVector3(dReal *res, dReal nScale)
 {
-    const dReal res_0 = res[0] * nScale;
-    const dReal res_1 = res[1] * nScale;
-    const dReal res_2 = res[2] * nScale;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] *= nScale;
+    res[1] *= nScale;
+    res[2] *= nScale;
 }
 #endif
-
 
 #if defined(__AVX__)
 ODE_PURE_INLINE void dScaleVector3r4(dReal *res, dReal nScale)
@@ -495,10 +460,9 @@ ODE_PURE_INLINE void dScaleVector3r4(dReal *res, dReal nScale)
 #else
 ODE_PURE_INLINE void dScaleVector3r4(dReal *res, dReal nScale)
 {
-    const dReal res_0 = res[0] * nScale;
-    const dReal res_1 = res[1] * nScale;
-    const dReal res_2 = res[2] * nScale;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] *= nScale;
+    res[1] *= nScale;
+    res[2] *= nScale;
 }
 #endif
 
@@ -515,10 +479,9 @@ ODE_PURE_INLINE void dScaleVector3r4(dReal *res, const dReal *a, const dReal nSc
 #else
 ODE_PURE_INLINE void dScaleVector3r4(dReal *res, const dReal *a, const dReal nScale)
 {
-    const dReal res_0 = a[0] * nScale;
-    const dReal res_1 = a[1] * nScale;
-    const dReal res_2 = a[2] * nScale;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] * nScale;
+    res[1] = a[1] * nScale;
+    res[2] = a[2] * nScale;
 }
 #endif
 
@@ -535,11 +498,10 @@ ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 #else
 ODE_PURE_INLINE void dScaleVector4(dReal *res, dReal nScale)
 {
-    const dReal res_0 = res[0] * nScale;
-    const dReal res_1 = res[1] * nScale;
-    const dReal res_2 = res[2] * nScale;
-    const dReal res_3 = res[3] * nScale;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2, res[3] = res_3;
+    res[0] *= nScale;
+    res[1] *= nScale;
+    res[2] *= nScale;
+    res[3] *= nScale;
 }
 #endif
 
@@ -552,11 +514,9 @@ ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyVector3(dReal *res, const dReal *a)
 {
-    const dReal res_0 = a[0];
-    const dReal res_1 = a[1];
-    const dReal res_2 = a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0];
+    res[1] = a[1];
+    res[2] = a[2];
 }
 #endif
 
@@ -571,11 +531,9 @@ ODE_PURE_INLINE void dCopyVector3r4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyVector3r4(dReal *res, const dReal *a)
 {
-    const dReal res_0 = a[0];
-    const dReal res_1 = a[1];
-    const dReal res_2 = a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0];
+    res[1] = a[1];
+    res[2] = a[2];
 }
 #endif
 
@@ -593,11 +551,9 @@ ODE_PURE_INLINE void dFabsVector3(dReal *res)
 #else
 ODE_PURE_INLINE void dFabsVector3(dReal *res)
 {
-    const dReal res_0 = dFabs(res[0]);
-    const dReal res_1 = dFabs(res[1]);
-    const dReal res_2 = dFabs(res[2]);
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dFabs(res[0]);
+    res[1] = dFabs(res[1]);
+    res[2] = dFabs(res[2]);
 }
 #endif
 
@@ -615,11 +571,9 @@ ODE_PURE_INLINE void dFabsVector3r4(dReal *res)
 #else
 ODE_PURE_INLINE void dFabsVector3r4(dReal *res)
 {
-    const dReal res_0 = dFabs(res[0]);
-    const dReal res_1 = dFabs(res[1]);
-    const dReal res_2 = dFabs(res[2]);
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dFabs(res[0]);
+    res[1] = dFabs(res[1]);
+    res[2] = dFabs(res[2]);
 }
 #endif
 
@@ -637,11 +591,9 @@ ODE_PURE_INLINE void dFabsVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dFabsVector3(dReal *res, const dReal *a)
 {
-    const dReal res_0 = dFabs(a[0]);
-    const dReal res_1 = dFabs(a[1]);
-    const dReal res_2 = dFabs(a[2]);
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dFabs(a[0]);
+    res[1] = dFabs(a[1]);
+    res[2] = dFabs(a[2]);
 }
 #endif
 
@@ -659,11 +611,9 @@ ODE_PURE_INLINE void dFabsVector3r4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dFabsVector3r4(dReal *res, const dReal *a)
 {
-    const dReal res_0 = dFabs(a[0]);
-    const dReal res_1 = dFabs(a[1]);
-    const dReal res_2 = dFabs(a[2]);
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dFabs(a[0]);
+    res[1] = dFabs(a[1]);
+    res[2] = dFabs(a[2]);
 }
 #endif
 
@@ -680,11 +630,9 @@ ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale
 #else
 ODE_PURE_INLINE void dCopyScaledVector3(dReal *res, const dReal *a, dReal nScale)
 {
-    const dReal res_0 = a[0] * nScale;
-    const dReal res_1 = a[1] * nScale;
-    const dReal res_2 = a[2] * nScale;
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] * nScale;
+    res[1] = a[1] * nScale;
+    res[2] = a[2] * nScale;
 }
 #endif
 
@@ -701,11 +649,9 @@ ODE_PURE_INLINE void dCopyScaledVector3r4(dReal *res, const dReal *a, dReal nSca
 #else
 ODE_PURE_INLINE void dCopyScaledVector3r4(dReal *res, const dReal *a, dReal nScale)
 {
-    const dReal res_0 = a[0] * nScale;
-    const dReal res_1 = a[1] * nScale;
-    const dReal res_2 = a[2] * nScale;
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] * nScale;
+    res[1] = a[1] * nScale;
+    res[2] = a[2] * nScale;
 }
 #endif
 
@@ -723,11 +669,9 @@ ODE_PURE_INLINE void  dCopyNegatedVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyNegatedVector3(dReal *res, const dReal *a)
 {
-    const dReal res_0 = -a[0];
-    const dReal res_1 = -a[1];
-    const dReal res_2 = -a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = -a[0];
+    res[1] = -a[1];
+    res[2] = -a[2];
 }
 #endif
 
@@ -745,11 +689,9 @@ ODE_PURE_INLINE void  dCopyNegatedVector3r4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyNegatedVector3r4(dReal *res, const dReal *a)
 {
-    const dReal res_0 = -a[0];
-    const dReal res_1 = -a[1];
-    const dReal res_2 = -a[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = -a[0];
+    res[1] = -a[1];
+    res[2] = -a[2];
 }
 #endif
 
@@ -767,11 +709,9 @@ ODE_PURE_INLINE void  dNegateVector3(dReal *res)
 #else
 ODE_PURE_INLINE void dNegateVector3(dReal *res)
 {
-    const dReal res_0 = -res[0];
-    const dReal res_1 = -res[1];
-    const dReal res_2 = -res[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = -res[0];
+    res[1] = -res[1];
+    res[2] = -res[2];
 }
 #endif
 
@@ -789,11 +729,9 @@ ODE_PURE_INLINE void  dNegateVector3r4(dReal *res)
 #else
 ODE_PURE_INLINE void dNegateVector3r4(dReal *res)
 {
-    const dReal res_0 = -res[0];
-    const dReal res_1 = -res[1];
-    const dReal res_2 = -res[2];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = -res[0];
+    res[1] = -res[1];
+    res[2] = -res[2];
 }
 #endif
 
@@ -808,12 +746,10 @@ ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dCopyVector4(dReal *res, const dReal *a)
 {
-  const dReal res_0 = a[0];
-  const dReal res_1 = a[1];
-  const dReal res_2 = a[2];
-  const dReal res_3 = a[3];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2; res[3] = res_3;
+    res[0] = a[0];
+    res[1] = a[1];
+    res[2] = a[2];
+    res[3] = a[3];
 }
 #endif
 
@@ -833,13 +769,13 @@ ODE_PURE_INLINE void dSwapVectors3(dReal *a, dReal *b)
     const dReal rb_0 = a[0];
     const dReal rb_1 = a[1];
     const dReal rb_2 = a[2];
-    const dReal ra_0 = b[0];
-    const dReal ra_1 = b[1];
-    const dReal ra_2 = b[2];
+    a[0] = b[0];
+    a[1] = b[1];
+    a[2] = b[2];
 
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    a[0] = ra_0; a[1] = ra_1; a[2] = ra_2;
-    b[0] = rb_0; b[1] = rb_1; b[2] = rb_2;
+    b[0] = rb_0;
+    b[1] = rb_1;
+    b[2] = rb_2;
 }
 #endif
 
@@ -886,11 +822,9 @@ ODE_PURE_INLINE void dCopyMatrix4x3(dReal *res, const dReal *a)
 #endif
 ODE_PURE_INLINE void dGetMatrixColumn3(dReal *res, const dReal *a, unsigned n)
 {
-  const dReal res_0 = a[n + 0];
-  const dReal res_1 = a[n + 4];
-  const dReal res_2 = a[n + 8];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[n + 0];
+    res[1] = a[n + 4];
+    res[2] = a[n + 8];
 }
 
 #if defined(__AVX__)
@@ -987,8 +921,10 @@ ODE_PURE_INLINE dReal dCalcPointPlaneDistance(const dVector3 point, const dVecto
     __m128 mp, mn, mc;
     mp = _mm_loadu_ps(plane);
     mn = _mm_loadu_ps(point);
+
     mc = _mm_set1_ps(1.0);
     mn = _mm_blend_ps(mn, mc, 8);
+
     mp = _mm_dp_ps(mp, mn, 0xf1);
     return (dReal)_mm_cvtss_f32(mp);
 }
@@ -1071,13 +1007,9 @@ ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *
 #else
 ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[1] * b[2] - a[2] * b[1];
-    const dReal res_1 = a[2] * b[0] - a[0] * b[2];
-    const dReal res_2 = a[0] * b[1] - a[1] * b[0];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[1] * b[2] - a[2] * b[1];
+    res[1] = a[2] * b[0] - a[0] * b[2];
+    res[2] = a[0] * b[1] - a[1] * b[0];
 }
 #endif
 
@@ -1103,13 +1035,9 @@ ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal
 #else
 ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[1] * b[2] - a[2] * b[1];
-    const dReal res_1 = a[2] * b[0] - a[0] * b[2];
-    const dReal res_2 = a[0] * b[1] - a[1] * b[0];
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0;
-    res[1] = res_1;
-    res[2] = res_2;
+    res[0] = a[1] * b[2] - a[2] * b[1];
+    res[1] = a[2] * b[0] - a[0] * b[2];
+    res[2] = a[0] * b[1] - a[1] * b[0];
 }
 #endif
 
@@ -1120,13 +1048,9 @@ ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal
 
 ODE_PURE_INLINE void _dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b, unsigned step_res, unsigned step_a, unsigned step_b)
 {
-  const dReal res_0 = a[  step_a]*b[2*step_b] - a[2*step_a]*b[  step_b];
-  const dReal res_1 = a[2*step_a]*b[       0] - a[       0]*b[2*step_b];
-  const dReal res_2 = a[       0]*b[  step_b] - a[  step_a]*b[       0];
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[         0] = res_0;
-  res[  step_res] = res_1;
-  res[2*step_res] = res_2;
+    res[           0] = a[  step_a] * b[2*step_b] - a[2*step_a] *b [  step_b];
+    res[    step_res] = a[2*step_a] * b[       0] - a[       0] *b [2*step_b];
+    res[2 * step_res] = a[       0] * b[  step_b] - a[  step_a] *b [       0];
 }
 
 ODE_PURE_INLINE void dCalcVectorCross3_114(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 1, 1, 4); }
@@ -1324,11 +1248,9 @@ ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE dReal dCalcPointsDistance3(const dReal *a, const dReal *b)
 {
-  dReal res;
   dReal tmp[3];
   dSubtractVectors3(tmp, a, b);
-  res = dCalcVectorLength3(tmp);
-  return res;
+  return dCalcVectorLength3(tmp);
 }
 #endif
 
@@ -1345,11 +1267,9 @@ ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE dReal dCalcPointsDistanceSquare3(const dReal *a, const dReal *b)
 {
-    dReal res;
     dReal tmp[3];
     dSubtractVectors3(tmp, a, b);
-    res = dCalcVectorLengthSquare3(tmp);
-    return res;
+    return dCalcVectorLengthSquare3(tmp);
 }
 #endif
 
@@ -1372,13 +1292,9 @@ ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *
 ODE_PURE_INLINE void dCalcLerpVectors3(dReal *res, const dReal *a, const dReal *b, const dReal t)
 {
     // res = a + ( b - a ) * t;
-    dReal tmp[3];
-    tmp[0] = a[0] + (b[0] - a[0]) * t;
-    tmp[1] = a[1] + (b[1] - a[1]) * t;
-    tmp[2] = a[2] + (b[2] - a[2]) * t;
-    res[0] = tmp[0];
-    res[1] = tmp[1];
-    res[2] = tmp[2];
+    res[0] = a[0] + (b[0] - a[0]) * t;
+    res[1] = a[1] + (b[1] - a[1]) * t;
+    res[2] = a[2] + (b[2] - a[2]) * t;
 }
 #endif
 
@@ -1401,13 +1317,9 @@ ODE_PURE_INLINE void dCalcLerpVectors3r4(dReal *res, const dReal *a, const dReal
 ODE_PURE_INLINE void dCalcLerpVectors3r4(dReal *res, const dReal *a, const dReal *b, const dReal t)
 {
     // res = a + ( b - a ) * t;
-    dReal tmp[3];
-    tmp[0] = a[0] + (b[0] - a[0]) * t;
-    tmp[1] = a[1] + (b[1] - a[1]) * t;
-    tmp[2] = a[2] + (b[2] - a[2]) * t;
-    res[0] = tmp[0];
-    res[1] = tmp[1];
-    res[2] = tmp[2];
+    res[0] = a[0] + (b[0] - a[0]) * t;
+    res[1] = a[1] + (b[1] - a[1]) * t;
+    res[2] = a[2] + (b[2] - a[2]) * t;
 }
 #endif
 
@@ -1427,10 +1339,9 @@ ODE_PURE_INLINE void dMultVectors3(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dMultVectors3(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] * b[0];
-    const dReal res_1 = a[1] * b[1];
-    const dReal res_2 = a[2] * b[2];;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] * b[0];
+    res[1] = a[1] * b[1];
+    res[2] = a[2] * b[2];;
 }
 #endif
 
@@ -1446,10 +1357,9 @@ ODE_PURE_INLINE void dMultVectors3r4(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dMultVectors3r4(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = a[0] * b[0];
-    const dReal res_1 = a[1] * b[1];
-    const dReal res_2 = a[2] * b[2];;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = a[0] * b[0];
+    res[1] = a[1] * b[1];
+    res[2] = a[2] * b[2];;
 }
 #endif
 
@@ -1465,10 +1375,9 @@ ODE_PURE_INLINE void dMultVector3(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dMultVector3(dReal *res, const dReal *a)
 {
-    const dReal res_0 = res[0] * a[0];
-    const dReal res_1 = res[1] * a[1];
-    const dReal res_2 = res[2] * a[2];;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = res[0] * a[0];
+    res[1] = res[1] * a[1];
+    res[2] = res[2] * a[2];;
 }
 #endif
 
@@ -1484,10 +1393,9 @@ ODE_PURE_INLINE void dMultVector3r4(dReal *res, const dReal *a)
 #else
 ODE_PURE_INLINE void dMultVector3r4(dReal *res, const dReal *a)
 {
-    const dReal res_0 = res[0] * a[0];
-    const dReal res_1 = res[1] * a[1];
-    const dReal res_2 = res[2] * a[2];;
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = res[0] * a[0];
+    res[1] = res[1] * a[1];
+    res[2] = res[2] * a[2];;
 }
 #endif
 
@@ -1518,11 +1426,9 @@ ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
-    const dReal res_0 = dCalcVectorDot3(a, b);
-    const dReal res_1 = dCalcVectorDot3(a + 4, b);
-    const dReal res_2 = dCalcVectorDot3(a + 8, b);
-    /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-    res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dCalcVectorDot3(a, b);
+    res[1] = dCalcVectorDot3(a + 4, b);
+    res[2] = dCalcVectorDot3(a + 8, b);
 }
 #endif
 
@@ -1561,11 +1467,9 @@ ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
 #else
 ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
 {
-  const dReal res_0 = dCalcVectorDot3_41(a, b);
-  const dReal res_1 = dCalcVectorDot3_41(a + 1, b);
-  const dReal res_2 = dCalcVectorDot3_41(a + 2, b);
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dCalcVectorDot3_41(a, b);
+    res[1] = dCalcVectorDot3_41(a + 1, b);
+    res[2] = dCalcVectorDot3_41(a + 2, b);
 }
 #endif
 
@@ -1576,11 +1480,9 @@ ODE_PURE_INLINE void dMultiplyHelper0_133(dReal *res, const dReal *a, const dRea
 
 ODE_PURE_INLINE void dMultiplyHelper1_133(dReal *res, const dReal *a, const dReal *b)
 {
-  const dReal res_0 = dCalcVectorDot3_44(a, b);
-  const dReal res_1 = dCalcVectorDot3_44(a + 1, b);
-  const dReal res_2 = dCalcVectorDot3_44(a + 2, b);
-  /* Only assign after all the calculations are over to avoid incurring memory aliasing*/
-  res[0] = res_0; res[1] = res_1; res[2] = res_2;
+    res[0] = dCalcVectorDot3_44(a, b);
+    res[1] = dCalcVectorDot3_44(a + 1, b);
+    res[2] = dCalcVectorDot3_44(a + 2, b);
 }
 
 /* 
@@ -1882,17 +1784,16 @@ ODE_PURE_INLINE void dTransposetMatrix34(dReal *dst, const dReal *a)
     t1 = _mm_loadu_ps(a + 4); // a4 a5 a6 a7
     t2 = _mm_loadu_ps(a + 8); // a8 a9 a10 a11
 
-    m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // a0 a1 a4 a5
-    m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // a2 a3 a6 a7
-    m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // a4 a5 a8 a9
-    m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // a6 a7 a10 a11
+    m0 = _mm_movelh_ps(t0, t1); // a0 a1 a4 a5
+    m2 = _mm_movehl_ps(t1, t0); // a2 a3 a6 a7
 
-    t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); // a0 a4 a8 a8 
-    t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); // a1 a5 a9 a9 
-    t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); // a2 a6 a10 a10
-   
+    t0 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 0, 2, 0)); // a0 a4 a8 a11
     _mm_storeu_ps(dst, t0);
+
+    t1 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 1, 3, 1)); // a1 a5 a9 a11
     _mm_storeu_ps(dst + 4, t1);
+
+    t2 = _mm_shuffle_ps(m2, t2, _MM_SHUFFLE(3, 2, 2, 0)); // a2 a6 a10 a11
     _mm_storeu_ps(dst + 8, t2);
 }
 #else
@@ -1900,7 +1801,7 @@ ODE_PURE_INLINE void dTransposetMatrix34(dReal *dst, const dReal *a)
 {
     dst[0] = a[0];
     dst[1] = a[4];
-    dst[2] = a[6];
+    dst[2] = a[8];
 
     dst[4] = a[1];
     dst[5] = a[5];
