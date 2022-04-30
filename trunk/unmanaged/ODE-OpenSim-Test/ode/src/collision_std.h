@@ -117,7 +117,7 @@ struct dxBox : public dxGeom {
 
 
 struct dxCapsule : public dxGeom {
-    dReal radius,lz;	// radius, length along z axis
+    dReal radius, halfLenZ;	// radius, half the length along z axis
     dxCapsule (dSpaceID space, dReal _radius, dReal _length);
     void computeAABB();
 };

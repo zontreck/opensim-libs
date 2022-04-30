@@ -64,9 +64,8 @@ int dCollideSpheres (dVector3 p1, dReal r1,
     dReal k = REAL(0.5) * (r2 - r1 - d);
 
     d = dRecip(d);
-    dScaleVector3r4(delta, d);
-    dCopyVector3r4(c->normal, delta);
-    dAddScaledVector3r4(c->pos, p1,  delta, k);
+    dScaleVector3r4(c->normal, delta, d);
+    dAddScaledVector3r4(c->pos, p1, c->normal, k);
     return 1;
 }
 

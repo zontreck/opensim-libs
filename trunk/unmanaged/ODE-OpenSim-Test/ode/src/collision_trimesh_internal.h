@@ -158,8 +158,7 @@ struct TrimeshCollidersCache
 
 inline TrimeshCollidersCache *GetTrimeshCollidersCache(unsigned uiTLSKind)
 {
-    EODETLSKIND tkTLSKind = (EODETLSKIND)uiTLSKind;
-    return COdeTls::GetTrimeshCollidersCache(tkTLSKind);
+    return COdeTls::GetTrimeshCollidersCache((EODETLSKIND)uiTLSKind);
 }
 
 

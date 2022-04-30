@@ -447,7 +447,7 @@ int dCollideRayCapsule (dxGeom *o1, dxGeom *o2,
     contact->side2 = -1;
 
     const dReal radiusSQ = ccyl->radius * ccyl->radius;
-    const dReal lz2 = ccyl->lz * REAL(0.5);
+    const dReal lz2 = ccyl->halfLenZ;
 
     dReal* pos = ray->final_posr->pos;
     dReal* R = ray->final_posr->R;
