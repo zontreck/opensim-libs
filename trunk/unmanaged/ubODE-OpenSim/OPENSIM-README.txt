@@ -1,5 +1,6 @@
 OPENSIM README
-this is version ODE-OpenSim.0.13.3
+this is version ODE-OpenSim.0.13.3 for ubODE
+WARNING, do not forget to rename the dlls, they are still created named as *ode* read below
 
 The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with selected adictions from more recent vrsions and modifications by opensim 
 
@@ -17,7 +18,7 @@ this will create a solution ode.sln for visual studio 2008 in build/vs2008
 - select the ReleaseDLL configuration, and platform (win32 or x64) acording to the target
 - do a (menu)Build/Rebuild Solution
 the ode.dll should be present in lib/ReleaseDLL
-copy it to opensim bin/lib32 or bin/lib64 acording to platform
+copy it to opensim bin/lib32/ubode.dll or bin/lib64/ubode.dll acording to platform
 
 warning: current solution makes no distintion on platform and so compiles both to same locations. The ode.dll present at lib/ 
 will be for the last platform compiled.
@@ -37,17 +38,17 @@ you may need to do chmod +x bootstrap before since git keeps losing it
 == On Linux 32-bit ==
 ./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
-cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so	 (possible name is not ..so.1.1.1 )
+cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libubode.so	 (possible name is not ..so.1.1.1 )
 
 == On Linux 64-bit ==
 ./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
-cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libode-x86_64.so (possible name is not ..so.1.1.1 )
+cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib64/libubode-x86_64.so (possible name is not ..so.1.1.1 )
 
 == On Linux 64-bit to cross-compile to 32-bit ==
 CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --disable-asserts --enable-shared --disable-threading-intf
 make
-cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libode.so
+cp ode/src/.libs/libode.so.1.1.1 $OPENSIM/bin/lib32/libubode.so
 
 you can run strip to remove debug information and reduce file size
 
