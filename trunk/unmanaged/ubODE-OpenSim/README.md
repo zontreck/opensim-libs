@@ -1,10 +1,11 @@
-The Open Dynamics Engine (ODE)
+The Open Dynamics Engine for ubODE
 ==============================
 
 This is a fork, with substancial changes, of The Open Dynamics Engine, for use with ubODE Opensimulator physics module.
 Under its BSD-style License.
 
 For other uses, please consider the original:
+
 
 ![ODE logo](http://bitbucket.org/odedevs/ode/raw/default/web/ODElogo.png)
 
