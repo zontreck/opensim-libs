@@ -1,6 +1,11 @@
 The Open Dynamics Engine (ODE)
 ==============================
 
+This is a fork, with substancial changes, of The Open Dynamics Engine, for use with ubODE Opensimulator physics module.
+Under its BSD-style License.
+
+For other uses, please consider the original:
+
 ![ODE logo](http://bitbucket.org/odedevs/ode/raw/default/web/ODElogo.png)
 
 Copyright (C) 2001-2007 Russell L. Smith.
@@ -30,5 +35,3 @@ See the [COPYING](http://bitbucket.org/odedevs/ode/raw/default/COPYING) file for
  * API documentation is in the file ode/docs/index.html, or you
    can view it on the web at [opende.sf.net/docs/index.html](http://opende.sf.net/docs/index.html).
 
-
-[![Build Status](https://drone.io/bitbucket.org/odedevs/ode/status.png)](https://drone.io/bitbucket.org/odedevs/ode/latest)
