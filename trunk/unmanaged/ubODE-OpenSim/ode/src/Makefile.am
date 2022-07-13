@@ -90,8 +90,7 @@ libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_opcode.cpp \
                         collision_trimesh_box.cpp \
-                        collision_trimesh_distance.cpp \
-						collision_trimesh_ccylinder.cpp \
+                        collision_trimesh_capsule.cpp \
                         collision_trimesh_internal.h \
                         collision_trimesh_plane.cpp
 
