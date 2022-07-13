@@ -97,9 +97,9 @@ struct sTrimeshCapsuleColliderData
 #endif
     int	_ProcessLocalContacts(dContactGeom *contact, dxTriMesh *TriMesh, dxGeom *Capsule);
 
-    static BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlaneNormNoOffset(dVector3 &vEpnt0, dVector3 &vEpnt1, dVector3 plPlaneNormal);
-    static BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlaneNorm(dVector3 &vEpnt0, dVector3 &vEpnt1, dVector3 plPlaneNormal, dReal PlaneOffset);
-    BOOL sTrimeshCapsuleColliderData::_cldTestNormal(dVector3 vAxis, int iAxis);
+    static BOOL _cldClipEdgeToPlaneNormNoOffset(dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector3 plPlaneNormal);
+    static BOOL _cldClipEdgeToPlaneNorm(dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector3 plPlaneNormal, const dReal PlaneOffset);
+    BOOL _cldTestNormal(const dVector3 vAxis, const int iAxis);
     BOOL _cldTestAxis(const dVector3 vAxis, int iAxis);
     BOOL _cldTestSeparatingAxesOfCapsule(const dVector3 &v0, const dVector3 &v1, 
         const dVector3 &v2, uint8 flags);
@@ -268,7 +268,7 @@ int	sTrimeshCapsuleColliderData::_ProcessLocalContacts(dContactGeom *contact,
 
 
 BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlaneNorm(
-    dVector3 &vEpnt0, dVector3 &vEpnt1, dVector3 plPlane, dReal offset)
+    dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector3 plPlane, const dReal offset)
 {
     // calculate distance of edge points to plane
     dReal fDistance0 = dCalcVectorDot3(vEpnt0, plPlane) + offset;
@@ -296,7 +296,7 @@ BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlaneNorm(
 }
 
 BOOL sTrimeshCapsuleColliderData::_cldClipEdgeToPlaneNormNoOffset(
-    dVector3 &vEpnt0, dVector3 &vEpnt1, dVector3 plPlane)
+    dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector3 plPlane)
 {
     // calculate distance of edge points to plane
     dReal fDistance0 = dCalcVectorDot3(vEpnt0, plPlane);
@@ -385,7 +385,7 @@ BOOL sTrimeshCapsuleColliderData::_cldTestAxis(const dVector3 vAxis, int iAxis)
     return TRUE;
 }
 
-BOOL sTrimeshCapsuleColliderData::_cldTestNormal(dVector3 vAxis, int iAxis)
+BOOL sTrimeshCapsuleColliderData::_cldTestNormal(const dVector3 vAxis,const  int iAxis)
 {
     dReal min = dCalcVectorDot3(m_vV0, vAxis);
     dReal max = dCalcVectorDot3(m_vV1, vAxis);
