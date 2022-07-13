@@ -466,11 +466,9 @@ void dxGeom::computePosr()
     dIASSERT(offset_posr);  
     dIASSERT(body);
 
-    dMultiply0_331 (final_posr->pos,body->posr.R,offset_posr->pos);
-    final_posr->pos[0] += body->posr.pos[0];
-    final_posr->pos[1] += body->posr.pos[1];
-    final_posr->pos[2] += body->posr.pos[2];
-    dMultiply0_333 (final_posr->R,body->posr.R,offset_posr->R);
+    dMultiply0_331 (final_posr->pos, body->posr.R, offset_posr->pos);
+    dAddVector3r4 (final_posr->pos, body->posr.pos);
+    dMultiply0_333 (final_posr->R, body->posr.R, offset_posr->R);
 }
 
 bool dxGeom::controlGeometry(int /*controlClass*/, int /*controlCode*/, void * /*dataValue*/, int *dataSize)
@@ -663,13 +661,14 @@ void dGeomCopyPosition(dxGeom *g, dVector3 pos)
 }
 
 
-const dReal * dGeomGetRotation (dxGeom *g)
+const dReal* dGeomGetRotation (dxGeom *g)
 {
     dAASSERT (g);
     dUASSERT (g->gflags & GEOM_PLACEABLE,"geom must be placeable");
     g->recomputePosr();
     return g->final_posr->R;
 }
+
 
 
 void dGeomCopyRotation(dxGeom *g, dMatrix3 R)
@@ -817,7 +816,7 @@ void dGeomGetPosRelPoint (dGeomID g, dReal px, dReal py, dReal pz, dVector3 resu
     prel[0] = px;
     prel[1] = py;
     prel[2] = pz;
-    dSubtractVector3r4(prel, g->final_posr->pos);
+    dSubtractVectors3r4(prel, g->final_posr->pos);
     prel[3] = 0;
     dMultiply1_331 (result, g->final_posr->R, prel);
 }

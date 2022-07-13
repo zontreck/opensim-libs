@@ -42,11 +42,6 @@ OPCODECREATE::OPCODECREATE()
 	mIMesh				= null;
 	mSettings.mRules	= SPLIT_SPLATTER_POINTS | SPLIT_GEOM_CENTER;
 	mSettings.mLimit	= 1;	// Mandatory for complete trees
-	mNoLeaf				= true;
-	mQuantized			= true;
-#ifdef __MESHMERIZER_H__
-	mCollisionHull		= false;
-#endif // __MESHMERIZER_H__
 	mKeepOriginal		= false;
 	mCanRemap			= false;
 }
@@ -89,28 +84,11 @@ void BaseModel::ReleaseBase()
  *	\return		true if success
  */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool BaseModel::CreateTree(bool no_leaf, bool quantized)
+bool BaseModel::CreateTree()
 {
 	DELETESINGLE(mTree);
 
-	// Setup model code
-	if(no_leaf)		mModelCode |= OPC_NO_LEAF;
-	else			mModelCode &= ~OPC_NO_LEAF;
-
-	if(quantized)	mModelCode |= OPC_QUANTIZED;
-	else			mModelCode &= ~OPC_QUANTIZED;
-
-	// Create the correct class
-	if(mModelCode & OPC_NO_LEAF)
-	{
-		if(mModelCode & OPC_QUANTIZED)	mTree = new AABBQuantizedNoLeafTree;
-		else							mTree = new AABBNoLeafTree;
-	}
-	else
-	{
-		if(mModelCode & OPC_QUANTIZED)	mTree = new AABBQuantizedTree;
-		else							mTree = new AABBCollisionTree;
-	}
+    mTree = new AABBNoLeafTree;
 	CHECKALLOC(mTree);
 
 	return true;

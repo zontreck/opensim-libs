@@ -14,6 +14,14 @@
 
 #if defined(__AVX__)
 #include <immintrin.h>
+
+inline_ void iceStore3f(float *res, __m128 ma)
+{
+    __m128 mb;
+    _mm_store_sd((double *)res, _mm_castps_pd(ma));
+    mb = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(ma), 0x02));
+    _mm_store_ss(res + 2, mb);
+}
 #endif
 
 // Forward declarations
@@ -68,17 +76,13 @@
 #if defined(__AVX__)
         inline_ Point& Add(const Point& p)
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(&x);
             mb = _mm_loadu_ps(p);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -90,17 +94,13 @@
 #if defined(__AVX__)
         inline_ Point& Add(const float f[3])
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(&x);
             mb = _mm_loadu_ps(f);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -110,17 +110,13 @@
 #if defined(__AVX__)
         inline_ Point& Add(const Point& p, const Point& q)
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(p);
             mb = _mm_loadu_ps(q);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -131,17 +127,13 @@
 #if defined(__AVX__)
         inline_ Point& Sub(const Point& p)
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(&x);
             mb = _mm_loadu_ps(p);
             ma = _mm_sub_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -154,17 +146,13 @@
 #if defined(__AVX__)
         inline_ Point& Sub(const float f[3])
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(&x);
             mb = _mm_loadu_ps(f);
             ma = _mm_sub_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -175,17 +163,13 @@
 #if defined(__AVX__)
         inline_ Point& Sub(const Point& p, const Point& q)
         {
-            float restmp[4];
             __m128 ma, mb;
 
             ma = _mm_loadu_ps(p);
             mb = _mm_loadu_ps(q);
             ma = _mm_sub_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -200,17 +184,13 @@
 #if defined(__AVX__)
         inline_ Point& Mult(float s)
         {
-            float restmp[4];
             __m128 ma, mc;
 
             ma = _mm_loadu_ps(&x);
             mc = _mm_set1_ps(s);
             ma = _mm_mul_ps(ma, mc);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -220,17 +200,13 @@
 #if defined(__AVX__)
         inline_ Point& Mult(const Point& a, float scalar)
         {
-            float restmp[4];
             __m128 ma, mc;
 
             ma = _mm_loadu_ps(a);
             mc = _mm_set1_ps(scalar);
             ma = _mm_mul_ps(ma, mc);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -246,7 +222,6 @@
 #if defined(__AVX__)
         inline_ Point& Mac(const Point& a, const Point& b, float scalar)
         {
-            float restmp[4];
             __m128 ma, mb, mc;
 
             mb = _mm_loadu_ps(b);
@@ -256,10 +231,7 @@
             ma = _mm_loadu_ps(a);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -275,7 +247,6 @@
 #if defined(__AVX__)
         inline_ Point& Mac(const Point& a, float scalar)
         {
-            float restmp[4];
             __m128 ma, mb, mc;
 
             mb = _mm_loadu_ps(a);
@@ -285,10 +256,7 @@
             ma = _mm_loadu_ps(&x);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -304,7 +272,6 @@
 #if defined(__AVX__)
         inline_ Point& Msc(const Point& a, const Point& b, float scalar)
         {
-            float restmp[4];
             __m128 ma, mb, mc;
 
             mb = _mm_loadu_ps(b);
@@ -314,10 +281,7 @@
             ma = _mm_loadu_ps(a);
             ma = _mm_sub_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -333,7 +297,6 @@
 #if defined(__AVX__)
         inline_ Point& Msc(const Point& a, float scalar)
         {
-            float restmp[4];
             __m128 ma, mb, mc;
 
             mb = _mm_loadu_ps(a);
@@ -343,10 +306,7 @@
             ma = _mm_loadu_ps(&x);
             ma = _mm_sub_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -362,7 +322,6 @@
 #if defined(__AVX__)
         inline_ Point& Mac2(const Point& a, const Point& b, float scalarb, const Point& c, float scalarc)
         {
-            float restmp[4];
             __m128 ma, mb, mc, ms;
 
             mb = _mm_loadu_ps(b);
@@ -377,10 +336,7 @@
             ma = _mm_loadu_ps(a);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -396,7 +352,6 @@
 #if defined(__AVX__)
     inline_ Point& Msc2(const Point& a, const Point& b, float scalarb, const Point& c, float scalarc)
     {
-        float restmp[4];
         __m128 ma, mb, mc, ms;
 
         mb = _mm_loadu_ps(b);
@@ -411,10 +366,7 @@
         ma = _mm_loadu_ps(a);
         ma = _mm_sub_ps(ma, mb);
 
-        _mm_storeu_ps(restmp, ma);
-        x = restmp[0];
-        y = restmp[1];
-        z = restmp[2];
+        iceStore3f(&x, ma);
         return *this;
     }
 #else
@@ -442,7 +394,6 @@
 #if defined(__AVX__)
         inline_ Point& Lerp(const Point& a, const Point& b, float t)
         {
-            float restmp[4];
             __m128 ma, mb, mt;
 
             ma = _mm_loadu_ps(a);
@@ -453,10 +404,7 @@
             mb = _mm_mul_ps(mb, mt);
             ma = _mm_add_ps(ma, mb);
 
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            z = restmp[2];
+            iceStore3f(&x, ma);
             return *this;
         }
 #else
@@ -593,7 +541,6 @@
         inline_ Point& Normalize()
         {
             __m128 ma, mc;
-            float restmp[4];
 
             ma = _mm_loadu_ps(&x);
             mc = _mm_dp_ps(ma, ma, 0x71);
@@ -604,10 +551,7 @@
                 mc = _mm_set1_ps(m);
                 ma = _mm_mul_ps(ma, mc);
 
-                _mm_storeu_ps(restmp, ma);
-                x = restmp[0];
-                y = restmp[1];
-                z = restmp[2];
+                iceStore3f(&x, ma);
             }
             return *this;
         }
@@ -716,7 +660,6 @@
             __m128 ma, mb, t1, t2, t3, t4;
             ma = _mm_loadu_ps(a);
             mb = _mm_loadu_ps(b);
-            float restmp[4];
 
             t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1));
             t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2));
@@ -728,10 +671,7 @@
             t4 = _mm_mul_ps(t1, t2);
 
             ma = _mm_sub_ps(t3, t4);
-            _mm_storeu_ps(restmp, ma);
-            x = restmp[0];
-            y = restmp[1];
-            x = restmp[2];
+            iceStore3f(&x, ma);
         }
 #else
         inline_ Point& Cross(const Point& a, const Point& b)
@@ -1207,7 +1147,7 @@
 #if defined(__AVX__)
         inline_ Point& operator*=(const Matrix3x3& mat)
         {
-            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            __m128 ma, t0, t1, t2, m0, m1, m2;
             float xx, yy, zz;
 
             class ShadowMatrix3x3 { public: float m[3][3]; };    // To allow inlining
@@ -1217,14 +1157,11 @@
             t1 = _mm_loadu_ps(Mat->m[1]);
             t2 = _mm_loadu_ps(Mat->m[2]);
 
-            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
-            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
-            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
-            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
-
-            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); //x0 x1 x2 x2
-            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
+            m0 = _mm_movelh_ps(t0, t1); // x0 y0 x1 y1
+            m2 = _mm_movehl_ps(t1, t0); // z0 w0 z1 w1
+            t0 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 0, 2, 0)); //x0 x1 x2 w2
+            t1 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 1, 3, 1)); //y0 y1 y2 w2
+            t2 = _mm_shuffle_ps(m2, t2, _MM_SHUFFLE(3, 2, 2, 0)); //z0 z1 z2 w2
 
             ma = _mm_loadu_ps(&x);
             m0 = _mm_dp_ps(ma, t0, 0x71);
@@ -1256,30 +1193,29 @@
 #if defined(__AVX__)
         inline_ Point& operator*=(const Matrix4x4& mat)
         {
-            __m128 ma, t0, t1, t2, m0, m1, m2, m3;
+            __m128 ma, t0, t1, t2, m0, m1, m2;
             float xx, yy, zz;
 
             class ShadowMatrix4x4 { public: float m[4][4]; };    // To allow inlining
             const ShadowMatrix4x4* Mat = (const ShadowMatrix4x4*)&mat;
-            t0 = _mm_loadu_ps(Mat->m[0]);
-            t1 = _mm_loadu_ps(Mat->m[1]);
-            t2 = _mm_loadu_ps(Mat->m[2]);
+            t0 = _mm_loadu_ps(Mat->m[0]); //x0 y0 z0 w0
+            t1 = _mm_loadu_ps(Mat->m[1]); //x1 y1 z1 w1
+            t2 = _mm_loadu_ps(Mat->m[2]); //x2 y2 z2 w2
 
-            m0 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(1, 0, 1, 0)); // x0 y0 x1 y1
-            m2 = _mm_shuffle_ps(t0, t1, _MM_SHUFFLE(3, 2, 3, 2)); // z0 w0 z1 w1
-            m1 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(1, 0, 1, 0)); // x1 y1 x2 y2
-            m3 = _mm_shuffle_ps(t1, t2, _MM_SHUFFLE(3, 2, 3, 2)); // z1 w1 z2 w2
-
-            t0 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(2, 2, 2, 0)); //x0 x1 x2 x2
-            t1 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(3, 3, 3, 1)); //y0 y1 y2 y2
-            t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); //z0 z1 z2 z2
+            m0 = _mm_movelh_ps(t0, t1); // x0 y0 x1 y1
+            m2 = _mm_movehl_ps(t1, t0); // z0 w0 z1 w1
+            t0 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 0, 2, 0)); //x0 x1 x2 w2
+            t1 = _mm_shuffle_ps(m0, t2, _MM_SHUFFLE(3, 1, 3, 1)); //y0 y1 y2 w2
+            t2 = _mm_shuffle_ps(m2, t2, _MM_SHUFFLE(3, 2, 2, 0)); //z0 z1 z2 w2
 
             ma = _mm_loadu_ps(&x);
 
             m0 = _mm_dp_ps(ma, t0, 0x71);
             xx = _mm_cvtss_f32(m0) + Mat->m[3][0];
+
             m1 = _mm_dp_ps(ma, t1, 0x71);
             yy = _mm_cvtss_f32(m1) + Mat->m[3][1];
+
             m2 = _mm_dp_ps(ma, t2, 0x71);
             zz = _mm_cvtss_f32(m2) + Mat->m[3][2];
             x = xx;    y = yy;    z = zz;

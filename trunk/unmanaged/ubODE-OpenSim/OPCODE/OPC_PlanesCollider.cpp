@@ -43,7 +43,7 @@ using namespace Opcode;
 //! Planes-triangle test
 #define PLANES_PRIM(prim_index, flag)		\
 	/* Request vertices from the app */		\
-	mIMesh->GetTriangle(mVP, prim_index, mVC);	\
+	mIMesh->GetTriangle(mVP, prim_index);	\
 	/* Perform triangle-box overlap test */	\
 	if(PlanesTriOverlap(clip_mask))			\
 	{										\
@@ -110,52 +110,11 @@ bool PlanesCollider::Collide(PlanesCache& cache, const Plane* planes, udword nb_
 
 	udword PlaneMask = (1<<nb_planes)-1;
 
-	if(!model.HasLeafNodes())
-	{
-		if(model.IsQuantized())
-		{
-			const AABBQuantizedNoLeafTree* Tree = (const AABBQuantizedNoLeafTree*)model.GetTree();
-
-			// Setup dequantization coeffs
-			mCenterCoeff	= Tree->mCenterCoeff;
-			mExtentsCoeff	= Tree->mExtentsCoeff;
-
-			// Perform collision query
-			if(SkipPrimitiveTests())	_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-			else						_Collide(Tree->GetNodes(), PlaneMask);
-		}
-		else
-		{
 			const AABBNoLeafTree* Tree = (const AABBNoLeafTree*)model.GetTree();
 
 			// Perform collision query
 			if(SkipPrimitiveTests())	_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
 			else						_Collide(Tree->GetNodes(), PlaneMask);
-		}
-	}
-	else
-	{
-		if(model.IsQuantized())
-		{
-			const AABBQuantizedTree* Tree = (const AABBQuantizedTree*)model.GetTree();
-
-			// Setup dequantization coeffs
-			mCenterCoeff	= Tree->mCenterCoeff;
-			mExtentsCoeff	= Tree->mExtentsCoeff;
-
-			// Perform collision query
-			if(SkipPrimitiveTests())	_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-			else						_Collide(Tree->GetNodes(), PlaneMask);
-		}
-		else
-		{
-			const AABBCollisionTree* Tree = (const AABBCollisionTree*)model.GetTree();
-
-			// Perform collision query
-			if(SkipPrimitiveTests())	_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-			else						_Collide(Tree->GetNodes(), PlaneMask);
-		}
-	}
 	return true;
 }
 
@@ -556,48 +515,10 @@ bool HybridPlanesCollider::Collide(PlanesCache& cache, const Plane* planes, udwo
 	udword PlaneMask = (1<<nb_planes)-1;
 
 	// Now, do the actual query against leaf boxes
-	if(!model.HasLeafNodes())
-	{
-		if(model.IsQuantized())
-		{
-			const AABBQuantizedNoLeafTree* Tree = (const AABBQuantizedNoLeafTree*)model.GetTree();
-
-			// Setup dequantization coeffs
-			mCenterCoeff	= Tree->mCenterCoeff;
-			mExtentsCoeff	= Tree->mExtentsCoeff;
-
-			// Perform collision query - we don't want primitive tests here!
-			_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-		}
-		else
-		{
 			const AABBNoLeafTree* Tree = (const AABBNoLeafTree*)model.GetTree();
 
 			// Perform collision query - we don't want primitive tests here!
 			_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-		}
-	}
-	else
-	{
-		if(model.IsQuantized())
-		{
-			const AABBQuantizedTree* Tree = (const AABBQuantizedTree*)model.GetTree();
-
-			// Setup dequantization coeffs
-			mCenterCoeff	= Tree->mCenterCoeff;
-			mExtentsCoeff	= Tree->mExtentsCoeff;
-
-			// Perform collision query - we don't want primitive tests here!
-			_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-		}
-		else
-		{
-			const AABBCollisionTree* Tree = (const AABBCollisionTree*)model.GetTree();
-
-			// Perform collision query - we don't want primitive tests here!
-			_CollideNoPrimitiveTest(Tree->GetNodes(), PlaneMask);
-		}
-	}
 
 	// We only have a list of boxes so far
 	if(GetContactStatus())

@@ -625,6 +625,19 @@ dReal FindTriangleTriangleCollision(const dVector3 tri1[3], const dVector3 edges
     return maxdeep;
 }
 
+int dCollideTri_Tri(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int Stride)
+{
+    return 0;
+}
+int dCollideTri_Mesh(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int Stride)
+{
+    return 0;
+}
+int dCollideMesh_Tri(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int Stride)
+{
+    return 0;
+}
+
 int dCollideTTL(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int Stride)
 {
     dIASSERT(Stride >= (int)sizeof(dContactGeom));
@@ -632,37 +645,39 @@ int dCollideTTL(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int S
     dIASSERT(g2->type == dTriMeshClass);
     dIASSERT((Flags & NUMC_MASK) >= 1);
 
-    dVector3 contactpoints[9];
-    dVector4 normal;
-    dVector4 tri1plane;
-    dVector4 tri2plane;
-    dVector3 v1[3], v2[3];
-    dVector3 v1e[3], v2e[3];
 
-    dxTriMesh* TriMesh1 = (dxTriMesh*)g1;
-    dxTriMesh* TriMesh2 = (dxTriMesh*)g2;
+    dxTriMeshData *TriData1 = ((dxTriMesh*)g1)->Data;
+    dxTriMeshData *TriData2 = ((dxTriMesh*)g2)->Data;
 
-    const dVector3& TLPosition1 = *(const dVector3*)dGeomGetPosition(TriMesh1);
-    // TLRotation1 = column-major order
-    const dMatrix3& TLRotation1 = *(const dMatrix3*)dGeomGetRotation(TriMesh1);
+    if (TriData1->Mesh.GetNbTriangles() == 1)
+    {
+        if (TriData2->Mesh.GetNbTriangles() == 1)
+            return dCollideTri_Tri(g1, g2, Flags, Contacts, Stride);
+        return dCollideTri_Mesh(g1, g2, Flags, Contacts, Stride);
+    }
+    else if (TriData2->Mesh.GetNbTriangles() == 1)
+        return dCollideMesh_Tri(g1, g2, Flags, Contacts, Stride);
 
-    const dVector3& TLPosition2 = *(const dVector3*)dGeomGetPosition(TriMesh2);
-    // TLRotation2 = column-major order
-    const dMatrix3& TLRotation2 = *(const dMatrix3*)dGeomGetRotation(TriMesh2);
+
+    dxPosR *dpr1 = g1->GetRecomputePosR();
+    const dVector3& TLPosition1 = *(const dVector3*)dpr1->pos;
+    const dMatrix3& TLRotation1 = *(const dMatrix3*)dpr1->R;
+
+    dxPosR *dpr2 = g2->GetRecomputePosR();
+    const dVector3& TLPosition2 = *(const dVector3*)dpr2->pos;
+    const dMatrix3& TLRotation2 = *(const dMatrix3*)dpr2->R;
+
     Matrix4x4 amatrix, bmatrix;
 
-    const unsigned uiTLSKind = TriMesh1->getParentSpaceTLSKind();
-    dIASSERT(uiTLSKind == TriMesh2->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
+    const unsigned uiTLSKind = ((dxTriMesh*)g1)->getParentSpaceTLSKind();
+    dIASSERT(uiTLSKind == ((dxTriMesh*)g2)->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
     TrimeshCollidersCache *pccColliderCache = GetTrimeshCollidersCache(uiTLSKind);
     AABBTreeCollider& Collider = pccColliderCache->_AABBTreeCollider;
     BVTCache &ColCache = pccColliderCache->ColCache;
     CONTACT_KEY_HASH_TABLE &hashcontactset = pccColliderCache->_hashcontactset;
 
-    ColCache.Model0 = &TriMesh1->Data->BVTree;
-    ColCache.Model1 = &TriMesh2->Data->BVTree;
-
-    const bool contacts_unimportant = (Flags & CONTACTS_UNIMPORTANT) != 0;
-    const int max_contacts = (Flags & NUMC_MASK);
+    ColCache.Model0 = &TriData1->BVTree;
+    ColCache.Model1 = &TriData2->BVTree;
 
     ////Prepare contact list
     ClearContactSet(hashcontactset);
@@ -686,6 +701,16 @@ int dCollideTTL(dxGeom* g1, dxGeom* g2, int Flags, dContactGeom* Contacts, int S
         int lastid1 = -11111;
         int lastid2 = -11111;
         int OutContactsCount = 0;
+
+        const bool contacts_unimportant = (Flags & CONTACTS_UNIMPORTANT) != 0;
+        const int max_contacts = (Flags & NUMC_MASK);
+
+        dVector3 contactpoints[9];
+        dVector4 normal;
+        dVector4 tri1plane;
+        dVector4 tri2plane;
+        dVector3 v1[3], v2[3];
+        dVector3 v1e[3], v2e[3];
 
         for (int i = 0; i < TriCount; i++)
         {

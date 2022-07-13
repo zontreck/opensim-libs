@@ -28,11 +28,6 @@
 
 		MeshInterface*			mIMesh;			//!< Mesh interface (access to triangles & vertices) (*)
 		BuildSettings			mSettings;		//!< Builder's settings
-		bool					mNoLeaf;		//!< true => discard leaf nodes (else use a normal tree)
-		bool					mQuantized;		//!< true => quantize the tree (else use a normal tree)
-#ifdef __MESHMERIZER_H__
-		bool					mCollisionHull;	//!< true => use convex hull + GJK
-#endif // __MESHMERIZER_H__
 		bool					mKeepOriginal;	//!< true => keep a copy of the original tree (debug purpose)
 		bool					mCanRemap;		//!< true => allows OPCODE to reorganize client arrays
 
@@ -42,8 +37,6 @@
 
 	enum ModelFlag
 	{
-		OPC_QUANTIZED	= (1<<0),	//!< Compressed/uncompressed tree
-		OPC_NO_LEAF		= (1<<1),	//!< Leaf/NoLeaf tree
 		OPC_SINGLE_NODE	= (1<<2)	//!< Special case for 1-node models
 	};
 
@@ -116,22 +109,6 @@
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/**
-		 *	Checks whether the tree has leaf nodes or not.
-		 *	\return		true if the tree has leaf nodes (normal tree), else false (optimized tree)
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		inline_			BOOL				HasLeafNodes()		const	{ return !(mModelCode & OPC_NO_LEAF);	}
-
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Checks whether the tree is quantized or not.
-		 *	\return		true if the tree is quantized
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		inline_			BOOL				IsQuantized()		const	{ return mModelCode & OPC_QUANTIZED;	}
-
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
 		 *	Checks whether the model has a single node or not. This special case must be handled separately.
 		 *	\return		true if the model has only 1 node
 		 */
@@ -169,7 +146,7 @@
 						AABBOptimizedTree*	mTree;			//!< Optimized tree owned by the model
 		// Internal methods
 						void				ReleaseBase();
-						bool				CreateTree(bool no_leaf, bool quantized);
+						bool				CreateTree();
 	};
 
 #endif //__OPC_BASEMODEL_H__

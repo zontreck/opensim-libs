@@ -130,11 +130,22 @@ struct dxGeom : public dBase {
     // recalculate our new final position if needed
     void recomputePosr()
     {
-        if (gflags & GEOM_POSR_BAD) {
+        if (gflags & GEOM_POSR_BAD)
+        {
             computePosr();
             gflags &= ~GEOM_POSR_BAD;
         }
     }
+
+    ODE_INLINE dxPosR* GetRecomputePosR()
+    {
+        if (gflags & GEOM_POSR_BAD)
+        {
+            computePosr();
+            gflags &= ~GEOM_POSR_BAD;
+        }
+        return final_posr;
+    };
 
     bool checkControlValueSizeValidity(void *dataValue, int *dataSize, int iRequiresSize) { return (*dataSize == iRequiresSize && dataValue != 0) ? true : !(*dataSize = iRequiresSize); } // Here it is the intent to return true for 0 required size in any case
     virtual bool controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize);

@@ -515,8 +515,8 @@ int dBoxTouchesBox (const dVector3 p1, const dMatrix3 R1,
 int dClipEdgeToPlane( dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlane)
 {
     // calculate distance of edge points to plane
-    dReal fDistance0 = dCalcPointPlaneDistance(  vEpnt0 ,plPlane );
-    dReal fDistance1 = dCalcPointPlaneDistance(  vEpnt1 ,plPlane );
+    dReal fDistance0 = dCalcPointPlaneDistance( vEpnt0, plPlane );
+    dReal fDistance1 = dCalcPointPlaneDistance( vEpnt1, plPlane );
 
     // if both points are behind the plane
     if ( fDistance0 < 0 && fDistance1 < 0 ) 
@@ -532,20 +532,15 @@ int dClipEdgeToPlane( dVector3 &vEpnt0, dVector3 &vEpnt1, const dVector4& plPlan
         // if we have edge/plane intersection
     } else if ((fDistance0 > 0 && fDistance1 < 0) || ( fDistance0 < 0 && fDistance1 > 0)) 
     {
-
         // find intersection point of edge and plane
-        dVector3 vIntersectionPoint;
-        vIntersectionPoint[0]= vEpnt0[0]-(vEpnt0[0]-vEpnt1[0])*fDistance0/(fDistance0-fDistance1);
-        vIntersectionPoint[1]= vEpnt0[1]-(vEpnt0[1]-vEpnt1[1])*fDistance0/(fDistance0-fDistance1);
-        vIntersectionPoint[2]= vEpnt0[2]-(vEpnt0[2]-vEpnt1[2])*fDistance0/(fDistance0-fDistance1);
-
+        dReal factor = fDistance0 / (fDistance1 - fDistance0);
         // clamp correct edge to intersection point
         if ( fDistance0 < 0 ) 
         {
-            dCopyVector3r4(vEpnt0, vIntersectionPoint);
+            dCalcLerpVectors3r4(vEpnt0, vEpnt0, vEpnt1, factor);
         } else 
         {
-            dCopyVector3r4(vEpnt1, vIntersectionPoint);
+            dCalcLerpVectors3r4(vEpnt1, vEpnt0, vEpnt1, factor);
         }
         return 1;
     }

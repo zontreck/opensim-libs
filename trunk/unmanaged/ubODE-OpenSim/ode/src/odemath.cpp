@@ -77,6 +77,17 @@ int _dSafeNormalize3 (dVector3 a)
 }
 //#endif
 
+int _dSafeNormalize3fast(dVector3 a)
+{
+    dReal l = dCalcVectorLengthSquare3(a);
+    if (l > dEpsilon)
+    {
+        dScaleVector3r4(a, dRecipSqrt(l));
+        return 1;
+    }
+    return 0;
+}
+
 /* OLD VERSION */
 /*
 void dNormalize3 (dVector3 a)

@@ -62,8 +62,6 @@ void TrimeshCollidersCache::InitOPCODECaches()
     */
 }
 
-
-
 // Trimesh data
 dxTriMeshData::dxTriMeshData() : UseFlags( NULL )
 {
@@ -76,16 +74,15 @@ dxTriMeshData::~dxTriMeshData()
 }
 
 void 
-dxTriMeshData::Build(const void* Vertices, int VertexStide, int VertexCount,
-                     const void* Indices, int IndexCount, int TriStride,
-                     const void* in_Normals,
-                     bool Single)
+dxTriMeshData::Build(const void* Vertices,int VertexCount,
+                     const void* Indices, int IndexCount)
 {
     Mesh.SetNbTriangles(IndexCount / 3);
     Mesh.SetNbVertices(VertexCount);
     Mesh.SetPointers((IndexedTriangle*)Indices, (Point*)Vertices);
-    Mesh.SetStrides(TriStride, VertexStide);
-    Mesh.SetSingle(Single);
+    Mesh.SetSingle(true);
+
+    int vertStride = Mesh.GetVertexStride();
 
     // Build tree
     BuildSettings Settings;
@@ -101,9 +98,6 @@ dxTriMeshData::Build(const void* Vertices, int VertexStide, int VertexCount,
     TreeBuilder.mIMesh = &Mesh;
 
     TreeBuilder.mSettings = Settings;
-    TreeBuilder.mNoLeaf = true;
-    TreeBuilder.mQuantized = false;
-//    TreeBuilder.mQuantized = true;
 
     TreeBuilder.mKeepOriginal = false;
     TreeBuilder.mCanRemap = false;
@@ -111,43 +105,41 @@ dxTriMeshData::Build(const void* Vertices, int VertexStide, int VertexCount,
     BVTree.Build(TreeBuilder);
 
     // compute model space AABB
-    dVector3 AABBMax, AABBMin;
-    AABBMax[0] = AABBMax[1] = AABBMax[2] = (dReal) -dInfinity;
-    AABBMin[0] = AABBMin[1] = AABBMin[2] = (dReal) dInfinity;
-    if( Single ) {
-        const char* verts = (const char*)Vertices;
-        for( int i = 0; i < VertexCount; ++i ) {
-            const float* v = (const float*)verts;
-            if( v[0] > AABBMax[0] ) AABBMax[0] = v[0];
-            if( v[1] > AABBMax[1] ) AABBMax[1] = v[1];
-            if( v[2] > AABBMax[2] ) AABBMax[2] = v[2];
-            if( v[0] < AABBMin[0] ) AABBMin[0] = v[0];
-            if( v[1] < AABBMin[1] ) AABBMin[1] = v[1];
-            if( v[2] < AABBMin[2] ) AABBMin[2] = v[2];
-            verts += VertexStide;
-        }
-    } else {
-        const char* verts = (const char*)Vertices;
-        for( int i = 0; i < VertexCount; ++i ) {
-            const double* v = (const double*)verts;
-            if( v[0] > AABBMax[0] ) AABBMax[0] = (dReal) v[0];
-            if( v[1] > AABBMax[1] ) AABBMax[1] = (dReal) v[1];
-            if( v[2] > AABBMax[2] ) AABBMax[2] = (dReal) v[2];
-            if( v[0] < AABBMin[0] ) AABBMin[0] = (dReal) v[0];
-            if( v[1] < AABBMin[1] ) AABBMin[1] = (dReal) v[1];
-            if( v[2] < AABBMin[2] ) AABBMin[2] = (dReal) v[2];
-            verts += VertexStide;
-        }
-    }
-    AABBCenter[0] = (AABBMin[0] + AABBMax[0]) * REAL(0.5);
-    AABBCenter[1] = (AABBMin[1] + AABBMax[1]) * REAL(0.5);
-    AABBCenter[2] = (AABBMin[2] + AABBMax[2]) * REAL(0.5);
-    AABBExtents[0] = AABBMax[0] - AABBCenter[0];
-    AABBExtents[1] = AABBMax[1] - AABBCenter[1];
-    AABBExtents[2] = AABBMax[2] - AABBCenter[2];
+    const char* verts = (const char*)Vertices;
+#if(__AVX__)
+    const __m128 half = _mm_set1_ps(0.5f);
+    __m128 ma, mb, mc;
 
-    // user data (not used by OPCODE)
-    Normals = (dReal *) in_Normals;
+    ma = _mm_set1_ps(dInfinity);
+    mb = _mm_set1_ps(-dInfinity);
+
+    for (int i = 0; i < VertexCount; ++i)
+    {
+        mc = _mm_loadu_ps((const dReal*)verts);
+        ma = _mm_min_ps(ma, mc);
+        mb = _mm_max_ps(mb, mc);
+        verts += vertStride;
+    }
+
+    ma = _mm_add_ps(ma, mb);
+    ma = _mm_mul_ps(ma, half);
+    _mm_storeu_ps(AABBCenter, ma);
+
+    ma = _mm_sub_ps(mb, ma);
+    _mm_storeu_ps(AABBExtents, ma);
+#else
+    dVector3 AABBMax, AABBMin;
+    AABBMin[0] = AABBMin[1] = AABBMin[2] = (dReal)dInfinity;
+    AABBMax[0] = AABBMax[1] = AABBMax[2] = (dReal)-dInfinity;
+    for (int i = 0; i < VertexCount; ++i)
+    {
+        dMinMaxVectors3r4(AABBMin, AABBMax, (const dReal*)verts);
+        verts += vertStride;
+    }
+
+    dAvgVectors3r4(AABBCenter, AABBMin, AABBMax);
+    dSubtractVectors3(AABBExtents, AABBMax, AABBCenter);
+#endif
 
     UseFlags = 0;
 }
@@ -176,45 +168,69 @@ static int EdgeCompare(const void* edge1, const void* edge2)
         return e1->VertIdx1 - e2->VertIdx1;
 }
 
-void SetupEdge(EdgeRecord* edge, int edgeIdx, int triIdx, const dTriIndex* vertIdxs)
+void SetupEdge(EdgeRecord* edge, int edgeIdx, const int triIdx, const dTriIndex* vertIdxs)
 {
-    if (edgeIdx == 0)
+    switch (edgeIdx)
     {
-        edge->EdgeFlags  = dxTriMeshData::kEdge0;
-        edge->Vert1Flags = dxTriMeshData::kVert0;
-        edge->Vert2Flags = dxTriMeshData::kVert1;
-        edge->VertIdx1 = vertIdxs[0];
-        edge->VertIdx2 = vertIdxs[1];
+        case 0:
+        {
+            edge->EdgeFlags = dxTriMeshData::kEdge0;
+            // Make sure vert index 1 is less than index 2 (for easier sorting)
+            if (vertIdxs[0] > vertIdxs[1])
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert1;
+                edge->Vert2Flags = dxTriMeshData::kVert0;
+                edge->VertIdx1 = vertIdxs[1];
+                edge->VertIdx2 = vertIdxs[0];
+            }
+            else
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert0;
+                edge->Vert2Flags = dxTriMeshData::kVert1;
+                edge->VertIdx1 = vertIdxs[0];
+                edge->VertIdx2 = vertIdxs[1];
+            }
+            break;
+        }
+        case 1:
+        {
+            edge->EdgeFlags = dxTriMeshData::kEdge1;
+            if (vertIdxs[1] > vertIdxs[2])
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert2;
+                edge->Vert2Flags = dxTriMeshData::kVert1;
+                edge->VertIdx1 = vertIdxs[2];
+                edge->VertIdx2 = vertIdxs[1];
+            }
+            else
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert1;
+                edge->Vert2Flags = dxTriMeshData::kVert2;
+                edge->VertIdx1 = vertIdxs[1];
+                edge->VertIdx2 = vertIdxs[2];
+            }
+            break;
+        }
+        default:
+        {
+            edge->EdgeFlags = dxTriMeshData::kEdge2;
+            if (vertIdxs[2] > vertIdxs[0])
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert0;
+                edge->Vert2Flags = dxTriMeshData::kVert2;
+                edge->VertIdx1 = vertIdxs[0];
+                edge->VertIdx2 = vertIdxs[2];
+            }
+            else
+            {
+                edge->Vert1Flags = dxTriMeshData::kVert2;
+                edge->Vert2Flags = dxTriMeshData::kVert0;
+                edge->VertIdx1 = vertIdxs[2];
+                edge->VertIdx2 = vertIdxs[0];
+            }
+            break;
+        }
     }
-    else if (edgeIdx == 1)
-    {
-        edge->EdgeFlags  = dxTriMeshData::kEdge1;
-        edge->Vert1Flags = dxTriMeshData::kVert1;
-        edge->Vert2Flags = dxTriMeshData::kVert2;
-        edge->VertIdx1 = vertIdxs[1];
-        edge->VertIdx2 = vertIdxs[2];
-    }
-    else if (edgeIdx == 2)
-    {
-        edge->EdgeFlags  = dxTriMeshData::kEdge2;
-        edge->Vert1Flags = dxTriMeshData::kVert2;
-        edge->Vert2Flags = dxTriMeshData::kVert0;
-        edge->VertIdx1 = vertIdxs[2];
-        edge->VertIdx2 = vertIdxs[0];
-    }
-
-    // Make sure vert index 1 is less than index 2 (for easier sorting)
-    if (edge->VertIdx1 > edge->VertIdx2)
-    {
-        unsigned int tempIdx = edge->VertIdx1;
-        edge->VertIdx1 = edge->VertIdx2;
-        edge->VertIdx2 = tempIdx;
-
-        uint8 tempFlags = edge->Vert1Flags;
-        edge->Vert1Flags = edge->Vert2Flags;
-        edge->Vert2Flags = tempFlags;
-    }
-
     edge->TriIdx = triIdx;
     edge->Concave = false;
 }
@@ -222,13 +238,12 @@ void SetupEdge(EdgeRecord* edge, int edgeIdx, int triIdx, const dTriIndex* vertI
 // Get the vertex opposite this edge in the triangle
 inline Point GetOppositeVert(EdgeRecord* edge, const Point* vertices[])
 {
-    if ((edge->Vert1Flags == dxTriMeshData::kVert0 && edge->Vert2Flags == dxTriMeshData::kVert1) ||
-        (edge->Vert1Flags == dxTriMeshData::kVert1 && edge->Vert2Flags == dxTriMeshData::kVert0))
+    uint8 curvflags = edge->Vert1Flags | edge->Vert2Flags;
+    if ((curvflags & dxTriMeshData::kvert0or1) == dxTriMeshData::kvert0or1)
     {
         return *vertices[2];
     }
-    else if ((edge->Vert1Flags == dxTriMeshData::kVert1 && edge->Vert2Flags == dxTriMeshData::kVert2) ||
-        (edge->Vert1Flags == dxTriMeshData::kVert2 && edge->Vert2Flags == dxTriMeshData::kVert1))
+    else if ((curvflags & dxTriMeshData::kvert1or2) == dxTriMeshData::kvert1or2)
     {
         return *vertices[0];
     }
@@ -238,7 +253,6 @@ inline Point GetOppositeVert(EdgeRecord* edge, const Point* vertices[])
 
 void dxTriMeshData::Preprocess()
 {
-
     // If this mesh has already been preprocessed, exit
     if (UseFlags)
         return;
@@ -284,8 +298,7 @@ void dxTriMeshData::Preprocess()
             rec1->VertIdx2 == rec2->VertIdx2)
         {
             VertexPointers vp;
-            ConversionArea vc;
-            Mesh.GetTriangle(vp, rec1->TriIdx, vc);
+            Mesh.GetTriangle(vp, rec1->TriIdx);
 
             // Get the normal of the first triangle
             Point triNorm = (*vp.Vertex[2] - *vp.Vertex[1]) ^ (*vp.Vertex[0] - *vp.Vertex[1]);
@@ -295,7 +308,7 @@ void dxTriMeshData::Preprocess()
             Point oppositeVert1 = GetOppositeVert(rec1, vp.Vertex);
 
             // Get the vert opposite this edge in the second triangle
-            Mesh.GetTriangle(vp, rec2->TriIdx, vc);
+            Mesh.GetTriangle(vp, rec2->TriIdx);
             Point oppositeVert2 = GetOppositeVert(rec2, vp.Vertex);
 
             float dot = triNorm.Dot((oppositeVert2 - oppositeVert1).Normalize());
@@ -363,9 +376,6 @@ void dGeomTriMeshDataDestroy(dTriMeshDataID g){
     delete g;
 }
 
-
-
-
 void dGeomTriMeshSetLastTransform( dxGeom* g, dMatrix4 last_trans )
 {
     dAASSERT(g);
@@ -377,7 +387,6 @@ void dGeomTriMeshSetLastTransform( dxGeom* g, dMatrix4 last_trans )
     return;
 }
 
-
 dReal* dGeomTriMeshGetLastTransform( dxGeom* g )
 {
     dAASSERT(g);
@@ -386,24 +395,9 @@ dReal* dGeomTriMeshGetLastTransform( dxGeom* g )
     return (dReal*)(((dxTriMesh*)g)->last_trans);
 }
 
-
-
-
 void dGeomTriMeshDataSet(dTriMeshDataID g, int data_id, void* in_data)
 {
     dUASSERT(g, "argument not trimesh data");
-
-    switch (data_id)
-    {
-    case TRIMESH_FACE_NORMALS:
-        g->Normals = (dReal *) in_data;
-        break;
-
-    default:
-        dUASSERT(data_id, "invalid data type");
-        break;
-    }
-
     return;
 }
 
@@ -412,18 +406,6 @@ void dGeomTriMeshDataSet(dTriMeshDataID g, int data_id, void* in_data)
 void*  dGeomTriMeshDataGet(dTriMeshDataID g, int data_id)
 {
     dUASSERT(g, "argument not trimesh data");
-
-    switch (data_id)
-    {
-    case TRIMESH_FACE_NORMALS:
-        return (void *) g->Normals;
-        break;
-
-    default:
-        dUASSERT(data_id, "invalid data type");
-        break;
-    }
-
     return NULL;
 }
 
@@ -435,71 +417,46 @@ void dGeomTriMeshDataBuildSingle1(dTriMeshDataID g,
 {
     dUASSERT(g, "argument not trimesh data");
 
-    g->Build(Vertices, VertexStride, VertexCount, 
-        Indices, IndexCount, TriStride, 
-        Normals, 
-        true);
+    g->Build(Vertices, VertexCount, Indices, IndexCount);
 }
-
 
 void dGeomTriMeshDataBuildSingle(dTriMeshDataID g,
                                  const void* Vertices, int VertexStride, int VertexCount, 
                                  const void* Indices, int IndexCount, int TriStride)
 {
-    dGeomTriMeshDataBuildSingle1(g, Vertices, VertexStride, VertexCount,
-        Indices, IndexCount, TriStride, (void*)NULL);
+    g->Build(Vertices, VertexCount,Indices, IndexCount);
 }
-
-
-void dGeomTriMeshDataBuildDouble1(dTriMeshDataID g,
-                                  const void* Vertices, int VertexStride, int VertexCount, 
-                                  const void* Indices, int IndexCount, int TriStride,
-                                  const void* Normals)
-{
-    dUASSERT(g, "argument not trimesh data");
-
-    g->Build(Vertices, VertexStride, VertexCount, 
-        Indices, IndexCount, TriStride, 
-        Normals, 
-        false);
-}
-
-
-void dGeomTriMeshDataBuildDouble(dTriMeshDataID g,
-                                 const void* Vertices, int VertexStride, int VertexCount, 
-                                 const void* Indices, int IndexCount, int TriStride)
-{
-    dGeomTriMeshDataBuildDouble1(g, Vertices, VertexStride, VertexCount,
-        Indices, IndexCount, TriStride, NULL);
-}
-
 
 void dGeomTriMeshDataBuildSimple1(dTriMeshDataID g,
                                   const dReal* Vertices, int VertexCount, 
                                   const dTriIndex* Indices, int IndexCount,
                                   const int* Normals)
 {
-#ifdef dSINGLE
-    dGeomTriMeshDataBuildSingle1(g,
-        Vertices, 4 * sizeof(dReal), VertexCount, 
-        Indices, IndexCount, 3 * sizeof(dTriIndex),
-        Normals);
-#else
-    dGeomTriMeshDataBuildDouble1(g, Vertices, 4 * sizeof(dReal), VertexCount, 
-        Indices, IndexCount, 3 * sizeof(dTriIndex),
-        Normals);
-#endif
+    g->Build(Vertices, VertexCount, Indices, IndexCount);
 }
-
 
 void dGeomTriMeshDataBuildSimple(dTriMeshDataID g,
                                  const dReal* Vertices, int VertexCount, 
                                  const dTriIndex* Indices, int IndexCount)
 {
-    dGeomTriMeshDataBuildSimple1(g,
-        Vertices, VertexCount, Indices, IndexCount,
-        (const int*)NULL);
+    g->Build(Vertices, VertexCount, Indices, IndexCount);
 }
+
+void dGeomTriMeshDataBuildDouble1(dTriMeshDataID g,
+    const void* Vertices, int VertexStride, int VertexCount,
+    const void* Indices, int IndexCount, int TriStride,
+    const void* Normals)
+{
+    //removed
+}
+
+void dGeomTriMeshDataBuildDouble(dTriMeshDataID g,
+    const void* Vertices, int VertexStride, int VertexCount,
+    const void* Indices, int IndexCount, int TriStride)
+{
+    //removed
+}
+
 
 void dGeomTriMeshDataPreprocess(dTriMeshDataID g)
 {
@@ -560,8 +517,6 @@ dxTriMesh::~dxTriMesh(){
     pccColliderCache->defaultCapsuleCache.TouchedPrimitives.Empty();
 #endif // dTLS_ENABLED
 }
-
-
 
 void dxTriMesh::ClearTCCache()
 {
@@ -649,29 +604,25 @@ bool dxTriMesh::controlGeometry_GetMergeSphereContacts(int &returnValue)
 
 
 void dxTriMesh::computeAABB() {
-    const dxTriMeshData* d = Data;
-    dVector3 c;
     const dMatrix3& R = final_posr->R;
-    const dVector3& pos = final_posr->pos;
 
-    dMultiply0_331( c, R, d->AABBCenter );
+    dVector3 c;
+    dMultiply0_331( c, R, Data->AABBCenter );
+    dAddVector3r4(c, final_posr->pos);
 
-    dReal xrange = dFabs(R[0] * Data->AABBExtents[0]) +
-        dFabs(R[1] * Data->AABBExtents[1]) + 
-        dFabs(R[2] * Data->AABBExtents[2]);
-    dReal yrange = dFabs(R[4] * Data->AABBExtents[0]) +
-        dFabs(R[5] * Data->AABBExtents[1]) + 
-        dFabs(R[6] * Data->AABBExtents[2]);
-    dReal zrange = dFabs(R[8] * Data->AABBExtents[0]) +
-        dFabs(R[9] * Data->AABBExtents[1]) + 
-        dFabs(R[10] * Data->AABBExtents[2]);
+    dVector3& extents = *(dVector3*)Data->AABBExtents;
 
-    aabb[0] = c[0] + pos[0] - xrange;
-    aabb[1] = c[0] + pos[0] + xrange;
-    aabb[2] = c[1] + pos[1] - yrange;
-    aabb[3] = c[1] + pos[1] + yrange;
-    aabb[4] = c[2] + pos[2] - zrange;
-    aabb[5] = c[2] + pos[2] + zrange;
+    dReal a = dDotAbsVectors3r4(R, extents);
+    aabb[0] = c[0] - a;
+    aabb[1] = c[0] + a;
+
+    a = dDotAbsVectors3r4(R + 4, extents);
+    aabb[2] = c[1] - a;
+    aabb[3] = c[1] + a;
+
+    a = dDotAbsVectors3r4(R + 8, extents);
+    aabb[4] = c[2] - a;
+    aabb[5] = c[2] + a;
 }
 
 
@@ -822,8 +773,9 @@ void dGeomTriMeshGetTriangle(dGeomID g, int Index, dVector3* v0, dVector3* v1, d
 
     dxTriMesh* Geom = (dxTriMesh*)g;
 
-    const dVector3& Position = *(const dVector3*)dGeomGetPosition(g);
-    const dMatrix3& Rotation = *(const dMatrix3*)dGeomGetRotation(g);
+    dxPosR *dpr =  g->GetRecomputePosR();
+    const dVector3& Position = *(const dVector3*)dpr->pos;
+    const dMatrix3& Rotation = *(const dMatrix3*)dpr->R;
 
     dVector3 v[3];
     FetchTriangle(Geom, Index, Position, Rotation, v);
@@ -853,8 +805,9 @@ void dGeomTriMeshGetPoint(dGeomID g, int Index, dReal u, dReal v, dVector3 Out){
 
     dxTriMesh* Geom = (dxTriMesh*)g;
 
-    const dVector3& Position = *(const dVector3*)dGeomGetPosition(g);
-    const dMatrix3& Rotation = *(const dMatrix3*)dGeomGetRotation(g);
+    dxPosR *dpr = g->GetRecomputePosR();
+    const dVector3& Position = *(const dVector3*)dpr->pos;
+    const dMatrix3& Rotation = *(const dMatrix3*)dpr->R;
 
     dVector3 dv[3];
     FetchTriangle(Geom, Index, Position, Rotation, dv);

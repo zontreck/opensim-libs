@@ -34,6 +34,7 @@
 #include "matrix.h"
 #include "odemath.h"
 #include "collision_util.h"
+#include "collision_std.h"
 #include "collision_trimesh_internal.h"
 
 static void GenerateContact(int in_Flags, dContactGeom* in_Contacts, int in_Stride,
@@ -70,9 +71,6 @@ struct sTrimeshBoxColliderData
     dVector3 m_vHullBoxPos;
     dVector3 m_vBoxHalfSize;
     dMatrix3 m_BoxRotTransposed;
-
-    // mesh data
-    dVector3 m_vHullDstPos;
 
     // global collider data
     dVector3 m_vBestNormal;
@@ -982,24 +980,18 @@ ODE_INLINE bool sTrimeshBoxColliderData::_cldTestOneTriangle(const dVector3 &v0,
     return false;
 }
 
-void sTrimeshBoxColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom *BoxGeom,
+ODE_INLINE void sTrimeshBoxColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom *BoxGeom,
     int Flags, dContactGeom* Contacts, int Stride)
 {
     // get source hull position, orientation and half size
-    const dMatrix3& mRotBox = *(const dMatrix3*)dGeomGetRotation(BoxGeom);
-    const dVector3& vPosBox = *(const dVector3*)dGeomGetPosition(BoxGeom);
+    dxPosR* posr = BoxGeom->GetRecomputePosR();
+    const dMatrix3& mRotBox = *(const dMatrix3*)posr->R;
+    const dVector3& vPosBox = *(const dVector3*)posr->pos;
 
     dTransposetMatrix34(m_BoxRotTransposed, mRotBox);
 
     dCopyVector3r4(m_vHullBoxPos, vPosBox);
-    dGeomBoxGetLengths(BoxGeom, m_vBoxHalfSize);
-    dScaleVector3r4(m_vBoxHalfSize, 0.5f);
-
-    // get destination hull position and orientation
-    const dVector3& vPosMesh = *(const dVector3*)dGeomGetPosition(TriMesh);
-
-    // to global
-    dCopyVector3r4(m_vHullDstPos, vPosMesh);
+    dCopyVector3r4(m_vBoxHalfSize, ((dxBox*)BoxGeom)->halfside);
 
     // global info for contact creation
     m_ctContacts = 0;
@@ -1011,9 +1003,7 @@ void sTrimeshBoxColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom *Bo
 
     // reset stuff
     m_fBestDepth = MAXVALUE;
-    m_vBestNormal[0] = 0;
-    m_vBestNormal[1] = 0;
-    m_vBestNormal[2] = 0;
+    dZeroVector3r4(m_vBestNormal);
 }
 
 int sTrimeshBoxColliderData::TestCollisionForSingleTriangle(int ctContacts0, int Triint,
@@ -1151,8 +1141,9 @@ int dCollideBTL(dxGeom* g1, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, 
         }
 
         // get destination hull position and orientation
-        const dMatrix3& mRotMesh = *(const dMatrix3*)dGeomGetRotation(TriMesh);
-        const dVector3& vPosMesh = *(const dVector3*)dGeomGetPosition(TriMesh);
+        dxPosR* TriMeshPosr = TriMesh->GetRecomputePosR();
+        const dMatrix3& mRotMesh = *(const dMatrix3*)TriMeshPosr->R;
+        const dVector3& vPosMesh = *(const dVector3*)TriMeshPosr->pos;
 
         int ctContacts0 = 0;
 

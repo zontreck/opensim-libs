@@ -217,12 +217,6 @@
 	#define FCMOVB_ST7	_asm	_emit	0xda	_asm	_emit	0xc7
 	#define FCMOVNB_ST7	_asm	_emit	0xdb	_asm	_emit	0xc7
 
-	//! A global function to find MAX(a,b) using FCOMI/FCMOV
-	inline_ float FCMax2(float a, float b)
-	{
-		return (a > b) ? a : b;
-	}
-
 	//! A global function to find MIN(a,b) using FCOMI/FCMOV
 	inline_ float FCMin2(float a, float b)
 	{
@@ -240,6 +234,55 @@
 	{
 		return (a < b) ? ((a < c) ? a : c) : ((b < c) ? b : c);
 	}
+
+    inline_ void MinMax(float& min, float& max, const float a, const float b, const float c)
+    {
+        if (a > b)
+        {
+            if (b > c)
+            {
+                max = a;
+                min = c;
+            }
+            else
+            {
+                min = b;
+                max = (a > c) ? a : c;
+            }
+        }
+        else
+        {
+            if (c > b)
+            {
+                max = c;
+                min = a;
+            }
+            else
+            {
+                max = b;
+                min = (a < c) ? a : c;
+            }
+        }
+    }
+
+    inline bool inExtent(const float a, const float b, const float c, const float e)
+    {
+        if (a > b)
+        {
+            if (((b < c) ? b : c) > e)
+                return false;
+            if (((a > c) ? a : c) < -e)
+                return false;
+        }
+        else
+        {
+            if(((a < c) ? a : c) > e)
+                return false;
+            if(((b > c) ? b : c) < -e)
+                return false;
+        }
+        return true;
+    }
 
 	inline_ int ConvertToSortable(float f)
 	{

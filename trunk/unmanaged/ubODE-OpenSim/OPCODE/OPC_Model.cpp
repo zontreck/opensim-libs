@@ -18,10 +18,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  *	The main collision wrapper, for all trees. Supported trees are:
- *	- Normal trees (2*N-1 nodes, full size)
  *	- No-leaf trees (N-1 nodes, full size)
- *	- Quantized trees (2*N-1 nodes, half size)
- *	- Quantized no-leaf trees (N-1 nodes, half size)
  *
  *	Usage:
  *
@@ -37,9 +34,7 @@
  *		OPCODECREATE OPCC;
  *		OPCC.IMesh			= ...;
  *		OPCC.Rules			= ...;
- *		OPCC.NoLeaf			= ...;
- *		OPCC.Quantized		= ...;
- *		OPCC.KeepOriginal	= ...;
+  *		OPCC.KeepOriginal	= ...;
  *		bool Status = Sample.Build(OPCC);
  *	\endcode
  *
@@ -101,9 +96,6 @@ using namespace Opcode;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Model::Model()
 {
-#ifdef __MESHMERIZER_H__	// Collision hulls only supported within ICE !
-	mHull	= null;
-#endif // __MESHMERIZER_H__
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -124,9 +116,6 @@ Model::~Model()
 void Model::Release()
 {
 	ReleaseBase();
-#ifdef __MESHMERIZER_H__	// Collision hulls only supported within ICE !
-	DELETESINGLE(mHull);
-#endif // __MESHMERIZER_H__
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,33 +168,13 @@ bool Model::Build(const OPCODECREATE& create)
 	}
 
 	// 3) Create an optimized tree according to user-settings
-	if(!CreateTree(create.mNoLeaf, create.mQuantized))	return false;
+	if(!CreateTree())	return false;
 
 	// 3-2) Create optimized tree
 	if(!mTree->Build(mSource))	return false;
 
 	// 3-3) Delete generic tree if needed
 	if(!create.mKeepOriginal)	DELETESINGLE(mSource);
-
-#ifdef __MESHMERIZER_H__
-	// 4) Convex hull
-	if(create.mCollisionHull)
-	{
-		// Create hull
-		mHull = new CollisionHull;
-		CHECKALLOC(mHull);
-
-		CONVEXHULLCREATE CHC;
-		// ### doesn't work with strides
-		CHC.NbVerts			= create.mIMesh->GetNbVertices();
-		CHC.Vertices		= create.mIMesh->GetVerts();
-		CHC.UnifyNormals	= true;
-		CHC.ReduceVertices	= true;
-		CHC.WordFaces		= false;
-		mHull->Compute(CHC);
-	}
-#endif // __MESHMERIZER_H__
-
 	return true;
 }
 

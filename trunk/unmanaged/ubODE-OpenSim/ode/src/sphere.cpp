@@ -197,7 +197,7 @@ int dCollideSphereBox (dxGeom *o1, dxGeom *o2, int flags,
     {
         // sphere center inside box. find closest face to `t'
         dFabsVector3r4(q, t);
-        dSubtractVector3r4(l, q);
+        dSubtractVectors3r4(l, q);
 
         dReal min_distance = l[0];
         int mini = 0;

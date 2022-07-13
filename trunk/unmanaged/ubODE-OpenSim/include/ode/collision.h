@@ -207,8 +207,7 @@ ODE_API void dGeomCopyPosition (dGeomID geom, dVector3 pos);
  * @sa dBodyGetRotation
  * @ingroup collide
  */
-ODE_API const dReal * dGeomGetRotation (dGeomID geom);
-
+ODE_API const dReal* dGeomGetRotation (dGeomID geom);
 
 /**
  * @brief Get the rotation matrix of a placeable geom.
@@ -224,7 +223,6 @@ ODE_API const dReal * dGeomGetRotation (dGeomID geom);
  * @ingroup collide
  */
 ODE_API void dGeomCopyRotation(dGeomID geom, dMatrix3 R);
-
 
 /**
  * @brief Get the rotation quaternion of a placeable geom.

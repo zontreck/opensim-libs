@@ -185,22 +185,4 @@
 		IMPLEMENT_COLLISION_TREE(AABBNoLeafTree, AABBNoLeafNode)
 	};
 
-	class OPCODE_API AABBQuantizedTree : public AABBOptimizedTree
-	{
-		IMPLEMENT_COLLISION_TREE(AABBQuantizedTree, AABBQuantizedNode)
-
-		public:
-						Point				mCenterCoeff;
-						Point				mExtentsCoeff;
-	};
-
-	class OPCODE_API AABBQuantizedNoLeafTree : public AABBOptimizedTree
-	{
-		IMPLEMENT_COLLISION_TREE(AABBQuantizedNoLeafTree, AABBQuantizedNoLeafNode)
-
-		public:
-						Point				mCenterCoeff;
-						Point				mExtentsCoeff;
-	};
-
 #endif // __OPC_OPTIMIZEDTREE_H__

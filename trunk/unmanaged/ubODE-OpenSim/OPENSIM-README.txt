@@ -1,5 +1,5 @@
 OPENSIM README
-this is version ODE-OpenSim.0.13.3 for ubODE
+this is version ODE-OpenSim.0.13.4 for ubODE
 WARNING, do not forget to rename the dlls, they are still created named as *ode* read below
 
 The ODE code in this repository correspondes to ODE release 0.13.1 r1902 with selected adictions from more recent vrsions and modifications by opensim 

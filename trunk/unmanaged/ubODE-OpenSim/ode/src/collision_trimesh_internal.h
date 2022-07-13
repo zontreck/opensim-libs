@@ -186,7 +186,10 @@ struct dxTriMeshData  : public dBase
         kVert0 = 0x8,
         kVert1 = 0x10,
         kVert2 = 0x20,
-        kUseAll = 0x3F
+        kUseAll = 0x3F,
+        kvert0or1 = kVert0 | kVert1,
+        kvert1or2 = kVert1 | kVert2,
+        kvert0or2 = kVert0 | kVert2
     };
 
     enum MeshFlags
@@ -208,17 +211,15 @@ struct dxTriMeshData  : public dBase
     dxTriMeshData();
     ~dxTriMeshData();
 
-    void Build(const void* Vertices, int VertexStide, int VertexCount, 
-        const void* Indices, int IndexCount, int TriStride, 
-        const void* Normals, 
-        bool Single);
+    void Build(const void* Vertices, int VertexCount,
+        const void* Indices, int IndexCount);
 
     /* aabb in model space */
     dVector3 AABBCenter;
     dVector3 AABBExtents;
 
     // data for use in collision resolution
-    const void* Normals;
+    //const void* Normals;
     uint8* UseFlags;
 };
 
@@ -293,35 +294,23 @@ inline unsigned FetchTriangleCount(dxTriMesh* TriMesh)
 inline void FetchTriangle(dxTriMesh* TriMesh, int Index, const dVector3 Position, const dMatrix3 Rotation, dVector3 Out[3])
 {
     VertexPointers VP;
-    ConversionArea VC;
-    TriMesh->Data->Mesh.GetTriangle(VP, Index, VC);
+    TriMesh->Data->Mesh.GetTriangle(VP, Index);
 
-    /*
-        for (int i = 0; i < 3; i++)
-        {
-            dVector3 v;
-            v[0] = VP.Vertex[i]->x;
-            v[1] = VP.Vertex[i]->y;
-            v[2] = VP.Vertex[i]->z;
-
-            dPointRotateTrans_r4(Out[i], Rotation, v, Position);
-        }
-    */
     dVector3 invecs[3];
-
     for (int i = 0; i < 3; i++)
     {
         invecs[i][0] = VP.Vertex[i]->x;
         invecs[i][1] = VP.Vertex[i]->y;
         invecs[i][2] = VP.Vertex[i]->z;
     }
-
     dtriangleRotateTrans_r4(Out, invecs, Rotation, Position);
 }
 
-inline void FetchTransformedTriangle(dxTriMesh* TriMesh, int Index, dVector3 Out[3]){
-    const dVector3& Position = *(const dVector3*)dGeomGetPosition(TriMesh);
-    const dMatrix3& Rotation = *(const dMatrix3*)dGeomGetRotation(TriMesh);
+inline void FetchTransformedTriangle(dxTriMesh* TriMesh, int Index, dVector3 Out[3])
+{
+    dxPosR* dpr = TriMesh->GetRecomputePosR();
+    const dVector3& Position = *(const dVector3*)dpr->pos;
+    const dMatrix3& Rotation = *(const dMatrix3*)dpr->R;
     FetchTriangle(TriMesh, Index, Position, Rotation, Out);
 }
 
@@ -351,8 +340,9 @@ inline Matrix4x4& MakeMatrix(const dVector3 Position, const dMatrix3 Rotation, M
 }
 
 inline Matrix4x4& MakeMatrix(dxGeom* g, Matrix4x4& Out){
-    const dVector3& Position = *(const dVector3*)dGeomGetPosition(g);
-    const dMatrix3& Rotation = *(const dMatrix3*)dGeomGetRotation(g);
+    dxPosR* dpr = g->GetRecomputePosR();
+    const dVector3& Position = *(const dVector3*)dpr->pos;
+    const dMatrix3& Rotation = *(const dMatrix3*)dpr->R;
     return MakeMatrix(Position, Rotation, Out);
 }
 
@@ -403,80 +393,5 @@ template<class T> const T& dcMAX(const T& x, const T& y){
 template<class T> const T& dcMIN(const T& x, const T& y){
     return x < y ? x : y;
 }
-
-dReal SqrDistancePointTri( const dVector3 p, const dVector3 triOrigin, 
-                          const dVector3 triEdge1, const dVector3 triEdge2,
-                          dReal* pfSParam = 0, dReal* pfTParam = 0 );
-
-dReal SqrDistanceSegments( const dVector3 seg1Origin, const dVector3 seg1Direction, 
-                          const dVector3 seg2Origin, const dVector3 seg2Direction,
-                          dReal* pfSegP0 = 0, dReal* pfSegP1 = 0 );
-
-dReal SqrDistanceSegTri( const dVector3 segOrigin, const dVector3 segEnd, 
-                        const dVector3 triOrigin, 
-                        const dVector3 triEdge1, const dVector3 triEdge2,
-                        dReal* t = 0, dReal* u = 0, dReal* v = 0 );
-
-inline
-void Vector3Negate( const dVector3 in, dVector3 out )
-{
-    out[0] = -in[0];
-    out[1] = -in[1];
-    out[2] = -in[2];
-    out[3] = REAL(0.0);
-}
-
-inline
-void Vector3Copy( const dVector3 in, dVector3 out )
-{
-    out[0] = in[0];
-    out[1] = in[1];
-    out[2] = in[2];
-    out[3] = REAL(0.0);
-}
-
-inline
-void Vector3Multiply( const dVector3 in, dReal scalar, dVector3 out )
-{
-    out[0] = in[0] * scalar;
-    out[1] = in[1] * scalar;
-    out[2] = in[2] * scalar;
-    out[3] = REAL(0.0);
-}
-
-//------------------------------------------------------------------------------
-/**
-  @brief Check for intersection between triangle and capsule.
-  
-  @param dist [out] Shortest distance squared between the triangle and 
-                    the capsule segment (central axis).
-  @param t    [out] t value of point on segment that's the shortest distance 
-                    away from the triangle, the coordinates of this point 
-                    can be found by (cap.seg.end - cap.seg.start) * t,
-                    or cap.seg.ipol(t).
-  @param u    [out] Barycentric coord on triangle.
-  @param v    [out] Barycentric coord on triangle.
-  @return True if intersection exists.
-  
-  The third Barycentric coord is implicit, ie. w = 1.0 - u - v
-  The Barycentric coords give the location of the point on the triangle
-  closest to the capsule (where the distance between the two shapes
-  is the shortest).
-*/
-inline
-bool IntersectCapsuleTri( const dVector3 segOrigin, const dVector3 segEnd, 
-                         const dReal radius, const dVector3 triOrigin, 
-                         const dVector3 triEdge0, const dVector3 triEdge1,
-                         dReal* dist, dReal* t, dReal* u, dReal* v )
-{
-    dReal sqrDist = SqrDistanceSegTri( segOrigin, segEnd, triOrigin, triEdge0, triEdge1, 
-        t, u, v );
-
-    if ( dist )
-        *dist = sqrDist;
-
-    return ( sqrDist <= (radius * radius) );
-}
-
 
 #endif	//_ODE_COLLISION_TRIMESH_INTERNAL_H_

@@ -69,8 +69,6 @@ typedef double dReal;
 #endif
 
 /* Detect if we've got both trimesh engines enabled. */
-
-
 /*
  * Define a type for indices, either 16 or 32 bit, based on build option
  * TODO: Currently GIMPACT only supports 32 bit indices.

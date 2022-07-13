@@ -27,7 +27,8 @@
 #include "error.h"
 
 
-int  _dSafeNormalize3 (dVector3 a);
+int  _dSafeNormalize3(dVector3 a);
+int  _dSafeNormalize3fast(dVector3 a);
 int  _dSafeNormalize4 (dVector4 a);
 
 ODE_PURE_INLINE void _dNormalize3(dVector3 a)
@@ -44,6 +45,7 @@ ODE_PURE_INLINE void _dNormalize4(dVector4 a)
 
 // For internal use
 #define dSafeNormalize3(a) _dSafeNormalize3(a)
+#define dSafeNormalize3fast(a) _dSafeNormalize3fast(a)
 #define dSafeNormalize4(a) _dSafeNormalize4(a)
 #define dNormalize3(a) _dNormalize3(a)
 #define dNormalize4(a) _dNormalize4(a)

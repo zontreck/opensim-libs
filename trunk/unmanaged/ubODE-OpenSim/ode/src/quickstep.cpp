@@ -2994,8 +2994,8 @@ void dxQuickStepIsland_Stage6c(dxQuickStepperStage6CallContext *stage6CallContex
             for (dxBody *const *bodycurr = body; bodycurr != bodyend; cforceMIDcurr+=6, bodycurr++)
             {
                 dxBody *b = *bodycurr;
-                dSubtractVector3r4(b->lvel, cforceMIDcurr);
-                dSubtractVector3r4(b->avel, cforceMIDcurr + 3);
+                dSubtractVectors3r4(b->lvel, cforceMIDcurr);
+                dSubtractVectors3r4(b->avel, cforceMIDcurr + 3);
             }
         }
     }

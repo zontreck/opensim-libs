@@ -288,8 +288,9 @@ int dCollideSTL(dxGeom* g1, dxGeom* SphereGeom, int Flags, dContactGeom* Contact
     dxTriMesh* TriMesh = (dxTriMesh*)g1;
 
     // Init
-    const dVector3& TLPosition = *(const dVector3*)dGeomGetPosition(TriMesh);
-    const dMatrix3& TLRotation = *(const dMatrix3*)dGeomGetRotation(TriMesh);
+    g1->recomputePosr();
+    const dVector3& TLPosition = *(const dVector3*)g1->final_posr->pos;
+    const dMatrix3& TLRotation = *(const dMatrix3*)g1->final_posr->R;
 
     const unsigned uiTLSKind = TriMesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == SphereGeom->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method

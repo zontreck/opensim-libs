@@ -20,11 +20,25 @@
 #ifndef __OPC_COMMON_H__
 #define __OPC_COMMON_H__
 
-// [GOTTFRIED]: Just a small change for readability.
-#ifdef OPC_CPU_COMPARE
-	#define GREATER(x, y)	AIR(x) > IR(y)
-#else
-	#define GREATER(x, y)	fabsf(x) > (y)
+#if defined(__AVX__)
+ODE_PURE_INLINE  bool avxBoxesOverlap(const dReal* acenter, const dReal* bcenter, const dReal* aext, const dReal* bext)
+{
+    const __m128 sign = _mm_set1_ps(-0.0f);
+    __m128 ma, mb, mc;
+
+    ma = _mm_loadu_ps(acenter);
+    mb = _mm_loadu_ps(bcenter);
+    ma = _mm_sub_ps(ma, mb);
+
+    ma = _mm_andnot_ps(sign, ma);
+
+    mb = _mm_loadu_ps(aext);
+    mc = _mm_loadu_ps(bext);
+    mb = _mm_add_ps(mb, mc);
+
+    ma = _mm_cmpgt_ps(ma, mb);
+    return ((_mm_movemask_ps(ma) & 0x07) == 0);
+}
 #endif
 
 	class OPCODE_API CollisionAABB
@@ -65,6 +79,9 @@
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		inline_	BOOL		IsInside(const CollisionAABB& box) const
 							{
+#if defined (__AVX__)
+                                return avxBoxesOverlap(&(box.mCenter.x), &(mCenter.x), &(box.mExtents.x), &(mExtents.x));
+#else
 								if(box.GetMin(0)>GetMin(0))	return FALSE;
 								if(box.GetMin(1)>GetMin(1))	return FALSE;
 								if(box.GetMin(2)>GetMin(2))	return FALSE;
@@ -72,7 +89,8 @@
 								if(box.GetMax(1)<GetMax(1))	return FALSE;
 								if(box.GetMax(2)<GetMax(2))	return FALSE;
 								return TRUE;
-							}
+#endif
+                            }
 
 				Point		mCenter;				//!< Box center
 				Point		mExtents;				//!< Box extents

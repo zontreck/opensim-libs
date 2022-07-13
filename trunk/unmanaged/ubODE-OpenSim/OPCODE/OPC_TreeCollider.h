@@ -41,31 +41,12 @@
 								Model1			= null;
 								id0				= 0;
 								id1				= 1;
-#ifdef __MESHMERIZER_H__		// Collision hulls only supported within ICE !
-								HullTest		= true;
-								SepVector.pid	= 0;
-								SepVector.qid	= 0;
-								SepVector.SV	= Point(1.0f, 0.0f, 0.0f);
-#endif // __MESHMERIZER_H__
 							}
 
-#ifdef __MESHMERIZER_H__		// Collision hulls only supported within ICE !
-	  inline_ void ResetCountDown()
-	  {
-	    CountDown		= 50;
-	  }
-#else
 	  void	ResetCountDown(){};
-#endif // __MESHMERIZER_H__
 
 		const Model*		Model0;	//!< Model for first object
 		const Model*		Model1;	//!< Model for second object
-
-#ifdef __MESHMERIZER_H__	// Collision hulls only supported within ICE !
-		SVCache				SepVector;
-		udword				CountDown;
-		bool				HullTest;
-#endif // __MESHMERIZER_H__
 	};
 
 	class OPCODE_API AABBTreeCollider : public Collider
@@ -95,8 +76,6 @@
 		// Collision queries
 							bool			Collide(const AABBCollisionTree* tree0, const AABBCollisionTree* tree1,				const Matrix4x4* world0=null, const Matrix4x4* world1=null, Pair* cache=null);
 							bool			Collide(const AABBNoLeafTree* tree0, const AABBNoLeafTree* tree1,					const Matrix4x4* world0=null, const Matrix4x4* world1=null, Pair* cache=null);
-							bool			Collide(const AABBQuantizedTree* tree0, const AABBQuantizedTree* tree1,				const Matrix4x4* world0=null, const Matrix4x4* world1=null, Pair* cache=null);
-							bool			Collide(const AABBQuantizedNoLeafTree* tree0, const AABBQuantizedNoLeafTree* tree1,	const Matrix4x4* world0=null, const Matrix4x4* world1=null, Pair* cache=null);
 		// Settings
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,16 +189,10 @@
 
 			// Standard AABB trees
 							void			_Collide(const AABBCollisionNode* b0, const AABBCollisionNode* b1);
-			// Quantized AABB trees
-							void			_Collide(const AABBQuantizedNode* b0, const AABBQuantizedNode* b1, const Point& a, const Point& Pa, const Point& b, const Point& Pb);
 			// No-leaf AABB trees
 							void			_CollideTriBox(const AABBNoLeafNode* b);
 							void			_CollideBoxTri(const AABBNoLeafNode* b);
 							void			_Collide(const AABBNoLeafNode* a, const AABBNoLeafNode* b);
-			// Quantized no-leaf AABB trees
-							void			_CollideTriBox(const AABBQuantizedNoLeafNode* b);
-							void			_CollideBoxTri(const AABBQuantizedNoLeafNode* b);
-							void			_Collide(const AABBQuantizedNoLeafNode* a, const AABBQuantizedNoLeafNode* b);
 			// Overlap tests
 							void			PrimTest(udword id0, udword id1);
 			inline_			void			PrimTestTriIndex(udword id1);

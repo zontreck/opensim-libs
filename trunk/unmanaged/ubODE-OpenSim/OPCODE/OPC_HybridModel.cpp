@@ -224,6 +224,7 @@ bool HybridModel::Build(const OPCODECREATE& create)
 	mNbLeaves = Data.mNbLeaves;	// Keep track of it
 
 	// Special case for 1-leaf meshes
+
 	if(mNbLeaves==1)
 	{
 		mModelCode |= OPC_SINGLE_NODE;
@@ -277,7 +278,7 @@ bool HybridModel::Build(const OPCODECREATE& create)
 	}
 
 	// 3) Create an optimized tree according to user-settings
-	if(!CreateTree(create.mNoLeaf, create.mQuantized))	goto FreeAndExit;
+	if(!CreateTree())	goto FreeAndExit;
 
 	// 3-2) Create optimized tree
 	if(!mTree->Build(LeafTree))	goto FreeAndExit;
@@ -311,24 +312,9 @@ udword HybridModel::GetUsedBytes() const
 
 inline_ void ComputeMinMax(Point& min, Point& max, const VertexPointers& vp)
 {
-	// Compute triangle's AABB = a leaf box
-#ifdef OPC_USE_FCOMI	// a 15% speedup on my machine, not much
-	min.x = FCMin3(vp.Vertex[0]->x, vp.Vertex[1]->x, vp.Vertex[2]->x);
-	max.x = FCMax3(vp.Vertex[0]->x, vp.Vertex[1]->x, vp.Vertex[2]->x);
-
-	min.y = FCMin3(vp.Vertex[0]->y, vp.Vertex[1]->y, vp.Vertex[2]->y);
-	max.y = FCMax3(vp.Vertex[0]->y, vp.Vertex[1]->y, vp.Vertex[2]->y);
-
-	min.z = FCMin3(vp.Vertex[0]->z, vp.Vertex[1]->z, vp.Vertex[2]->z);
-	max.z = FCMax3(vp.Vertex[0]->z, vp.Vertex[1]->z, vp.Vertex[2]->z);
-#else
-	min = *vp.Vertex[0];
-	max = *vp.Vertex[0];
-	min.Min(*vp.Vertex[1]);
-	max.Max(*vp.Vertex[1]);
-	min.Min(*vp.Vertex[2]);
-	max.Max(*vp.Vertex[2]);
-#endif
+    MinMax(min.x, max.x, vp.Vertex[0]->x, vp.Vertex[1]->x, vp.Vertex[2]->x);
+    MinMax(min.y, max.y, vp.Vertex[0]->y, vp.Vertex[1]->y, vp.Vertex[2]->y);
+    MinMax(min.z, max.z, vp.Vertex[0]->z, vp.Vertex[1]->z, vp.Vertex[2]->z);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -341,10 +327,11 @@ inline_ void ComputeMinMax(Point& min, Point& max, const VertexPointers& vp)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool HybridModel::Refit()
 {
+    return false;
+/*
 	if(!mIMesh)	return false;
 	if(!mTree)	return false;
 
-	if(IsQuantized())	return false;
 	if(HasLeafNodes())	return false;
 
 	const LeafTriangles* LT = GetLeafTriangles();
@@ -450,18 +437,15 @@ bool HybridModel::Refit()
 			CurrentBox.GetMin(Min_);
 			CurrentBox.GetMax(Max_);
 		}
-#ifdef OPC_USE_FCOMI
+
 		Min.x = FCMin2(Min.x, Min_.x);
 		Max.x = FCMax2(Max.x, Max_.x);
 		Min.y = FCMin2(Min.y, Min_.y);
 		Max.y = FCMax2(Max.y, Max_.y);
 		Min.z = FCMin2(Min.z, Min_.z);
 		Max.z = FCMax2(Max.z, Max_.z);
-#else
-		Min.Min(Min_);
-		Max.Max(Max_);
-#endif
 		Current.mAABB.SetMinMax(Min, Max);
 	}
 	return true;
+*/
 }

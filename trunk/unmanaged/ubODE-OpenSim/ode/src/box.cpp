@@ -106,22 +106,22 @@ void dGeomBoxGetLengths (dGeomID g, dVector3 result)
 dReal dGeomBoxPointDepth (dGeomID g, dReal x, dReal y, dReal z)
 {
     dUASSERT (g && g->type == dBoxClass,"argument not a box");
-    g->recomputePosr();
-    dxBox *b = (dxBox*) g;
 
     // Set p = (x,y,z) relative to box center
-
-    dVector3 p,q;
+    dVector3 p;
     p[0] = x;
     p[1] = y;
     p[2] = z;
-    dSubtractVector3r4(p, b->final_posr->pos);
+    
+    dxPosR *box_posr = g->GetRecomputePosR();
+    dSubtractVectors3r4(p, box_posr->pos);
 
     // Rotate p into box's coordinate frame, so we can
     // treat the OBB as an AABB
-    dMultiply1_331(q, b->final_posr->R, p);
+    dVector3 q;
+    dMultiply1_331(q, box_posr->R, p);
     dFabsVector3r4(p, q);
-    dSubtractVectors3r4(q, b->halfside, p);
+    dSubtractVectors3r4(q, ((dxBox*)g)->halfside, p);
 
     int   i;
     dReal tmp;
@@ -895,8 +895,10 @@ int dCollideBoxBox (dxGeom *o1, dxGeom *o2, int flags,
     dReal depth;
     dxBox *b1 = (dxBox*) o1;
     dxBox *b2 = (dxBox*) o2;
-    int num = dBoxBox (o1->final_posr->pos, o1->final_posr->R, b1->halfside,
-                    o2->final_posr->pos, o2->final_posr->R, b2->halfside,
+    dxPosR *posr1 = o1->GetRecomputePosR();
+    dxPosR *posr2 = o2->GetRecomputePosR();
+    int num = dBoxBox (posr1->pos, posr1->R, b1->halfside,
+                    posr2->pos, posr2->R, b2->halfside,
                     normal, &depth, flags, contact, skip);
     for (int i=0; i<num; i++)
     {
@@ -1034,7 +1036,7 @@ done:
         {
             dContactGeom *target = CONTACT(contact, 3 * skip);
             dAddVectors3r4(target->pos, CONTACT(contact, skip)->pos, CONTACT(contact, 2 * skip)->pos);
-            dSubtractVector3r4(target->pos, p);
+            dSubtractVectors3r4(target->pos, p);
             target->depth  = d4;
             ret++;
         }

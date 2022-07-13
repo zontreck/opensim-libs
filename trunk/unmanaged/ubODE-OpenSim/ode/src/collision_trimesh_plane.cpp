@@ -49,8 +49,9 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
     const int contact_max = ( flags & NUMC_MASK );
 
     // Cache trimesh position and rotation.
-    const dVector3& trimesh_pos = *(const dVector3*)dGeomGetPosition( trimesh );
-    const dMatrix3& trimesh_R = *(const dMatrix3*)dGeomGetRotation( trimesh );
+    dxPosR *posr = trimesh->GetRecomputePosR();
+    const dVector3& trimesh_pos = *(const dVector3*)posr->pos;
+    const dMatrix3& trimesh_R = *(const dMatrix3*)posr->R;
 
     //
     // For all triangles.
@@ -58,13 +59,10 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
 
     VertexPointersEx VPE;
     VertexPointers &VP = VPE.vp;
-    ConversionArea VC;
     dReal alpha;
     dVector3 vertex;
 
-#if !defined(dSINGLE) || 1
     dVector3 int_vertex;		// Intermediate vertex for double precision mode.
-#endif // dSINGLE
 
     const unsigned uiTLSKind = trimesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == plane->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
@@ -82,7 +80,7 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
     for ( int t = 0; t < tri_count; ++t )
     {
         // Get triangle, which should also use callback.
-        bool ex_avail = trimesh->Data->Mesh.GetExTriangle( VPE, t, VC);
+        bool ex_avail = trimesh->Data->Mesh.GetExTriangle( VPE, t);
 
         // For each vertex.
         for ( int v = 0; v < 3; ++v )
@@ -101,20 +99,12 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
             // Get Vertex
             //
 
-#if defined(dSINGLE) && 0 // Always assign via intermediate array as otherwise it is an incapsulation violation
-
-            dMultiply0_331( vertex, trimesh_R, (float*)( VP.Vertex[ v ] ) );
-
-#else // dDOUBLE || 1
-
             // OPCODE data is in single precision format.
             int_vertex[ 0 ] = VP.Vertex[ v ]->x;
             int_vertex[ 1 ] = VP.Vertex[ v ]->y;
             int_vertex[ 2 ] = VP.Vertex[ v ]->z;
 
             dMultiply0_331(vertex, trimesh_R, int_vertex );
-
-#endif // dSINGLE/dDOUBLE
 
             dAddVector3r4(vertex, trimesh_pos);
 
