@@ -23,7 +23,7 @@
 	struct VertexPointers
 	{
 		const Point*	Vertex[3];
-		
+		/*
 		bool BackfaceCulling(const Point& source)
 		{
 			const Point& p0 = *Vertex[0];
@@ -36,6 +36,7 @@
 			// Backface culling
 			return (Normal | (source - p0)) >= 0.0f;
 		}
+        */
 	};
 
 	struct VertexPointersEx

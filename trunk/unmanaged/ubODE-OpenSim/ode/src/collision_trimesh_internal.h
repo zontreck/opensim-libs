@@ -89,20 +89,25 @@ public:
         return Result;
     }
 
-    bool GetVertexUSEDFlag(unsigned VertexIndex) const { return (m_VertexUseBits[VertexIndex / 8] & (1 << (VertexIndex % 8))) != 0; }
-    void SetVertexUSEDFlag(unsigned VertexIndex) { m_VertexUseBits[VertexIndex / 8] |= (1 << (VertexIndex % 8)); }
+    bool GetVertexUSEDFlag(unsigned VertexIndex) const
+    {
+        return (m_VertexUseBits[VertexIndex >> 3] & (1 << (VertexIndex & 0x07))) != 0;
+    }
+    void SetVertexUSEDFlag(unsigned VertexIndex)
+    {
+        m_VertexUseBits[VertexIndex >> 3] |= (1 << (VertexIndex & 0x07));
+    }
 
 private:
     bool ReallocVertexUSEDFlags(size_t VertexNewElements)
     {
-        bool Result = false;
         uint8 *VertexNewBits = (uint8 *)dRealloc(m_VertexUseBits, m_VertexUseElements * sizeof(m_VertexUseBits[0]), VertexNewElements * sizeof(m_VertexUseBits[0]));
         if (VertexNewBits) {
             m_VertexUseBits = VertexNewBits;
             m_VertexUseElements = VertexNewElements;
-            Result = true;
+            return true;
         }
-        return Result;
+        return false;
     }
 
     void FreeVertexUSEDFlags()
