@@ -865,9 +865,9 @@ dReal CoplanarTriTri(const dVector3 n, const dVector3 v0, const dVector3 v1, con
     short i0, i1;
     /* first project onto an axis-aligned plane, that maximizes the area */
     /* of the triangles, compute indices: i0,i1. */
-    A[0] = fabsf(n[0]);
-    A[1] = fabsf(n[1]);
-    A[2] = fabsf(n[2]);
+    A[0] = dFabs(n[0]);
+    A[1] = dFabs(n[1]);
+    A[2] = dFabs(n[2]);
     if (A[0] > A[1])
     {
         if (A[0] > A[2])
@@ -1038,11 +1038,11 @@ dReal TriTriOverlap(const dVector3 tri1[3], const dVector3 edges1[3], const dVec
     float du1 = dCalcPointPlaneDistance(tri2[1], tri1plane);
     float du2 = dCalcPointPlaneDistance(tri2[2], tri1plane);
 
-    if (fabs(du0) < dEpsilon) du0 = 0.0;
-    if (fabs(du1) < dEpsilon) du1 = 0.0;
-    if (fabs(du2) < dEpsilon) du2 = 0.0;
+    if (dFabs(du0) < dEpsilon) du0 = 0.0;
+    if (dFabs(du1) < dEpsilon) du1 = 0.0;
+    if (dFabs(du2) < dEpsilon) du2 = 0.0;
 
-    if (fabs(du0) < 0.1f && fabs(du1) < 0.1f && fabs(du2) < 0.1f)
+    if (dFabs(du0) < 0.1f && dFabs(du1) < 0.1f && dFabs(du2) < 0.1f)
         return CoplanarTriTri(tri1plane, tri1[0], tri1[1], tri1[2], tri2[0], tri2[1], tri2[2]);
 
     const float du0du1 = du0 * du1;
@@ -1056,9 +1056,9 @@ dReal TriTriOverlap(const dVector3 tri1[3], const dVector3 edges1[3], const dVec
     float dv1 = dCalcPointPlaneDistance(tri1[1], tri2plane);
     float dv2 = dCalcPointPlaneDistance(tri1[2], tri2plane);
 
-    if (fabs(dv0) < dEpsilon) dv0 = 0.0;
-    if (fabs(dv1) < dEpsilon) dv1 = 0.0;
-    if (fabs(dv2) < dEpsilon) dv2 = 0.0;
+    if (dFabs(dv0) < dEpsilon) dv0 = 0.0;
+    if (dFabs(dv1) < dEpsilon) dv1 = 0.0;
+    if (dFabs(dv2) < dEpsilon) dv2 = 0.0;
 
     const float dv0dv1 = dv0 * dv1;
     const float dv0dv2 = dv0 * dv2;
@@ -1073,10 +1073,10 @@ dReal TriTriOverlap(const dVector3 tri1[3], const dVector3 edges1[3], const dVec
     dCalcVectorCross3r4(D, tri1plane, tri2plane);
 
     // Compute and index to the largest component of D
-    float max = fabsf(D[0]);
+    float max = dFabs(D[0]);
     short index = 0;
-    float bb = fabsf(D[1]);
-    float cc = fabsf(D[2]);
+    float bb = dFabs(D[1]);
+    float cc = dFabs(D[2]);
     if (bb > max)
     {
         max = bb;

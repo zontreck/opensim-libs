@@ -264,9 +264,9 @@ void dMassSetTrimesh( dMass *m, dReal density, dGeomID g )
         dSubtractVectors3r4( a, v[1], v[0] ); 
         dSubtractVectors3r4( b, v[2], v[0] ); 
         dCalcVectorCross3r4( n, b, a );
-        nx = (dReal)fabs(n[0]);
-        ny = (dReal)fabs(n[1]);
-        nz = (dReal)fabs(n[2]);
+        nx = dFabs(n[0]);
+        ny = dFabs(n[1]);
+        nz = dFabs(n[2]);
 
         if( nx > ny && nx > nz )
             C = 0;

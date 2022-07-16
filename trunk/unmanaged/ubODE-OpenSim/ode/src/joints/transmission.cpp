@@ -141,7 +141,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
         dCopyVector3(l[1], l[0]);
 
         nn = dCalcVectorDot3(n[0], n[1]);
-        dIASSERT(fabs(nn) != 1);
+        dIASSERT(dFabs(nn) != 1);
         
         na_0 = dCalcVectorDot3(n[0], a[0]);
         na_1 = dCalcVectorDot3(n[1], a[1]);
@@ -285,7 +285,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
             phase[i] = theta;
         }
 
-        dIASSERT(fabs(phase_hat - phase[i]) < M_PI);
+        dIASSERT(dFabs(phase_hat - phase[i]) < M_PI);
     }
 
     // Calculate the phase error.  Depending on the mode the condition
@@ -328,7 +328,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
     // Do not add the constraint if there's backlash and we're in the
     // backlash gap.
 
-    if (backlash == 0 || fabs(delta) > backlash) {
+    if (backlash == 0 || dFabs(delta) > backlash) {
         // The constraint is satisfied iff the absolute velocity of the
         // contact point projected onto the tangent of the wheels is equal
         // for both gears.  This velocity can be calculated as:

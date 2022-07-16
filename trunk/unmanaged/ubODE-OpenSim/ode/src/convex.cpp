@@ -889,7 +889,7 @@ bool CheckEdgeIntersection(dxConvex& cvx1,dxConvex& cvx2, int flags,int& curc,
                             (plane[1] * cvx2.final_posr->pos[1]) +
                             (plane[2] * cvx2.final_posr->pos[2]));
                         dReal depth = (dCalcVectorDot3(depthplane, target->pos) - depthplane[3]); // Ax + By + Cz - D
-                        if((fabs(depth)<fabs(target->depth))&&((depth<-dEpsilon)||(depth>dEpsilon)))
+                        if((dFabs(depth)<dFabs(target->depth))&&((depth<-dEpsilon)||(depth>dEpsilon)))
                         {
                             target->depth=depth;
                             dCopyVector3r4(target->normal, depthplane);

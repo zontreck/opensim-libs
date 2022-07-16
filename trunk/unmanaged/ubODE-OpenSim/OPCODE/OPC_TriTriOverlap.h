@@ -78,9 +78,9 @@ BOOL CoplanarTriTri(const Point& n, const Point& v0, const Point& v1, const Poin
     short i0, i1;
     /* first project onto an axis-aligned plane, that maximizes the area */
     /* of the triangles, compute indices: i0,i1. */
-    A[0] = fabsf(n[0]);
-    A[1] = fabsf(n[1]);
-    A[2] = fabsf(n[2]);
+    A[0] = dFabs(n[0]);
+    A[1] = dFabs(n[1]);
+    A[2] = dFabs(n[2]);
     if (A[0] > A[1])
     {
         if (A[0] > A[2])
@@ -193,16 +193,16 @@ inline_ BOOL AABBTreeCollider::TriTriOverlap(const Point& V0, const Point& V1, c
     float du1 = (N1 | U1) + d1;
     float du2 = (N1 | U2) + d1;
 
-    if (fabs(du0) < LOCAL_EPSILON) du0 = 0.0;
-    if (fabs(du1) < LOCAL_EPSILON) du1 = 0.0;
-    if (fabs(du2) < LOCAL_EPSILON) du2 = 0.0;
+    if (dFabs(du0) < LOCAL_EPSILON) du0 = 0.0;
+    if (dFabs(du1) < LOCAL_EPSILON) du1 = 0.0;
+    if (dFabs(du2) < LOCAL_EPSILON) du2 = 0.0;
 
     const float du0du1 = du0 * du1;
     const float du0du2 = du0 * du2;
 
     if (du0du1 > 0 && du0du2 > 0)	// same sign on all of them + not equal 0 ?
     {
-        if (fabs(du0) > 0.1f || fabs(du1) > 0.1f || fabs(du2) > 0.1f)
+        if (dFabs(du0) > 0.1f || dFabs(du1) > 0.1f || dFabs(du2) > 0.1f)
             return false;
         return true;
     }
@@ -220,16 +220,16 @@ inline_ BOOL AABBTreeCollider::TriTriOverlap(const Point& V0, const Point& V1, c
     float dv1 = (N2 | V1) + d2;
     float dv2 = (N2 | V2) + d2;
 
-    if (fabs(dv0) < LOCAL_EPSILON) dv0 = 0.0;
-    if (fabs(dv1) < LOCAL_EPSILON) dv1 = 0.0;
-    if (fabs(dv2) < LOCAL_EPSILON) dv2 = 0.0;
+    if (dFabs(dv0) < LOCAL_EPSILON) dv0 = 0.0;
+    if (dFabs(dv1) < LOCAL_EPSILON) dv1 = 0.0;
+    if (dFabs(dv2) < LOCAL_EPSILON) dv2 = 0.0;
 
     const float dv0dv1 = dv0 * dv1;
     const float dv0dv2 = dv0 * dv2;
 
     if (dv0dv1 > 0 && dv0dv2 > 0)	// same sign on all of them + not equal 0 ?
     {
-        if (fabs(dv0) > 0.1f || fabs(dv1) > 0.1f || fabs(dv2) > 0.1f)
+        if (dFabs(dv0) > 0.1f || dFabs(dv1) > 0.1f || dFabs(dv2) > 0.1f)
             return false;
         return true;
     }
@@ -238,11 +238,11 @@ inline_ BOOL AABBTreeCollider::TriTriOverlap(const Point& V0, const Point& V1, c
     const Point D = N1^N2;
 
     // Compute and index to the largest component of D
-    float max = fabsf(D[0]);
+    float max = dFabs(D[0]);
     short index = 0;
-    float bb = fabsf(D[1]);
+    float bb = dFabs(D[1]);
     if (bb > max) max = bb, index = 1;
-    if (fabsf(D[2]) > max) index = 2;
+    if (dFabs(D[2]) > max) index = 2;
 
     // This is the simplified projection onto L
     const float vp0 = V0[index];
