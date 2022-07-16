@@ -93,12 +93,8 @@
 		// Internal methods
 							void			_Collide(const AABBCollisionNode* node, udword clip_mask);
 							void			_Collide(const AABBNoLeafNode* node, udword clip_mask);
-							void			_Collide(const AABBQuantizedNode* node, udword clip_mask);
-							void			_Collide(const AABBQuantizedNoLeafNode* node, udword clip_mask);
 							void			_CollideNoPrimitiveTest(const AABBCollisionNode* node, udword clip_mask);
 							void			_CollideNoPrimitiveTest(const AABBNoLeafNode* node, udword clip_mask);
-							void			_CollideNoPrimitiveTest(const AABBQuantizedNode* node, udword clip_mask);
-							void			_CollideNoPrimitiveTest(const AABBQuantizedNoLeafNode* node, udword clip_mask);
 			// Overlap tests
 		inline_				BOOL			PlanesAABBOverlap(const Point& center, const Point& extents, udword& out_clip_mask, udword in_clip_mask);
 		inline_				BOOL			PlanesTriOverlap(udword in_clip_mask);

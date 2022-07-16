@@ -104,11 +104,6 @@
 		IMPLEMENT_NOLEAF_NODE(AABBNoLeafNode, CollisionAABB)
 	};
 
-	class OPCODE_API AABBQuantizedNoLeafNode
-	{
-		IMPLEMENT_NOLEAF_NODE(AABBQuantizedNoLeafNode, QuantizedAABB)
-	};
-
 	//! Common interface for a collision tree
 	#define IMPLEMENT_COLLISION_TREE(base_class, node)																\
 		public:																										\

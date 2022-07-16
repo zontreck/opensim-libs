@@ -929,7 +929,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
 
         //set plane Geom
         dCopyVector4((sliding_plane)->p, itPlane);
-        //dGeomMoved(sliding_plane);
+        dGeomMoved(sliding_plane);
 
         numPlaneContacts = geomNPlaneCollider (o2, sliding_plane, planeTestFlags, PlaneContact, sizeof(dContactGeom));
         if(numPlaneContacts > 0)

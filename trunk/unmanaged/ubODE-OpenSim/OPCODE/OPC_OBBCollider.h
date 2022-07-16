@@ -113,12 +113,8 @@
 		// Internal methods
 							void			_Collide(const AABBCollisionNode* node);
 							void			_Collide(const AABBNoLeafNode* node);
-							void			_Collide(const AABBQuantizedNode* node);
-							void			_Collide(const AABBQuantizedNoLeafNode* node);
 							void			_CollideNoPrimitiveTest(const AABBCollisionNode* node);
 							void			_CollideNoPrimitiveTest(const AABBNoLeafNode* node);
-							void			_CollideNoPrimitiveTest(const AABBQuantizedNode* node);
-							void			_CollideNoPrimitiveTest(const AABBQuantizedNoLeafNode* node);
 			// Overlap tests
 		inline_				BOOL			OBBContainsBox(const Point& bc, const Point& be);
 		inline_				BOOL			BoxBoxOverlap(const Point& extents, const Point& center);

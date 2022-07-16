@@ -39,9 +39,9 @@ int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, 
 
     dxTriMesh* TriMesh = (dxTriMesh*)g1;
 
-    g1->recomputePosr();
-    const dMatrix3& TLRotation = *(const dMatrix3*)g1->final_posr->R;
-    const dVector3& TLPosition = *(const dVector3*)g1->final_posr->pos;
+    dxPosR* dpr = g1->GetRecomputePosR();
+    const dMatrix3& TLRotation = *(const dMatrix3*)dpr->R;
+    const dVector3& TLPosition = *(const dVector3*)dpr->pos;
 
     const unsigned uiTLSKind = TriMesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == RayGeom->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method

@@ -97,7 +97,4 @@ void VolumeCollider::_Dump(const type* node)			\
 }
 
 IMPLEMENT_NOLEAFDUMP(AABBNoLeafNode)
-IMPLEMENT_NOLEAFDUMP(AABBQuantizedNoLeafNode)
-
 IMPLEMENT_LEAFDUMP(AABBCollisionNode)
-IMPLEMENT_LEAFDUMP(AABBQuantizedNode)

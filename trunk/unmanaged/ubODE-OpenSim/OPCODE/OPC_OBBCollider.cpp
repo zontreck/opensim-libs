@@ -417,70 +417,6 @@ void OBBCollider::_CollideNoPrimitiveTest(const AABBCollisionNode* node)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
- *	Recursive collision query for quantized AABB trees.
- *	\param		node	[in] current collision node
- */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void OBBCollider::_Collide(const AABBQuantizedNode* node)
-{
-	// Dequantize box
-	const QuantizedAABB& Box = node->mAABB;
-	const Point Center(float(Box.mCenter[0]) * mCenterCoeff.x, float(Box.mCenter[1]) * mCenterCoeff.y, float(Box.mCenter[2]) * mCenterCoeff.z);
-	const Point Extents(float(Box.mExtents[0]) * mExtentsCoeff.x, float(Box.mExtents[1]) * mExtentsCoeff.y, float(Box.mExtents[2]) * mExtentsCoeff.z);
-
-	// Perform OBB-AABB overlap test
-	if(!BoxBoxOverlap(Extents, Center))	return;
-
-	TEST_BOX_IN_OBB(Center, Extents)
-
-	if(node->IsLeaf())
-	{
-		OBB_PRIM(node->GetPrimitive(), OPC_CONTACT)
-	}
-	else
-	{
-		_Collide(node->GetPos());
-
-		if(ContactFound()) return;
-
-		_Collide(node->GetNeg());
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- *	Recursive collision query for quantized AABB trees, without primitive tests.
- *	\param		node	[in] current collision node
- */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void OBBCollider::_CollideNoPrimitiveTest(const AABBQuantizedNode* node)
-{
-	// Dequantize box
-	const QuantizedAABB& Box = node->mAABB;
-	const Point Center(float(Box.mCenter[0]) * mCenterCoeff.x, float(Box.mCenter[1]) * mCenterCoeff.y, float(Box.mCenter[2]) * mCenterCoeff.z);
-	const Point Extents(float(Box.mExtents[0]) * mExtentsCoeff.x, float(Box.mExtents[1]) * mExtentsCoeff.y, float(Box.mExtents[2]) * mExtentsCoeff.z);
-
-	// Perform OBB-AABB overlap test
-	if(!BoxBoxOverlap(Extents, Center))	return;
-
-	TEST_BOX_IN_OBB(Center, Extents)
-
-	if(node->IsLeaf())
-	{
-		SET_CONTACT(node->GetPrimitive(), OPC_CONTACT)
-	}
-	else
-	{
-		_CollideNoPrimitiveTest(node->GetPos());
-
-		if(ContactFound()) return;
-
-		_CollideNoPrimitiveTest(node->GetNeg());
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
  *	Recursive collision query for no-leaf AABB trees.
  *	\param		node	[in] current collision node
  */
@@ -522,65 +458,6 @@ void OBBCollider::_CollideNoPrimitiveTest(const AABBNoLeafNode* node)
 	if(node->HasNegLeaf())	{ SET_CONTACT(node->GetNegPrimitive(), OPC_CONTACT) }
 	else					_CollideNoPrimitiveTest(node->GetNeg());
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- *	Recursive collision query for quantized no-leaf AABB trees.
- *	\param		node	[in] current collision node
- */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void OBBCollider::_Collide(const AABBQuantizedNoLeafNode* node)
-{
-	// Dequantize box
-	const QuantizedAABB& Box = node->mAABB;
-	const Point Center(float(Box.mCenter[0]) * mCenterCoeff.x, float(Box.mCenter[1]) * mCenterCoeff.y, float(Box.mCenter[2]) * mCenterCoeff.z);
-	const Point Extents(float(Box.mExtents[0]) * mExtentsCoeff.x, float(Box.mExtents[1]) * mExtentsCoeff.y, float(Box.mExtents[2]) * mExtentsCoeff.z);
-
-	// Perform OBB-AABB overlap test
-	if(!BoxBoxOverlap(Extents, Center))	return;
-
-	TEST_BOX_IN_OBB(Center, Extents)
-
-	if(node->HasPosLeaf())	{ OBB_PRIM(node->GetPosPrimitive(), OPC_CONTACT) }
-	else					_Collide(node->GetPos());
-
-	if(ContactFound()) return;
-
-	if(node->HasNegLeaf())	{ OBB_PRIM(node->GetNegPrimitive(), OPC_CONTACT) }
-	else					_Collide(node->GetNeg());
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- *	Recursive collision query for quantized no-leaf AABB trees, without primitive tests.
- *	\param		node	[in] current collision node
- */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void OBBCollider::_CollideNoPrimitiveTest(const AABBQuantizedNoLeafNode* node)
-{
-	// Dequantize box
-	const QuantizedAABB& Box = node->mAABB;
-	const Point Center(float(Box.mCenter[0]) * mCenterCoeff.x, float(Box.mCenter[1]) * mCenterCoeff.y, float(Box.mCenter[2]) * mCenterCoeff.z);
-	const Point Extents(float(Box.mExtents[0]) * mExtentsCoeff.x, float(Box.mExtents[1]) * mExtentsCoeff.y, float(Box.mExtents[2]) * mExtentsCoeff.z);
-
-	// Perform OBB-AABB overlap test
-	if(!BoxBoxOverlap(Extents, Center))	return;
-
-	TEST_BOX_IN_OBB(Center, Extents)
-
-	if(node->HasPosLeaf())	{ SET_CONTACT(node->GetPosPrimitive(), OPC_CONTACT) }
-	else					_CollideNoPrimitiveTest(node->GetPos());
-
-	if(ContactFound()) return;
-
-	if(node->HasNegLeaf())	{ SET_CONTACT(node->GetNegPrimitive(), OPC_CONTACT) }
-	else					_CollideNoPrimitiveTest(node->GetNeg());
-}
-
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
