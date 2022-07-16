@@ -20,127 +20,118 @@
 #ifndef __OPC_MESHINTERFACE_H__
 #define __OPC_MESHINTERFACE_H__
 
-	struct VertexPointers
-	{
-		const Point*	Vertex[3];
-		/*
-		bool BackfaceCulling(const Point& source)
-		{
-			const Point& p0 = *Vertex[0];
-			const Point& p1 = *Vertex[1];
-			const Point& p2 = *Vertex[2];
+struct VertexPointers
+{
+    const Point*	Vertex[3];
+};
 
-			// Compute normal direction
-			Point Normal = (p2 - p1)^(p0 - p1);
+struct VertexPointersEx
+{
+    VertexPointers	vp;
+    dTriIndex	Index[3];
+};
 
-			// Backface culling
-			return (Normal | (source - p0)) >= 0.0f;
-		}
-        */
-	};
+class OPCODE_API MeshInterface
+{
+public:
+    // Constructor / Destructor
+    MeshInterface();
+    ~MeshInterface();
+    // Common settings
+    inline_			udword				GetNbTriangles()	const { return mNbTris; }
+    inline_			udword				GetNbVertices()		const { return mNbVerts; }
+    inline_			void				SetNbTriangles(udword nb) { mNbTris = nb; }
+    inline_			void				SetNbVertices(udword nb) { mNbVerts = nb; }
 
-	struct VertexPointersEx
-	{
-		VertexPointers	vp;
-		dTriIndex	Index[3];
-	};
+    // Pointers settings
 
-	class OPCODE_API MeshInterface
-	{
-		public:
-		// Constructor / Destructor
-											MeshInterface();
-											~MeshInterface();
-		// Common settings
-		inline_			udword				GetNbTriangles()	const	{ return mNbTris;	}
-		inline_			udword				GetNbVertices()		const	{ return mNbVerts;	}
-		inline_			void				SetNbTriangles(udword nb)	{ mNbTris = nb;		}
-		inline_			void				SetNbVertices(udword nb)	{ mNbVerts = nb;	}
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     *	Pointers control: setups object pointers. Must provide access to faces and vertices for a given object.
+     *	\param		tris	[in] pointer to triangles
+     *	\param		verts	[in] pointer to vertices
+     *	\return		true if success
+     */
+     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool SetPointers(const IndexedTriangle* tris, const Point* verts);
+    inline_	const IndexedTriangle* GetTris() const
+    {
+        return mTris;
+    }
+    inline_	const Point* GetVerts() const
+    {
+        return mVerts;
+    }
 
-		// Pointers settings
+    inline_ bool SetStrides(udword tri_stride = sizeof(IndexedTriangle), udword vertex_stride = sizeof(Point)) { return true; }
+    inline_ void SetSingle(bool value) {}
+    inline_ udword GetTriStride() const { return sizeof(IndexedTriangle); }
+    inline_ udword GetVertexStride() const { return sizeof(Point); }
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Pointers control: setups object pointers. Must provide access to faces and vertices for a given object.
-		 *	\param		tris	[in] pointer to triangles
-		 *	\param		verts	[in] pointer to vertices
-		 *	\return		true if success
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-						bool				SetPointers(const IndexedTriangle* tris, const Point* verts);
-		inline_	const	IndexedTriangle*	GetTris()			const	{ return mTris;			}
-		inline_	const	Point*				GetVerts()			const	{ return mVerts;		}
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     *	Fetches a triangle given a triangle index.
+     *	\param		vp		[out] required triangle's vertex pointers
+     *	\param		index	[in] triangle index
+     *	\param		vc      [in,out] storage required for data conversion (pass local variable with same scope as \a vp, as \a vp may point to this memory on return)
+     */
+     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    inline_ void GetTriangle(VertexPointers& vp, udword index)	const
+    {
+        const IndexedTriangle* T = &mTris[index];
+        vp.Vertex[0] = &mVerts[T->mVRef[0]];
+        vp.Vertex[1] = &mVerts[T->mVRef[1]];
+        vp.Vertex[2] = &mVerts[T->mVRef[2]];
+    }
 
-		inline_			bool				SetStrides(udword tri_stride=sizeof(IndexedTriangle), udword vertex_stride=sizeof(Point)) { return true; }
-		inline_			void				SetSingle(bool value) {}
-		inline_			udword				GetTriStride()		const	{ return sizeof(IndexedTriangle);	}
-		inline_			udword				GetVertexStride()	const	{ return sizeof(Point);	}
+    inline_ void GetExTriangle(VertexPointersEx& vpe, udword index)	const
+    {
+        const IndexedTriangle* T = &mTris[index];
+        dTriIndex VertIndex0 = T->mVRef[0];
+        vpe.Index[0] = VertIndex0;
+        vpe.vp.Vertex[0] = &mVerts[VertIndex0];
+        dTriIndex VertIndex1 = T->mVRef[1];
+        vpe.Index[1] = VertIndex1;
+        vpe.vp.Vertex[1] = &mVerts[VertIndex1];
+        dTriIndex VertIndex2 = T->mVRef[2];
+        vpe.Index[2] = VertIndex2;
+        vpe.vp.Vertex[2] = &mVerts[VertIndex2];
+    }
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Fetches a triangle given a triangle index.
-		 *	\param		vp		[out] required triangle's vertex pointers
-		 *	\param		index	[in] triangle index
-		 *	\param		vc      [in,out] storage required for data conversion (pass local variable with same scope as \a vp, as \a vp may point to this memory on return)
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		inline_			void				GetTriangle(VertexPointers& vp, udword index)	const
-											{
-												const IndexedTriangle* T = &mTris[index];
-												vp.Vertex[0] = &mVerts[T->mVRef[0]];
-												vp.Vertex[1] = &mVerts[T->mVRef[1]];
-												vp.Vertex[2] = &mVerts[T->mVRef[2]];
-											}
+public:
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     *	Remaps client's mesh according to a permutation.
+     *	\param		nb_indices	[in] number of indices in the permutation (will be checked against number of triangles)
+     *	\param		permutation	[in] list of triangle indices
+     *	\return		true if success
+     */
+     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool RemapClient(udword nb_indices, const dTriIndex* permutation) const;
 
-		inline_			bool				GetExTriangle(VertexPointersEx& vpe, udword index)	const
-											{
-												const IndexedTriangle* T = &mTris[index];
-												dTriIndex VertIndex0 = T->mVRef[0];
-												vpe.Index[0] = VertIndex0;
-												vpe.vp.Vertex[0] = &mVerts[VertIndex0];
-												dTriIndex VertIndex1 = T->mVRef[1];
-												vpe.Index[1] = VertIndex1;
-												vpe.vp.Vertex[1] = &mVerts[VertIndex1];
-												dTriIndex VertIndex2 = T->mVRef[2];
-												vpe.Index[2] = VertIndex2;
-												vpe.vp.Vertex[2] = &mVerts[VertIndex2];
-												return true;
-											}
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     *	Checks the mesh interface is valid, i.e. things have been setup correctly.
+     *	\return		true if valid
+     */
+     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool IsValid() const;
 
-		public:
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Remaps client's mesh according to a permutation.
-		 *	\param		nb_indices	[in] number of indices in the permutation (will be checked against number of triangles)
-		 *	\param		permutation	[in] list of triangle indices
-		 *	\return		true if success
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		bool				RemapClient(udword nb_indices, const dTriIndex* permutation)	const;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     *	Checks the mesh itself is valid.
+     *	Currently we only look for degenerate faces.
+     *	\return		number of degenerate faces
+     */
+     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    udword CheckTopology() const;
+private:
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Checks the mesh interface is valid, i.e. things have been setup correctly.
-		 *	\return		true if valid
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-						bool				IsValid()		const;
-
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
-		 *	Checks the mesh itself is valid.
-		 *	Currently we only look for degenerate faces.
-		 *	\return		number of degenerate faces
-		 */
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-						udword				CheckTopology()	const;
-		private:
-
-						udword				mNbTris;			//!< Number of triangles in the input model
-						udword				mNbVerts;			//!< Number of vertices in the input model
-		// User pointers
-						const	IndexedTriangle*	mTris;				//!< Array of indexed triangles
-						const	Point*				mVerts;				//!< Array of vertices
-	};
+    udword mNbTris;  //!< Number of triangles in the input model
+    udword mNbVerts; //!< Number of vertices in the input model
+// User pointers
+    const IndexedTriangle* mTris; //!< Array of indexed triangles
+    const Point* mVerts;          //!< Array of vertices
+};
 
 #endif //__OPC_MESHINTERFACE_H__

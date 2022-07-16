@@ -15,81 +15,69 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 inline_ BOOL RayCollider::RayTriOverlap(const Point& vert0, const Point& vert1, const Point& vert2)
 {
-	// Stats
-	mNbRayPrimTests++;
+    // Stats
+    mNbRayPrimTests++;
 
-	// Find vectors for two edges sharing vert0
-	Point edge1 = vert1 - vert0;
-	Point edge2 = vert2 - vert0;
+    // Find vectors for two edges sharing vert0
+    Point edge1 = vert1 - vert0;
+    Point edge2 = vert2 - vert0;
 
-	// Begin calculating determinant - also used to calculate U parameter
-	Point pvec = mDir ^ edge2;
+    // Begin calculating determinant - also used to calculate U parameter
+    Point pvec = mDir ^ edge2;
 
-	// If determinant is near zero, ray lies in plane of triangle
-	float det = edge1 | pvec;
+    // If determinant is near zero, ray lies in plane of triangle
+    float det = edge1 | pvec;
 
-	if(mCulling)
-	{
-		if(det <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude()))
+    /*
+    if (mCulling)
+    {
+        if (det <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude()))
             return FALSE;
-
-        // Calculate distance from vert0 to ray origin
-		Point tvec = mOrigin - vert0;
-
-		// Calculate U parameter and test bounds
-		mStabbedFace.mU = tvec | pvec;
-        if (mStabbedFace.mU < 0 || mStabbedFace.mU > det)
+    }
+    else
+    {
+        if (fabsf(det) <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude()))
             return FALSE;
+    }
+    */
 
-		// Prepare to test V parameter
-		Point qvec = tvec^edge1;
-
-		// Calculate V parameter and test bounds
-		mStabbedFace.mV = mDir | qvec;
-        if (mStabbedFace.mV < 0 || mStabbedFace.mU + mStabbedFace.mV > det)
+    if (mCulling)
+    {
+        if (det < LOCAL_EPSILON)
             return FALSE;
-
-		// Calculate t, scale parameters, ray intersects triangle
-		mStabbedFace.mDistance = edge2 | qvec;
-		// Det > 0 so we can early exit here
-		// Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
-		if(mStabbedFace.mDistance < 0)
+    }
+    else
+    {
+        if (det > -LOCAL_EPSILON && det < LOCAL_EPSILON)
             return FALSE;
-		// Else go on
-		float OneOverDet = 1.0f / det;
-		mStabbedFace.mDistance *= OneOverDet;
-		mStabbedFace.mU *= OneOverDet;
-		mStabbedFace.mV *= OneOverDet;
-	}
-	else
-	{
-		// the non-culling branch
-		if(fabsf(det) <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude()))
-            return FALSE;
-		float OneOverDet = 1.0f / det;
+    }
 
-		// Calculate distance from vert0 to ray origin
-		Point tvec = mOrigin - vert0;
+    // Calculate distance from vert0 to ray origin
+    Point tvec = mOrigin - vert0;
 
-		// Calculate U parameter and test bounds
-		mStabbedFace.mU = (tvec|pvec) * OneOverDet;
-//		if(IR(u)&0x80000000 || u>1.0f)					return FALSE;
-		if(mStabbedFace.mU < 0 || mStabbedFace.mU > 1.0f)
-            return FALSE;
+    // Calculate U parameter and test bounds
+    mStabbedFace.mU = tvec | pvec;
+    if (mStabbedFace.mU < 0 || mStabbedFace.mU > det)
+        return FALSE;
 
-		// prepare to test V parameter
-		Point qvec = tvec^edge1;
+    // Prepare to test V parameter
+    Point qvec = tvec ^ edge1;
 
-		// Calculate V parameter and test bounds
-		mStabbedFace.mV = (mDir|qvec) * OneOverDet;
-		if(mStabbedFace.mV < 0 || mStabbedFace.mU + mStabbedFace.mV > 1.0f)
-            return FALSE;
+    // Calculate V parameter and test bounds
+    mStabbedFace.mV = mDir | qvec;
+    if (mStabbedFace.mV < 0 || mStabbedFace.mU + mStabbedFace.mV > det)
+        return FALSE;
 
-		// Calculate t, ray intersects triangle
-		mStabbedFace.mDistance = (edge2|qvec) * OneOverDet;
-		// Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
-		if(mStabbedFace.mDistance < 0)
-            return FALSE;
-	}
-	return TRUE;
+    // Calculate t, scale parameters, ray intersects triangle
+    mStabbedFace.mDistance = edge2 | qvec;
+    // Det > 0 so we can early exit here
+    // Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
+    if (mStabbedFace.mDistance < 0)
+        return FALSE;
+    // Else go on
+    float OneOverDet = 1.0f / det;
+    mStabbedFace.mDistance *= OneOverDet;
+    mStabbedFace.mU *= OneOverDet;
+    mStabbedFace.mV *= OneOverDet;
+    return TRUE;
 }
