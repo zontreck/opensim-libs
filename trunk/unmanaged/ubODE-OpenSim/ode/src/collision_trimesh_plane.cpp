@@ -62,7 +62,7 @@ int dCollideTrimeshPlane( dxGeom *o1, dxGeom *o2, int flags, dContactGeom* conta
     dReal alpha;
     dVector3 vertex;
 
-    dVector3 int_vertex;		// Intermediate vertex for double precision mode.
+    //dVector3 int_vertex;		// Intermediate vertex for double precision mode.
 
     const unsigned uiTLSKind = trimesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == plane->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method

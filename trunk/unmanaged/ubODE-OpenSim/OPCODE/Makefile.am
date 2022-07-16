@@ -21,7 +21,6 @@ libOPCODE_la_SOURCES =  OPC_AABBCollider.cpp    OPC_AABBCollider.h \
                         OPC_OBBCollider.cpp     OPC_OBBCollider.h \
                         Opcode.cpp              Opcode.h \
                         OPC_OptimizedTree.cpp   OPC_OptimizedTree.h \
-                        OPC_Picking.cpp         OPC_Picking.h \
                         OPC_PlanesCollider.cpp  OPC_PlanesCollider.h \
                         OPC_RayCollider.cpp     OPC_RayCollider.h \
                         OPC_SphereCollider.cpp  OPC_SphereCollider.h \

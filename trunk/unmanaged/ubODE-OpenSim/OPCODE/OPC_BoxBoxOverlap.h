@@ -191,17 +191,20 @@ inline_ BOOL AABBCollider::AABBAABBOverlap(const Point& extents, const Point& ce
     return ((_mm_movemask_ps(ma) & 0x07) == 0);
 
 #else
-    float tx = mBox.mCenter.x - center.x;
-    float ex = extents.x + mBox.mExtents.x;
-    if (fabs(tx) > ex) return FALSE;
+    float t = mBox.mCenter.x - center.x;
+    float e = extents.x + mBox.mExtents.x;
+    if (fabs(t) > e)
+        return FALSE;
 
-    float ty = mBox.mCenter.y - center.y;
-    float ey = extents.y + mBox.mExtents.y;
-    if (fabs(ty) > ey) return FALSE;
+    t = mBox.mCenter.y - center.y;
+    e = extents.y + mBox.mExtents.y;
+    if (fabs(t) > e)
+        return FALSE;
 
-    float tz = mBox.mCenter.z - center.z;
-    float ez = extents.z + mBox.mExtents.z;
-    if (fabs(tz) > ez) return FALSE;
+    t = mBox.mCenter.z - center.z;
+    e = extents.z + mBox.mExtents.z;
+    if (fabs(t) > e)
+        return FALSE;
     return TRUE;
 #endif
 }

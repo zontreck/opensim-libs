@@ -23,10 +23,10 @@ inline_ BOOL RayCollider::RayTriOverlap(const Point& vert0, const Point& vert1, 
 	Point edge2 = vert2 - vert0;
 
 	// Begin calculating determinant - also used to calculate U parameter
-	Point pvec = mDir^edge2;
+	Point pvec = mDir ^ edge2;
 
 	// If determinant is near zero, ray lies in plane of triangle
-	float det = edge1|pvec;
+	float det = edge1 | pvec;
 
 	if(mCulling)
 	{
@@ -62,7 +62,7 @@ inline_ BOOL RayCollider::RayTriOverlap(const Point& vert0, const Point& vert1, 
 	else
 	{
 		// the non-culling branch
-		if(FastFabs(det) <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude())) return FALSE;
+		if(fabsf(det) <= LOCAL_EPSILON * FCMin2(edge1.SquareMagnitude(), edge2.SquareMagnitude())) return FALSE;
 		float OneOverDet = 1.0f / det;
 
 		// Calculate distance from vert0 to ray origin

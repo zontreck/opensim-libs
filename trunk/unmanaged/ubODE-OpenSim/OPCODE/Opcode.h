@@ -106,8 +106,6 @@
 		#include "OPC_LSSCollider.h"
 		#include "OPC_PlanesCollider.h"
 		// Usages
-		#include "OPC_Picking.h"
-
 
 		FUNCTION OPCODE_API bool InitOpcode();
 		FUNCTION OPCODE_API bool CloseOpcode();
