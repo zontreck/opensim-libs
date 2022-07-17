@@ -274,24 +274,25 @@ inline_ BOOL AABBCollider::TriBoxOverlap()
 	// First, test overlap in the {x,y,z}-directions
 
 	// find min, max of the triangle in x-direction, and test for overlap in X
-	if(FCMin3(v0.x, v1.x, v2.x)>extents.x)	return FALSE;
-	if(FCMax3(v0.x, v1.x, v2.x)<-extents.x)	return FALSE;
+    if (!inExtent(v0.x, v1.x, v2.x, extents.x))
+        return FALSE;
 
 	// same for Y
 	v0.y = mLeafVerts[0].y - center.y;
 	v1.y = mLeafVerts[1].y - center.y;
 	v2.y = mLeafVerts[2].y - center.y;
 
-	if(FCMin3(v0.y, v1.y, v2.y)>extents.y)	return FALSE;
-	if(FCMax3(v0.y, v1.y, v2.y)<-extents.y)	return FALSE;
+    if (!inExtent(v0.y, v1.y, v2.y, extents.y))
+        return FALSE;
 
 	// same for Z
 	v0.z = mLeafVerts[0].z - center.z;
 	v1.z = mLeafVerts[1].z - center.z;
 	v2.z = mLeafVerts[2].z - center.z;
 
-	if(FCMin3(v0.z, v1.z, v2.z)>extents.z)	return FALSE;
-	if(FCMax3(v0.z, v1.z, v2.z)<-extents.z)	return FALSE;
+    if (!inExtent(v0.z, v1.z, v2.z, extents.z))
+        return FALSE;
+
 	// 2) Test if the box intersects the plane of the triangle
 	// compute plane equation of triangle: normal*x+d=0
 	// ### could be precomputed since we use the same leaf triangle several times

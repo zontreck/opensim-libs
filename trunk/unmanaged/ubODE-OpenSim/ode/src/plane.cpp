@@ -48,7 +48,19 @@ dContactGeom::g1 and dContactGeom::g2.
 
 static void make_sure_plane_normal_has_unit_length (dxPlane *g)
 {
-    dSafeNormalize3(g->p);
+    dReal *p = g->p;
+    dReal l = dCalcVectorLengthSquare3(p);
+    if (l > dEpsilon)
+    {
+        dScaleVector4(p, dRecipSqrt(l));
+    }
+    else
+    {
+        p[0] = 1;
+        p[1] = 0;
+        p[2] = 0;
+        p[3] = 0;
+    }
 }
 
 
@@ -59,7 +71,19 @@ dxGeom (space,0)
     p[0] = a;
     p[1] = b;
     p[2] = c;
-    p[3] = dSafeNormalize3(p) ? d : 0;
+    p[3] = d;
+    dReal l = dCalcVectorLengthSquare3(p);
+    if (l > dEpsilon)
+    {
+        dScaleVector4(p, dRecipSqrt(l));
+    }
+    else
+    {
+        p[0] = 1;
+        p[1] = 0;
+        p[2] = 0;
+        p[3] = 0;
+    }
 }
 
 void dxPlane::computeAABB()
@@ -144,10 +168,25 @@ dGeomID dCreatePlane (dSpaceID space, dReal a, dReal b, dReal c, dReal d)
 void dGeomPlaneSetParams (dGeomID g, dReal a, dReal b, dReal c, dReal d)
 {
     dUASSERT (g && g->type == dPlaneClass,"argument not a plane");
-    ((dxPlane*)g)->p[0] = a;
-    ((dxPlane*)g)->p[1] = b;
-    ((dxPlane*)g)->p[2] = c;
-    ((dxPlane*)g)->p[3] = dSafeNormalize3(((dxPlane*)g)->p) ? d : 0;
+    dReal* p = ((dxPlane*)g)->p;
+    p[0] = a;
+    p[1] = b;
+    p[2] = c;
+    p[3] = d;
+
+    dReal l = dCalcVectorLengthSquare3(p);
+    if (l > dEpsilon)
+    {
+        dScaleVector4(p, dRecipSqrt(l));
+    }
+    else
+    {
+        p[0] = 1;
+        p[1] = 0;
+        p[2] = 0;
+        p[3] = 0;
+    }
+
     dGeomMoved (g);
 }
 

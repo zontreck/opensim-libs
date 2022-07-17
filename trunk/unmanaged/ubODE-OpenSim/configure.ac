@@ -1,5 +1,5 @@
 dnl AC_INIT does not take a macro as a version nr: set it separately! - Bram
-AC_INIT([UBODE],[0.13.4],[ubode@opensimulator.org])
+AC_INIT([UBODE],[0.13.4],[opensim-dev@opensimulator.org])
 ODE_VERSION=OS0.13.4
 AC_SUBST(ODE_VERSION)
 

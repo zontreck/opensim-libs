@@ -120,23 +120,26 @@ void dGeomRaySet (dGeomID g, dReal px, dReal py, dReal pz,
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
 
+    dxPosR *rayPosR = g->GetRecomputePosR();
+
+    dReal* pos = rayPosR->pos;
+    pos[0] = px;
+    pos[1] = py;
+    pos[2] = pz;
+
     dVector3 n;
     n[0] = dx;
     n[1] = dy;
     n[2] = dz;
     dNormalize3(n);
-    dReal* R = g->final_posr->R;
+
+    dReal* R = rayPosR->R;
     R[2] = n[0];
     R[6] = n[1];
     R[10] = n[2];
 
-    dReal* pos = g->final_posr->pos;
-    pos[0] = px;
-    pos[1] = py;
-    pos[2] = pz;
     dGeomMoved (g);
 }
-
 
 void dGeomRayGet (dGeomID g, dVector3 start, dVector3 dir)
 {
