@@ -1,5 +1,5 @@
 dnl AC_INIT does not take a macro as a version nr: set it separately! - Bram
-AC_INIT([ODE],[0.13.4],[ode@ode.org])
+AC_INIT([UBODE],[0.13.4],[ubode@opensimulator.org])
 ODE_VERSION=OS0.13.4
 AC_SUBST(ODE_VERSION)
 
@@ -22,8 +22,8 @@ AC_SUBST(ODE_VERSION)
 #
 #  6. If any interfaces have been removed since the last public release,
 #     then set AGE to 0.
-CURRENT=5
-REVISION=0
+CURRENT=6
+REVISION=1
 AGE=1
 
 ODE_VERSION_INFO="-version-info $CURRENT:$REVISION:$AGE"
