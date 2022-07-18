@@ -228,7 +228,8 @@ struct dxTriMeshData  : public dBase
     uint8* UseFlags;
 };
 
-struct dxTriMesh : public dxGeom{
+struct dxTriMesh : public dxGeom
+{
     // Callbacks
     dTriCallback* Callback;
     dTriArrayCallback* ArrayCallback;

@@ -31,18 +31,17 @@
 #include "collision_util.h"
 #include "collision_trimesh_internal.h"
 
-int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, int Stride){
+int dCollideRTL(dxGeom* TriGeom, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, int Stride){
     dIASSERT (Stride >= (int)sizeof(dContactGeom));
-    dIASSERT (g1->type == dTriMeshClass);
+    dIASSERT (TriGeom->type == dTriMeshClass);
     dIASSERT (RayGeom->type == dRayClass);
     dIASSERT ((Flags & NUMC_MASK) >= 1);
 
-    dxTriMesh* TriMesh = (dxTriMesh*)g1;
-
-    dxPosR* dpr = g1->GetRecomputePosR();
+    dxPosR* dpr = TriGeom->GetRecomputePosR();
     const dMatrix3& TLRotation = *(const dMatrix3*)dpr->R;
     const dVector3& TLPosition = *(const dVector3*)dpr->pos;
 
+    dxTriMesh* TriMesh = (dxTriMesh*)TriGeom;
     const unsigned uiTLSKind = TriMesh->getParentSpaceTLSKind();
     dIASSERT(uiTLSKind == RayGeom->getParentSpaceTLSKind()); // The colliding spaces must use matching cleanup method
     TrimeshCollidersCache *pccColliderCache = GetTrimeshCollidersCache(uiTLSKind);
@@ -72,64 +71,93 @@ int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, 
     WorldRay.mDir.z = Direction[2];
 
     /* Intersect */
-    Matrix4x4 amatrix;
     int TriCount = 0;
-    if (Collider.Collide(WorldRay, TriMesh->Data->BVTree, &MakeMatrix(TLPosition, TLRotation, amatrix))) {
+    Matrix4x4 amatrix;
+    if (Collider.Collide(WorldRay, TriMesh->Data->BVTree, &MakeMatrix(TLPosition, TLRotation, amatrix)))
+    {
         TriCount = pccColliderCache->Faces.GetNbFaces();
     }
 
-    if (TriCount == 0) {
+    if (TriCount == 0)
+    {
         return 0;
     }
 
     const CollisionFace* Faces = pccColliderCache->Faces.GetFaces();
+    CollisionFace face;
 
     int OutTriCount = 0;
-    for (int i = 0; i < TriCount; i++) {
-        if (TriMesh->RayCallback == null ||
-            TriMesh->RayCallback(TriMesh, RayGeom, Faces[i].mFaceID,
-            Faces[i].mU, Faces[i].mV)) {
-                const int& TriIndex = Faces[i].mFaceID;
-                if (!Callback(TriMesh, RayGeom, TriIndex)) {
-                    continue;
-                }
+    int TriIndex;
+    dVector3 dv[3];
+
+    if (TriMesh->RayCallback == null)
+    {
+        for (int i = 0; i < TriCount; i++)
+        {
+            face = Faces[i];
+            TriIndex = face.mFaceID;
+
+            //if (!Callback(TriMesh, RayGeom, TriIndex))
+            //    continue;
+
+            dContactGeom* Contact = SAFECONTACT(Flags, Contacts, OutTriCount, Stride);
+
+            FetchTriangle(TriMesh, TriIndex, TLPosition, TLRotation, dv);
+            dSubtractVectors3r4(dv[1], dv[0]);
+            dSubtractVectors3r4(dv[2], dv[0]);
+            dCalcVectorCross3r4(Contact->normal, dv[2], dv[1]);	// Reversed
+
+            // Even though all triangles might be initially valid, 
+            // a triangle may degenerate into a segment after applying 
+            // space transformation.
+            if (dSafeNormalize3(Contact->normal))
+            {
+                dReal T = face.mDistance;
+                dAddScaledVector3(Contact->pos, Origin, Direction, T);
+
+                Contact->depth = T;
+                Contact->g1 = TriGeom;
+                Contact->g2 = RayGeom;
+                Contact->side1 = TriIndex;
+                Contact->side2 = -1;
+
+                OutTriCount++;
+
+                // Putting "break" at the end of loop prevents unnecessary checks on first pass and "continue"
+                if (OutTriCount >= (Flags & NUMC_MASK))
+                    break;
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < TriCount; i++)
+        {
+            face = Faces[i];
+            TriIndex = face.mFaceID;
+            if (TriMesh->RayCallback(TriMesh, RayGeom, TriIndex, face.mU, face.mV))
+            {
+                //if (!Callback(TriMesh, RayGeom, TriIndex))
+                //    continue;
 
                 dContactGeom* Contact = SAFECONTACT(Flags, Contacts, OutTriCount, Stride);
 
-                dVector3 dv[3];
                 FetchTriangle(TriMesh, TriIndex, TLPosition, TLRotation, dv);
 
-                dVector3 vu;
-                vu[0] = dv[1][0] - dv[0][0];
-                vu[1] = dv[1][1] - dv[0][1];
-                vu[2] = dv[1][2] - dv[0][2];
-                vu[3] = REAL(0.0);
-
-                dVector3 vv;
-                vv[0] = dv[2][0] - dv[0][0];
-                vv[1] = dv[2][1] - dv[0][1];
-                vv[2] = dv[2][2] - dv[0][2];
-                vv[3] = REAL(0.0);
-
-                dCalcVectorCross3r4(Contact->normal, vv, vu);	// Reversed
+                dSubtractVectors3r4(dv[1], dv[0]);
+                dSubtractVectors3r4(dv[2], dv[0]);
+                dCalcVectorCross3r4(Contact->normal, dv[2], dv[1]);	// Reversed
 
                 // Even though all triangles might be initially valid, 
                 // a triangle may degenerate into a segment after applying 
                 // space transformation.
                 if (dSafeNormalize3(Contact->normal))
                 {
-                    // No sense to save on single type conversion in algorithm of this size.
-                    // If there would be a custom typedef for distance type it could be used 
-                    // instead of dReal. However using float directly is the loss of abstraction 
-                    // and possible loss of precision in future.
-                    /*float*/ dReal T = Faces[i].mDistance;
-                    Contact->pos[0] = Origin[0] + (Direction[0] * T);
-                    Contact->pos[1] = Origin[1] + (Direction[1] * T);
-                    Contact->pos[2] = Origin[2] + (Direction[2] * T);
-                    Contact->pos[3] = REAL(0.0);
+                    dReal T = face.mDistance;
+                    dAddScaledVector3(Contact->pos, Origin, Direction, T);
 
                     Contact->depth = T;
-                    Contact->g1 = TriMesh;
+                    Contact->g1 = TriGeom;
                     Contact->g2 = RayGeom;
                     Contact->side1 = TriIndex;
                     Contact->side2 = -1;
@@ -137,10 +165,10 @@ int dCollideRTL(dxGeom* g1, dxGeom* RayGeom, int Flags, dContactGeom* Contacts, 
                     OutTriCount++;
 
                     // Putting "break" at the end of loop prevents unnecessary checks on first pass and "continue"
-                    if (OutTriCount >= (Flags & NUMC_MASK)) {
+                    if (OutTriCount >= (Flags & NUMC_MASK))
                         break;
-                    }
                 }
+            }
         }
     }
     return OutTriCount;

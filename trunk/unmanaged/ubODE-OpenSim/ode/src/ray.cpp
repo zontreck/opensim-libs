@@ -54,7 +54,7 @@ dxRay::dxRay (dSpaceID space, dReal _length) : dxGeom (space,1)
 
 void dxRay::computeAABB()
 {
-    const dReal *pos = final_posr->pos;
+    dReal *pos = final_posr->pos;
 
     dReal e = final_posr->R[2] * length;
     if (e >= 0)
@@ -96,7 +96,7 @@ void dxRay::computeAABB()
 
 dGeomID dCreateRay (dSpaceID space, dReal length)
 {
-    return new dxRay (space,length);
+    return new dxRay (space, length);
 }
 
 
@@ -120,7 +120,7 @@ void dGeomRaySet (dGeomID g, dReal px, dReal py, dReal pz,
 {
     dUASSERT (g && g->type == dRayClass,"argument not a ray");
 
-    dxPosR *rayPosR = g->GetRecomputePosR();
+    dxPosR *rayPosR = g->final_posr;
 
     dReal* pos = rayPosR->pos;
     pos[0] = px;
