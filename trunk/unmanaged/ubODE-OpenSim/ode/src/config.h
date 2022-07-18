@@ -34,16 +34,9 @@
 
 #define dTRIMESH_16BIT_INDICES 0
 
-/*
 #define dOU_ENABLED 1
 #define dATOMICS_ENABLED 1
 #define dTLS_ENABLED 1
-*/
-
-
-#define dOU_ENABLED 0
-#define dATOMICS_ENABLED 0
-#define dTLS_ENABLED 0
 
 #define dTHREADING_INTF_DISABLED 1
 /* #define dBUILTIN_THREADING_IMPL_ENABLED 1 */

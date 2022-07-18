@@ -146,7 +146,7 @@ using namespace Opcode;
     }
 
 #define UPDATE_CACHE \
-    if(cache && GetContactStatus() && mStabbedFaces) \
+    if(cache && mStabbedFaces && GetContactStatus()) \
     { \
         const CollisionFace* Current = mStabbedFaces->GetFaces(); \
        *cache = Current ? Current->mFaceID : INVALID_ID; \

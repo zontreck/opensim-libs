@@ -67,7 +67,7 @@ public:
      *	\param		min			[in] the min point
      *	\param		max			[in] the max point
      */
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     inline_ void SetMinMax(const Point& min, const Point& max)
     {
         mCenter = (max + min)*0.5f;
@@ -80,18 +80,18 @@ public:
      *	\param		box		[in] the other box
      *	\return		true if current box is inside input box
      */
-     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     inline_ BOOL IsInside(const CollisionAABB& box) const
     {
 #if defined (__AVX__)
         return avxBoxesOverlap(&(box.mCenter.x), &(mCenter.x), &(box.mExtents.x), &(mExtents.x));
 #else
-        if (box.GetMin(0) > GetMin(0))	return FALSE;
-        if (box.GetMin(1) > GetMin(1))	return FALSE;
-        if (box.GetMin(2) > GetMin(2))	return FALSE;
-        if (box.GetMax(0) < GetMax(0))	return FALSE;
-        if (box.GetMax(1) < GetMax(1))	return FALSE;
-        if (box.GetMax(2) < GetMax(2))	return FALSE;
+        if (box.GetMin(0) > GetMin(0)) return FALSE; 
+        if (box.GetMin(1) > GetMin(1)) return FALSE;
+        if (box.GetMin(2) > GetMin(2)) return FALSE;
+        if (box.GetMax(0) < GetMax(0)) return FALSE;
+        if (box.GetMax(1) < GetMax(1)) return FALSE;
+        if (box.GetMax(2) < GetMax(2)) return FALSE;
         return TRUE;
 #endif
     }
