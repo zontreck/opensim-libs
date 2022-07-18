@@ -83,22 +83,6 @@
 		// good strategy.
 	};
 
-	class OPCODE_API AABBQuantizedNode
-	{
-		IMPLEMENT_IMPLICIT_NODE(AABBQuantizedNode, QuantizedAABB)
-
-		inline_			uword				GetSize()		const
-											{
-												const uword* Bits = mAABB.mExtents;
-												uword Max = Bits[0];
-												if(Bits[1]>Max)	Max = Bits[1];
-												if(Bits[2]>Max)	Max = Bits[2];
-												return Max;
-											}
-		// NB: for quantized nodes I don't feel like computing a square-magnitude with integers all
-		// over the place.......!
-	};
-
 	class OPCODE_API AABBNoLeafNode
 	{
 		IMPLEMENT_NOLEAF_NODE(AABBNoLeafNode, CollisionAABB)
