@@ -121,7 +121,7 @@ void dClosestLineSegmentPoints (const dVector3 a1, const dVector3 a2,
     dSubtractVectors3r4(a1b1, b1, a1);
     da1 = dCalcVectorDot3(a1a2, a1b1);
 
-    dSubtractVectorCross3r4(b1b2, b2, b1);
+    dSubtractVectors3r4(b1b2, b2, b1);
     db1 = dCalcVectorDot3(b1b2, a1b1);
     if (da1 <= 0 && db1 >= 0)
     {

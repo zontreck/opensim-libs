@@ -747,8 +747,7 @@ int dxOSTerrain::dCollideOSTerrainZone( const int minX, const int maxX, const in
     // maximum contact point...
     // or in complex mesh case (trimesh and convex)
     // need some test or insights on this before enabling this.
-    const bool isContactNumPointsLimited = 
-        true;
+    const bool isContactNumPointsLimited = true;
 
     bool needFurtherPasses = (o2->type == dTriMeshClass);
     //compute Ratio between Triangle size and O2 aabb size
@@ -1444,7 +1443,7 @@ int dxOSTerrain::dCollideOSTerrainSphere(const int minX, const int maxX, const i
                 }
   
                 depth = 1e30;
-                
+
                 if (!topColide)
                 {
                     if (!lastHbotColide)

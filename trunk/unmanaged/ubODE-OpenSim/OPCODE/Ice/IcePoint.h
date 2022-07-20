@@ -672,6 +672,7 @@ inline_ void iceStore3f(float *res, __m128 ma)
 
             ma = _mm_sub_ps(t3, t4);
             iceStore3f(&x, ma);
+            return *this;
         }
 #else
         inline_ Point& Cross(const Point& a, const Point& b)
