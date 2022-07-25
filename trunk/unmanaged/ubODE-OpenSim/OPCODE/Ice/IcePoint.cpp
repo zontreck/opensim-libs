@@ -125,20 +125,6 @@ void Point::ProjectToScreen(float halfrenderwidth, float halfrenderheight, const
 	projected.y *= -halfrenderheight;	projected.y += halfrenderheight;
 }
 
-void Point::SetNotUsed()
-{
-	// We use a particular integer pattern : 0xffffffff everywhere. This is a NAN.
-	x = y = z = FR(0xffffffff);
-}
-
-BOOL Point::IsNotUsed()	const
-{
-	if(IR(x)!=0xffffffff)	return FALSE;
-	if(IR(y)!=0xffffffff)	return FALSE;
-	if(IR(z)!=0xffffffff)	return FALSE;
-	return TRUE;
-}
-
 #if defined(__AVX__)
 Point& Point::Mult(const Matrix3x3& mat, const Point& a)
 {

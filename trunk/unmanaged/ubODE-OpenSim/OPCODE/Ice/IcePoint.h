@@ -453,9 +453,12 @@ inline_ void iceStore3f(float *res, __m128 ma)
         //! Clamps each element
         inline_ Point& Clamp(float min, float max)
         {
-            if(x<min)    x=min;    if(x>max)    x=max;
-            if(y<min)    y=min;    if(y>max)    y=max;
-            if(z<min)    z=min;    if(z>max)    z=max;
+            if(x<min)    x=min;
+            if(x>max)    x=max;
+            if(y<min)    y=min;
+            if(y>max)    y=max;
+            if(z<min)    z=min;
+            if(z>max)    z=max;
             return *this;
         }
 
@@ -506,34 +509,6 @@ inline_ void iceStore3f(float *res, __m128 ma)
             if(!IsValidFloat(y))    return FALSE;
             if(!IsValidFloat(z))    return FALSE;
             return TRUE;
-        }
-
-        //! Slighty moves the point
-        void Tweak(udword coord_mask, udword tweak_mask)
-        {
-            if(coord_mask&1)    { udword Dummy = IR(x);    Dummy^=tweak_mask;    x = FR(Dummy); }
-            if(coord_mask&2)    { udword Dummy = IR(y);    Dummy^=tweak_mask;    y = FR(Dummy); }
-            if(coord_mask&4)    { udword Dummy = IR(z);    Dummy^=tweak_mask;    z = FR(Dummy); }
-        }
-
-        #define TWEAKMASK        0x3fffff
-        #define TWEAKNOTMASK    ~TWEAKMASK
-        //! Slighty moves the point out
-        inline_ void TweakBigger()
-        {
-            udword Dummy;
-            Dummy = (IR(x)&TWEAKNOTMASK);    if (x >= 0) Dummy += TWEAKMASK + 1; x = FR(Dummy);
-            Dummy = (IR(y)&TWEAKNOTMASK);    if (y >= 0) Dummy+=TWEAKMASK+1; y = FR(Dummy);
-            Dummy = (IR(z)&TWEAKNOTMASK);    if (z >= 0) Dummy+=TWEAKMASK+1; z = FR(Dummy);
-        }
-
-        //! Slighty moves the point in
-        inline_ void TweakSmaller()
-        {
-            udword    Dummy;
-            Dummy = (IR(x)&TWEAKNOTMASK);    if (x < 0) Dummy += TWEAKMASK + 1; x = FR(Dummy);
-            Dummy = (IR(y)&TWEAKNOTMASK);    if (y < 0) Dummy+=TWEAKMASK+1; y = FR(Dummy);
-            Dummy = (IR(z)&TWEAKNOTMASK);    if (z < 0) Dummy+=TWEAKMASK+1; z = FR(Dummy);
         }
 
         //! Normalizes the vector
@@ -704,8 +679,8 @@ inline_ void iceStore3f(float *res, __m128 ma)
         {
             const float* Vals = &x;
             PointComponent m = X;
-            if(AIR(Vals[Y]) > AIR(Vals[m])) m = Y;
-            if(AIR(Vals[Z]) > AIR(Vals[m])) m = Z;
+            if(fabsf(Vals[Y]) > fabsf(Vals[m])) m = Y;
+            if(fabsf(Vals[Z]) > fabsf(Vals[m])) m = Z;
             return m;
         }
 

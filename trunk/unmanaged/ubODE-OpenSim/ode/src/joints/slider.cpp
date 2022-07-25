@@ -170,6 +170,7 @@ dxJointSlider::getInfo2 ( dReal worldFPS, dReal worldERP, const Info2Descr *info
     {
         pos2 = 0;
         R2 = 0;
+        dZeroVector4(c);
     }
 
     // 3 rows to make body rotations equal

@@ -115,6 +115,21 @@ ODE_PURE_INLINE void dZeroVector3(dReal *res)
 #endif
 
 #if defined(__AVX__)
+ODE_PURE_INLINE void dZeroVector4(dReal *res)
+{
+    __m128 ma = _mm_setzero_ps();
+    _mm_storeu_ps(res, ma); (res, ma);
+}
+#else
+ODE_PURE_INLINE void dZeroVector4(dReal *res)
+{
+    res[0] = 0;
+    res[1] = 0;
+    res[2] = 0;
+    res[4] = 0;
+}
+#endif
+#if defined(__AVX__)
 ODE_PURE_INLINE void dZeroVector3r4(dReal *res)
 {
     __m128 ma;

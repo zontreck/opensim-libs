@@ -377,9 +377,9 @@
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		inline_			BOOL		Intersect(const AABB& a)				const
 									{
-										float tx = mCenter.x - a.mCenter.x;	float ex = a.mExtents.x + mExtents.x;	if(AIR(tx) > IR(ex))	return FALSE;
-										float ty = mCenter.y - a.mCenter.y;	float ey = a.mExtents.y + mExtents.y;	if(AIR(ty) > IR(ey))	return FALSE;
-										float tz = mCenter.z - a.mCenter.z;	float ez = a.mExtents.z + mExtents.z;	if(AIR(tz) > IR(ez))	return FALSE;
+										float tx = mCenter.x - a.mCenter.x;	float ex = a.mExtents.x + mExtents.x;	if(fabsf(tx) > ex)	return FALSE;
+										float ty = mCenter.y - a.mCenter.y;	float ey = a.mExtents.y + mExtents.y;	if(fabsf(ty) > ey)	return FALSE;
+										float tz = mCenter.z - a.mCenter.z;	float ez = a.mExtents.z + mExtents.z;	if(fabsf(tz) > ez)	return FALSE;
 										return TRUE;
 									}
 
@@ -410,7 +410,7 @@
 									{
 										float t = mCenter[axis] - a.mCenter[axis];
 										float e = a.mExtents[axis] + mExtents[axis];
-										if(AIR(t) > IR(e))	return FALSE;
+										if(fabsf(t) > e)	return FALSE;
 										return TRUE;
 									}
 
@@ -429,21 +429,21 @@
 										// Compute new extents. FPU code & CPU code have been interleaved for improved performance.
 										Point Ex(mtx.m[0][0] * mExtents.x, mtx.m[0][1] * mExtents.x, mtx.m[0][2] * mExtents.x);
 										//IR(Ex.x)&=0x7fffffff;	IR(Ex.y)&=0x7fffffff;	IR(Ex.z)&=0x7fffffff;
-										Ex.x = FR( AIR(Ex.x) );
-										Ex.y = FR( AIR(Ex.y) );
-										Ex.z = FR( AIR(Ex.z) );
+										Ex.x = fabsf(Ex.x);
+										Ex.y = fabsf(Ex.y);
+										Ex.z = fabsf(Ex.z);
 
 										Point Ey(mtx.m[1][0] * mExtents.y, mtx.m[1][1] * mExtents.y, mtx.m[1][2] * mExtents.y);
 										//IR(Ey.x)&=0x7fffffff;	IR(Ey.y)&=0x7fffffff;	IR(Ey.z)&=0x7fffffff;
-										Ey.x = FR( AIR(Ey.x) );
-										Ey.y = FR( AIR(Ey.y) );
-										Ey.z = FR( AIR(Ey.z) );
+										Ey.x = fabsf(Ey.x);
+										Ey.y = fabsf(Ey.y);
+										Ey.z = fabsf(Ey.z);
 
 										Point Ez(mtx.m[2][0] * mExtents.z, mtx.m[2][1] * mExtents.z, mtx.m[2][2] * mExtents.z);
 										//IR(Ez.x)&=0x7fffffff;	IR(Ez.y)&=0x7fffffff;	IR(Ez.z)&=0x7fffffff;
-										Ez.x = FR( AIR(Ez.x) );
-										Ez.y = FR( AIR(Ez.y) );
-										Ez.z = FR( AIR(Ez.z) );
+										Ez.x = fabsf(Ez.x);
+										Ez.y = fabsf(Ez.y);
+										Ez.z = fabsf(Ez.z);
 
 										aabb.mExtents.x = Ex.x + Ey.x + Ez.x;
 										aabb.mExtents.y = Ex.y + Ey.y + Ez.y;

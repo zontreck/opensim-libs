@@ -28,12 +28,9 @@
 	//#define SIR(x)					((sdword&)(x))
 	static inline sdword SIR(float x) { float_sdword fs; fs.f = x; return fs.s; }
 
-	//! Absolute integer representation of a floating-point value
-	#define AIR(x)					(IR(x)&0x7fffffff)
-
 	//! Floating-point representation of an integer value.
 	//#define FR(x)					((float&)(x))
-	static inline float FR(unsigned x) { float_udword fu; fu.u = x; return fu.f; }
+	//static inline float FR(unsigned x) { float_udword fu; fu.u = x; return fu.f; }
 
 	//! Integer-based comparison of a floating point value.
 	//! Don't use it blindly, it can be faster or slower than the FPU comparison, depends on the context.
@@ -44,78 +41,13 @@
 	//! Don't use it blindy, it can be faster or slower than the FPU comparison, depends on the context.
 	inline_ float FastFabs(float x)
 	{
-		udword FloatBits = IR(x)&0x7fffffff;
-		return FR(FloatBits);
+		return fabsf(x);
 	}
 
 	//! Fast square root for floating-point values.
 	inline_ float FastSqrt(float square)
 	{
 		return (float)sqrt(square);
-	}
-
-	//! Saturates positive to zero.
-	inline_ float fsat(float f)
-	{
-		udword y = IR(f) & ~(SIR(f) >>31);
-		return FR(y);
-	}
-
-	//! Computes 1.0f / sqrtf(x).
-	inline_ float frsqrt(float f)
-	{
-		float x = f * 0.5f;
-		udword y = 0x5f3759df - (IR(f) >> 1);
-		// Iteration...
-		const float fy = FR(y);
-		const float result = fy * ( 1.5f - ( x * fy * fy ) );
-		// Result
-		return result;
-	}
-
-	//! Computes 1.0f / sqrtf(x). Comes from NVIDIA.
-	inline_ float InvSqrt(const float& x)
-	{
-		const udword tmp = (udword(IEEE_1_0 << 1) + IEEE_1_0 - IR(x)) >> 1;      
-		const float y = FR(tmp);
-		return y * (1.47f - 0.47f * x * y * y);
-	}
-
-	//! Computes 1.0f / sqrtf(x). Comes from Quake3. Looks like the first one I had above.
-	//! See http://www.magic-software.com/3DGEDInvSqrt.html
-	inline_ float RSqrt(float number)
-	{
-		int i;
-		float x2, y;
-		const float threehalfs = 1.5f;
-
-		x2 = number * 0.5f;
-		y  = number;
-		i  = IR(y);
-		i  = 0x5f3759df - (i >> 1);
-		y  = FR(i);
-		y  = y * (threehalfs - (x2 * y * y));
-
-		return y;
-	}
-
-	//! TO BE DOCUMENTED
-	inline_ float fsqrt(float f)
-	{
-		udword y = ( ( SIR(f) - 0x3f800000 ) >> 1 ) + 0x3f800000;
-		// Iteration...?
-		// (float&)y = (3.0f - ((float&)y * (float&)y) / f) * (float&)y * 0.5f;
-		// Result
-		return FR(y);
-	}
-
-	//! Returns the float ranged espilon value.
-	inline_ float fepsilon(float f)
-	{
-		udword b = IR(f) & 0xff800000;
-		udword a = b | 0x00000001;
-		// Result
-		return FR(a) - FR(b);
 	}
 
 	//! Is the float valid ?
@@ -166,13 +98,6 @@
 		}
 	}
 */
-	//! This function computes the slowest possible floating-point value (you can also directly use FLT_EPSILON)
-	inline_ float ComputeFloatEpsilon()
-	{
-		const float f = FR( IR(1.0f) ^ 1 );
-		return f - 1.0f;	// You can check it's the same as FLT_EPSILON
-	}
-
 	inline_ bool IsFloatZero(float x, float epsilon=1e-6f)
 	{
 		return x*x < epsilon;
