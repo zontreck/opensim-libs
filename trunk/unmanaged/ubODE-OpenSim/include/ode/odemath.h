@@ -118,7 +118,7 @@ ODE_PURE_INLINE void dZeroVector3(dReal *res)
 ODE_PURE_INLINE void dZeroVector4(dReal *res)
 {
     __m128 ma = _mm_setzero_ps();
-    _mm_storeu_ps(res, ma); (res, ma);
+    _mm_storeu_ps(res, ma);
 }
 #else
 ODE_PURE_INLINE void dZeroVector4(dReal *res)
