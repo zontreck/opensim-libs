@@ -126,7 +126,7 @@ ODE_PURE_INLINE void dZeroVector4(dReal *res)
     res[0] = 0;
     res[1] = 0;
     res[2] = 0;
-    res[4] = 0;
+    res[3] = 0;
 }
 #endif
 #if defined(__AVX__)
