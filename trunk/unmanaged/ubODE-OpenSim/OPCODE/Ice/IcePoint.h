@@ -1159,7 +1159,9 @@ inline_ void iceStore3f(float *res, __m128 ma)
             float yp = x * Mat->m[0][1] + y * Mat->m[1][1] + z * Mat->m[2][1];
             float zp = x * Mat->m[0][2] + y * Mat->m[1][2] + z * Mat->m[2][2];
 
-            x = xp;    y = yp;    z = zp;
+            x = xp;
+            y = yp;
+            z = zp;
 
             return *this;
         }

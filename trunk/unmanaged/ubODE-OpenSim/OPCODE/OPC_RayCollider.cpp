@@ -279,8 +279,7 @@ BOOL RayCollider::InitQuery(const Ray& world_ray, const Matrix4x4* world, udword
     // The (Origin/Dir) form is needed for the ray-triangle test anyway (even for segment tests)
     if (world)
     {
-        Matrix3x3 InvWorld = *world;
-        mDir = InvWorld * world_ray.mDir;
+        mDir = (*world) * world_ray.mDir;
 
         Matrix4x4 World;
         InvertPRMatrix(World, *world);
