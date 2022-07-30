@@ -873,7 +873,7 @@ inline_ void iceStore3f(float *res, __m128 ma)
             return _mm_cvtss_f32(ma);
         }
 #else
-        inline_ float operator|(const Point& p)    const { return x*p.x + y*p.y + z*p.z; }
+        inline_ float operator|(const Point& p) const { return p.x * x + p.y * y + p.z * z; }
 #endif
 
         //! Operator for Point VecProd = Point ^ Point.
