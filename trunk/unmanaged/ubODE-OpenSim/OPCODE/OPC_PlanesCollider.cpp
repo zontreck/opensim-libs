@@ -152,9 +152,11 @@ BOOL PlanesCollider::InitQuery(PlanesCache& cache, const Plane* planes, udword n
 		InvertPRMatrix(InvWorldM, *worldm);
 
 //		for(udword i=0;i<nb_planes;i++)	mPlanes[i] = planes[i] * InvWorldM;
-		for(udword i=0;i<nb_planes;i++)	TransformPlane(mPlanes[i], planes[i], InvWorldM);
+		for(int i=0; i < nb_planes; i++)
+            TransformPlane(mPlanes[i], planes[i], InvWorldM);
 	}
-	else CopyMemory(mPlanes, planes, nb_planes*sizeof(Plane));
+	else
+        CopyMemory(mPlanes, planes, nb_planes*sizeof(Plane));
 
 	// 3) Setup destination pointer
 	mTouchedPrimitives = &cache.TouchedPrimitives;
