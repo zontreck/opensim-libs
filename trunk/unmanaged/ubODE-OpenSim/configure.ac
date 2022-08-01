@@ -146,7 +146,7 @@ AC_ARG_ENABLE([ou],
         AS_HELP_STRING([--enable-ou],
             [use TLS for global caches (allows threaded collision checks for isolated spaces)]
         ),
-        use_ou_tls=$enableval,use_ou_tls=yes)
+        use_ou_tls=$enableval,use_ou_tls=no)
 use_ou="no"
 if test x$use_ou_tls = xyes -o x$threading_intf = xyes
 then
