@@ -16,12 +16,12 @@
 class PRS;
 class PR;
 
-#define    MATRIX4X4_EPSILON        (1.0e-7f)
+#define MATRIX4X4_EPSILON (1.0e-7f)
 
 class ICEMATHS_API Matrix4x4
 {
-    //                void    LUBackwardSubstitution( sdword *indx, float* b );
-    //                void    LUDecomposition( sdword* indx, float* d );
+    //void    LUBackwardSubstitution( sdword *indx, float* b );
+    //void    LUDecomposition( sdword* indx, float* d );
 
 public:
     //! Empty constructor.
@@ -196,8 +196,8 @@ public:
     Matrix4x4& Invert();
     //Matrix&    ComputeAxisMatrix(Point& axis, float angle);
 
-            // Cast operators
-            //! Casts a Matrix4x4 to a Matrix3x3.
+    // Cast operators
+    //! Casts a Matrix4x4 to a Matrix3x3.
     inline_ operator Matrix3x3() const
     {
         return Matrix3x3(
@@ -564,8 +564,8 @@ public:
         return    *this;
     }
 
-    inline_ const HPoint& operator[](int row) const { return *(const HPoint*)&m[row][0]; }
-    inline_ HPoint& operator[](int row) { return *(HPoint*)&m[row][0]; }
+    //inline_ const HPoint& operator[](int row) const { return *(const HPoint*)&m[row][0]; }
+    //inline_ HPoint& operator[](int row) { return *(HPoint*)&m[row][0]; }
 
 public:
     float m[4][4];

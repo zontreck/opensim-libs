@@ -56,6 +56,7 @@
 #include "matrix.h"
 #include "odemath.h"
 #include "collision_util.h"
+#include "collision_std.h"
 #include "collision_trimesh_internal.h"
 #include "util.h"
 
@@ -817,32 +818,28 @@ void sTrimeshCapsuleColliderData::_cldTestOneTriangleVSCapsule(
 void sTrimeshCapsuleColliderData::SetupInitialContext(dxTriMesh *TriMesh, dxGeom *Capsule, 
                                                       int flags, int skip)
 {
-    const dMatrix3* pRot = (const dMatrix3*)dGeomGetRotation(Capsule);
-    memcpy(m_mCapsuleRotation, pRot, sizeof(dMatrix3));
-
-    const dVector3* pDst = (const dVector3*)dGeomGetPosition(Capsule);
-    memcpy(m_vCapsulePosition, pDst, sizeof(dVector3));
+    dxPosR *CapsulePosR = Capsule->GetRecomputePosR();
+    memcpy(m_mCapsuleRotation, CapsulePosR->R, sizeof(dMatrix3));
+    memcpy(m_vCapsulePosition, CapsulePosR->pos, sizeof(dVector3));
  
     m_vCapsuleAxis[0] = m_mCapsuleRotation[nCAPSULE_AXIS];
     m_vCapsuleAxis[1] = m_mCapsuleRotation[4 + nCAPSULE_AXIS];
     m_vCapsuleAxis[2] = m_mCapsuleRotation[8 + nCAPSULE_AXIS];
 
     // Get size of Capsule
-    dGeomCapsuleGetParams(Capsule, &m_fCapsuleRadius, &m_fCapCilinderSize);
-    m_fCapCilinderSize *= REAL(0.5);
+    m_fCapCilinderSize = ((dxCapsule*)Capsule)->halfLenZ;
+    m_fCapsuleRadius = ((dxCapsule*)Capsule)->radius;
     m_fCapsuleSize = m_fCapCilinderSize + m_fCapsuleRadius;
 
     dCopyScaledVector3r4(m_vSizeOnAxis, m_vCapsuleAxis, m_fCapCilinderSize);
 
-    const dMatrix3* pTriRot = (const dMatrix3*)dGeomGetRotation(TriMesh);
-    memcpy(m_mTriMeshRot, pTriRot, sizeof(dMatrix3));
-
-    const dVector3* pTriPos = (const dVector3*)dGeomGetPosition(TriMesh);
-    memcpy(m_mTriMeshPos, pTriPos, sizeof(dVector3));
+    dxPosR *meshPosR = TriMesh->GetRecomputePosR();
+    memcpy(m_mTriMeshRot, meshPosR->R, sizeof(dMatrix3));
+    memcpy(m_mTriMeshPos, meshPosR->pos, sizeof(dVector3));
 
     // global info for contact creation
-    m_iStride			=skip;
-    m_iFlags			=flags;
+    m_iStride =skip;
+    m_iFlags = flags;
 
     // reset contact counter
     m_ctContacts = 0;	
@@ -865,52 +862,48 @@ int sTrimeshCapsuleColliderData::TestCollisionForSingleTriangle(int ctContacts0,
 }
 
 
-static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider, 
-                                                  const sTrimeshCapsuleColliderData &cData, dxTriMesh *TriMesh, dxGeom *Capsule,
-                                                  OBBCache &BoxCache)
+static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
+    const sTrimeshCapsuleColliderData &cData, dxTriMesh *TriMesh, dxGeom *Capsule,
+    OBBCache &BoxCache)
 {
-    // It is a potential issue to explicitly cast to float 
-    // if custom width floating point type is introduced in OPCODE.
-    // It is necessary to make a typedef and cast to it
-    // (e.g. typedef float opc_float;)
-    // However I'm not sure in what header it should be added.
-
-    const dVector3 &vCapsulePosition = cData.m_vCapsulePosition;
-
-    Point cCenter(/*(float)*/ vCapsulePosition[0], /*(float)*/ vCapsulePosition[1], /*(float)*/ vCapsulePosition[2]);
-    Point cExtents(/*(float)*/ cData.m_fCapsuleRadius, /*(float)*/ cData.m_fCapsuleRadius,/*(float)*/ cData.m_fCapsuleSize);
-
+    const float *capPtr = (float*)&cData.m_mCapsuleRotation[0];
     Matrix3x3 obbRot;
+    obbRot.m[0][0] = capPtr[0];
+    obbRot.m[1][0] = capPtr[1];
+    obbRot.m[2][0] = capPtr[2];
 
-    const dMatrix3 &mCapsuleRotation = cData.m_mCapsuleRotation;
+    obbRot.m[0][1] = capPtr[4];
+    obbRot.m[1][1] = capPtr[5];
+    obbRot.m[2][1] = capPtr[6];
 
-    obbRot[0][0] = /*(float)*/ mCapsuleRotation[0];
-    obbRot[1][0] = /*(float)*/ mCapsuleRotation[1];
-    obbRot[2][0] = /*(float)*/ mCapsuleRotation[2];
+    obbRot.m[0][2] = capPtr[8];
+    obbRot.m[1][2] = capPtr[9];
+    obbRot.m[2][2] = capPtr[10];
+    
 
-    obbRot[0][1] = /*(float)*/ mCapsuleRotation[4];
-    obbRot[1][1] = /*(float)*/ mCapsuleRotation[5];
-    obbRot[2][1] = /*(float)*/ mCapsuleRotation[6];
-
-    obbRot[0][2] = /*(float)*/ mCapsuleRotation[8];
-    obbRot[1][2] = /*(float)*/ mCapsuleRotation[9];
-    obbRot[2][2] = /*(float)*/ mCapsuleRotation[10];
-
-    OBB obbCapsule(cCenter,cExtents,obbRot);
-
+    Point cCenter(cData.m_vCapsulePosition[0], cData.m_vCapsulePosition[1], cData.m_vCapsulePosition[2]);
+    Point cExtents(cData.m_fCapsuleRadius, cData.m_fCapsuleRadius, cData.m_fCapsuleSize);
+    OBB obbCapsule(cCenter, cExtents, obbRot);
+    
     Matrix4x4 MeshMatrix;
     MakeMatrix(cData.m_mTriMeshPos, cData.m_mTriMeshRot, MeshMatrix);
 
+
+
     // TC results
-    if (TriMesh->doBoxTC) {
+    if (TriMesh->doBoxTC)
+    {
         dxTriMesh::BoxTC* BoxTC = 0;
-        for (int i = 0; i < TriMesh->BoxTCCache.size(); i++){
-            if (TriMesh->BoxTCCache[i].Geom == Capsule){
+        for (int i = 0; i < TriMesh->BoxTCCache.size(); i++)
+        {
+            if (TriMesh->BoxTCCache[i].Geom == Capsule)
+            {
                 BoxTC = &TriMesh->BoxTCCache[i];
                 break;
             }
         }
-        if (!BoxTC){
+        if (!BoxTC)
+        {
             TriMesh->BoxTCCache.push(dxTriMesh::BoxTC());
 
             BoxTC = &TriMesh->BoxTCCache[TriMesh->BoxTCCache.size() - 1];
@@ -922,10 +915,12 @@ static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
         Collider.SetTemporalCoherence(true);
         Collider.Collide(*BoxTC, obbCapsule, TriMesh->Data->BVTree, null, &MeshMatrix);
     }
-    else {
+    else
+    {
         Collider.SetTemporalCoherence(false);
-        Collider.Collide(BoxCache, obbCapsule, TriMesh->Data->BVTree, null,&MeshMatrix);
+        Collider.Collide(BoxCache, obbCapsule, TriMesh->Data->BVTree, null,null /*&MeshMatrix*/);
     }
+
 }
 
 // capsule - trimesh by CroTeam

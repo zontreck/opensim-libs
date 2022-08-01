@@ -968,35 +968,27 @@ static void dQueryCTLPotentialCollisionTriangles(OBBCollider &Collider,
 
     Point cCenter(vCylinderPos[0],vCylinderPos[1],vCylinderPos[2]);
 
-    Point cExtents(cData.m_fCylinderRadius,cData.m_fCylinderRadius,cData.m_fCylinderRadius);
+    Point cExtents(cData. m_fCylinderRadius,cData. m_fCylinderRadius,cData.m_fCylinderRadius);
     cExtents[nCYLINDER_AXIS] = cData.m_fCylinderSize * REAL(0.5);
 
+    const float *capPtr = (float*)&cData.m_mCylinderRot;
     Matrix3x3 obbRot;
+    obbRot.m[0][0] = capPtr[0];
+    obbRot.m[1][0] = capPtr[1];
+    obbRot.m[2][0] = capPtr[2];
 
-    const dMatrix3 &mCylinderRot = cData.m_mCylinderRot;
+    obbRot.m[0][1] = capPtr[4];
+    obbRot.m[1][1] = capPtr[5];
+    obbRot.m[2][1] = capPtr[6];
 
-    // It is a potential issue to explicitly cast to float 
-    // if custom width floating point type is introduced in OPCODE.
-    // It is necessary to make a typedef and cast to it
-    // (e.g. typedef float opc_float;)
-    // However I'm not sure in what header it should be added.
-
-    obbRot[0][0] = /*(float)*/mCylinderRot[0];
-    obbRot[1][0] = /*(float)*/mCylinderRot[1];
-    obbRot[2][0] = /*(float)*/mCylinderRot[2];
-
-    obbRot[0][1] = /*(float)*/mCylinderRot[4];
-    obbRot[1][1] = /*(float)*/mCylinderRot[5];
-    obbRot[2][1] = /*(float)*/mCylinderRot[6];
-
-    obbRot[0][2] = /*(float)*/mCylinderRot[8];
-    obbRot[1][2] = /*(float)*/mCylinderRot[9];
-    obbRot[2][2] = /*(float)*/mCylinderRot[10];
+    obbRot.m[0][2] = capPtr[8];
+    obbRot.m[1][2] = capPtr[9];
+    obbRot.m[2][2] = capPtr[10];
 
     OBB obbCapsule(cCenter,cExtents,obbRot);
 
-    Matrix4x4 CapsuleMatrix;
-    MakeMatrix(vCylinderPos, mCylinderRot, CapsuleMatrix);
+    //Matrix4x4 CapsuleMatrix;
+    //MakeMatrix(vCylinderPos, cData.m_mCylinderRot, CapsuleMatrix);
 
     Matrix4x4 MeshMatrix;
     MakeMatrix(cData.m_vTrimeshPos, cData.m_mTrimeshRot, MeshMatrix);

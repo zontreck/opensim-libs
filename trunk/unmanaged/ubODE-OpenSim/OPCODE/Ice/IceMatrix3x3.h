@@ -279,12 +279,12 @@ public:
     //!         cy        0        -sy
     //!    RY = 0        1        0
     //!         sy        0        cy
-    void            RotY(float angle);
+    void RotY(float angle);
     //! Set a rotation matrix around the Z axis.
     //!         cz        sz        0
     //!    RZ = -sz    cz        0
     //!         0        0        1
-    void            RotZ(float angle);
+    void RotZ(float angle);
     //!            cy        sx.sy        -sy.cx
     //!    RY.RX    0        cx            sx
     //!            sy        -sx.cy        cx.cy
@@ -483,9 +483,9 @@ public:
     }
 
     //! Operator for Matrix3x3 Div = Matrix3x3 / float;
-    inline_    Matrix3x3        operator/(float s)                const
+    inline_ Matrix3x3 operator/(float s) const
     {
-        if (s)    s = 1.0f / s;
+        if (s) s = 1.0f / s;
         return Matrix3x3(
             m[0][0] * s, m[0][1] * s, m[0][2] * s,
             m[1][0] * s, m[1][1] * s, m[1][2] * s,
@@ -504,10 +504,10 @@ public:
     //! Operator for Matrix3x3 += Matrix3x3
     inline_ Matrix3x3& operator+=(const Matrix3x3& mat)
     {
-        m[0][0] += mat.m[0][0];        m[0][1] += mat.m[0][1];        m[0][2] += mat.m[0][2];
-        m[1][0] += mat.m[1][0];        m[1][1] += mat.m[1][1];        m[1][2] += mat.m[1][2];
-        m[2][0] += mat.m[2][0];        m[2][1] += mat.m[2][1];        m[2][2] += mat.m[2][2];
-        return    *this;
+        m[0][0] += mat.m[0][0]; m[0][1] += mat.m[0][1]; m[0][2] += mat.m[0][2];
+        m[1][0] += mat.m[1][0]; m[1][1] += mat.m[1][1]; m[1][2] += mat.m[1][2];
+        m[2][0] += mat.m[2][0]; m[2][1] += mat.m[2][1]; m[2][2] += mat.m[2][2];
+        return *this;
     }
 
     //! Operator for Matrix3x3 -= Matrix3x3
@@ -525,19 +525,19 @@ public:
         Point TempRow;
 
         GetRow(0, TempRow);
-        m[0][0] = TempRow.x*mat.m[0][0] + TempRow.y*mat.m[1][0] + TempRow.z*mat.m[2][0];
-        m[0][1] = TempRow.x*mat.m[0][1] + TempRow.y*mat.m[1][1] + TempRow.z*mat.m[2][1];
-        m[0][2] = TempRow.x*mat.m[0][2] + TempRow.y*mat.m[1][2] + TempRow.z*mat.m[2][2];
+        m[0][0] = TempRow.x * mat.m[0][0] + TempRow.y * mat.m[1][0] + TempRow.z * mat.m[2][0];
+        m[0][1] = TempRow.x * mat.m[0][1] + TempRow.y * mat.m[1][1] + TempRow.z * mat.m[2][1];
+        m[0][2] = TempRow.x * mat.m[0][2] + TempRow.y * mat.m[1][2] + TempRow.z * mat.m[2][2];
 
         GetRow(1, TempRow);
-        m[1][0] = TempRow.x*mat.m[0][0] + TempRow.y*mat.m[1][0] + TempRow.z*mat.m[2][0];
-        m[1][1] = TempRow.x*mat.m[0][1] + TempRow.y*mat.m[1][1] + TempRow.z*mat.m[2][1];
-        m[1][2] = TempRow.x*mat.m[0][2] + TempRow.y*mat.m[1][2] + TempRow.z*mat.m[2][2];
+        m[1][0] = TempRow.x * mat.m[0][0] + TempRow.y * mat.m[1][0] + TempRow.z * mat.m[2][0];
+        m[1][1] = TempRow.x * mat.m[0][1] + TempRow.y * mat.m[1][1] + TempRow.z * mat.m[2][1];
+        m[1][2] = TempRow.x * mat.m[0][2] + TempRow.y * mat.m[1][2] + TempRow.z * mat.m[2][2];
 
         GetRow(2, TempRow);
-        m[2][0] = TempRow.x*mat.m[0][0] + TempRow.y*mat.m[1][0] + TempRow.z*mat.m[2][0];
-        m[2][1] = TempRow.x*mat.m[0][1] + TempRow.y*mat.m[1][1] + TempRow.z*mat.m[2][1];
-        m[2][2] = TempRow.x*mat.m[0][2] + TempRow.y*mat.m[1][2] + TempRow.z*mat.m[2][2];
+        m[2][0] = TempRow.x * mat.m[0][0] + TempRow.y * mat.m[1][0] + TempRow.z * mat.m[2][0];
+        m[2][1] = TempRow.x * mat.m[0][1] + TempRow.y * mat.m[1][1] + TempRow.z * mat.m[2][1];
+        m[2][2] = TempRow.x * mat.m[0][2] + TempRow.y * mat.m[1][2] + TempRow.z * mat.m[2][2];
         return    *this;
     }
 
@@ -573,8 +573,7 @@ public:
     //! Cast a Matrix3x3 to a Quat.
     operator Quat() const;
 
-    inline_ const Point& operator[](int row) const { return *(const Point*)&m[row][0]; }
-    inline_ Point& operator[](int row) { return *(Point*)&m[row][0]; }
+    //inline_ Point& operator[](int row) { return *(Point*)&m[row][0]; }
 
 public:
     float m[3][3];

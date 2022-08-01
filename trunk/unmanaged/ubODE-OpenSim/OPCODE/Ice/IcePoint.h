@@ -48,7 +48,7 @@ inline_ void iceStore3f(float *res, __m128 ma)
         //! Constructor from array
         inline_ Point(const float f[3]) : x(f[0]), y(f[1]), z(f[2]) {}
         //! Copy constructor
-        inline_ Point(const Point& p) : x(p.x), y(p.y), z(p.z) {}
+        //inline_ Point(const Point& p) : x(p.x), y(p.y), z(p.z) {}
         //! Destructor
         inline_ ~Point() {}
 
@@ -668,30 +668,27 @@ inline_ void iceStore3f(float *res, __m128 ma)
         inline_ PointComponent LargestAxis() const
         {
             const float* Vals = &x;
-            PointComponent m = X;
-            if(Vals[Y] > Vals[m]) m = Y;
-            if(Vals[Z] > Vals[m]) m = Z;
-            return m;
+            const float a = Vals[X];
+            const float b = Vals[Y];
+            return b >= a ? (b >= Vals[Z] ? Y : Z) : (a >= Vals[Z] ? X : Z);
         }
 
         //! Returns closest axis
         inline_ PointComponent ClosestAxis() const
         {
             const float* Vals = &x;
-            PointComponent m = X;
-            if(fabsf(Vals[Y]) > fabsf(Vals[m])) m = Y;
-            if(fabsf(Vals[Z]) > fabsf(Vals[m])) m = Z;
-            return m;
+            const float a = fabsf(Vals[X]);
+            const float b = fabsf(Vals[Y]);
+            return b >= a ? (b >= fabsf(Vals[Z]) ? Y : Z) : (a >= fabsf(Vals[Z]) ? X : Z);
         }
 
         //! Returns smallest axis
         inline_ PointComponent SmallestAxis() const
         {
             const float* Vals = &x;
-            PointComponent m = X;
-            if(Vals[Y] < Vals[m]) m = Y;
-            if(Vals[Z] < Vals[m]) m = Z;
-            return m;
+            const float a = Vals[X];
+            const float b = Vals[Y];
+            return b <= a ? (b <= Vals[Z] ? Y : Z) : (a <= Vals[Z] ? X : Z);
         }
 
         //! Refracts the point
