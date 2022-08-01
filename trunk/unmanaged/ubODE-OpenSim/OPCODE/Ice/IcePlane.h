@@ -86,11 +86,10 @@
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline_	void TransformPlane(Plane& transformed, const Plane& plane, const Matrix4x4& transform)
 	{
-		// Rotate the normal using the rotation part of the 4x4 matrix
-		transformed.n = plane.n * Matrix3x3(transform);
-
+        TransformPoint3x3(transformed.n, plane.n, transform);
 		// Compute new d
-		transformed.d = plane.d - (Point(transform.GetTrans())|transformed.n);
+        float dot = transform.m[3][0] * transformed.n.x + transform.m[3][1] * transformed.n.y + transform.m[3][2] * transformed.n.z;
+        transformed.d = plane.d - dot;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,13 +100,14 @@
 	 *	\warning	the plane normal must be unit-length
 	 */
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	inline_	void TransformPlane(Plane& plane, const Matrix4x4& transform)
+/*	inline_	void TransformPlane(Plane& plane, const Matrix4x4& transform)
 	{
 		// Rotate the normal using the rotation part of the 4x4 matrix
 		plane.n *= Matrix3x3(transform);
 
 		// Compute new d
-		plane.d -= Point(transform.GetTrans())|plane.n;
+        float dot = transform.m[3][0] * plane.n.x + transform.m[3][1] * plane.n.y + transform.m[3][2] * plane.n.z;
+		plane.d -= dot;
 	}
-
+*/
 #endif // __ICEPLANE_H__

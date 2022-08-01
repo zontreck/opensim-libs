@@ -88,7 +88,7 @@ public:
     //! Sets a column.
     inline_ void SetCol(const udword c, const HPoint& p) { m[0][c] = p.x; m[1][c] = p.y; m[2][c] = p.z; m[3][c] = p.w; }
     //! Sets a column.
-    inline_ void SetCol(const udword c, const Point& p) { m[0][c] = p.x;    m[1][c] = p.y;    m[2][c] = p.z;    m[3][c] = (c != 3) ? 0.0f : 1.0f; }
+    inline_ void SetCol(const udword c, const Point& p) { m[0][c] = p.x; m[1][c] = p.y; m[2][c] = p.z; m[3][c] = (c != 3) ? 0.0f : 1.0f; }
 
     // Translation
     //! Returns the translation part of the matrix.
