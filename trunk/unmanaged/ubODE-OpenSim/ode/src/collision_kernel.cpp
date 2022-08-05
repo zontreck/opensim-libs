@@ -471,13 +471,15 @@ void dxGeom::computePosr()
     dMultiply0_333 (final_posr->R, body->posr.R, offset_posr->R);
 }
 
-bool dxGeom::controlGeometry(int /*controlClass*/, int /*controlCode*/, void * /*dataValue*/, int *dataSize)
-{
-    dAASSERT(false && "Control class/code is not supported for current geom");
 
-    *dataSize = 0;
-    return false;
-}
+//bool dxGeom::controlGeometry(int /*controlClass*/, int /*controlCode*/, void * /*dataValue*/, int *dataSize)
+//{
+//    dAASSERT(false && "Control class/code is not supported for current geom");
+
+//    *dataSize = 0;
+//    return false;
+//}
+
 
 //****************************************************************************
 // misc
@@ -864,7 +866,7 @@ void dGeomVectorFromWorld (dGeomID g, dReal px, dReal py, dReal pz, dVector3 res
 }
 
 
-
+/*
 int dGeomLowLevelControl (dxGeom *g, int controlClass, int controlCode, void *dataValue, int *dataSize)
 {
     dAASSERT (g);
@@ -877,7 +879,7 @@ int dGeomLowLevelControl (dxGeom *g, int controlClass, int controlCode, void *da
     bool result = g->controlGeometry(controlClass, controlCode, dataValue, dataSize);
     return result;
 }
-
+*/
 //****************************************************************************
 // C interface that lets the user make new classes. this interface is a lot
 // more cumbersome than C++ subclassing, which is what is used internally

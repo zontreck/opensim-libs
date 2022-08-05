@@ -605,7 +605,8 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
     const dVector3 ax1, int rotational )
 {
     int srow = row * info->rowskip;
-
+    dxBody *b0;
+    dxBody *b1;
     // if the joint is powered, or has joint limits, add in the extra row
     int powered = fmax > 0;
     if ( powered || limit )
@@ -617,7 +618,7 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
         J1[srow+1] = ax1[1];
         J1[srow+2] = ax1[2];
 
-        dxBody *b1 = joint->node[1].body;
+        b1 = joint->node[1].body;
         if ( b1 )
         {
             J2[srow+0] = -ax1[0];
@@ -641,7 +642,7 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
         dVector3 ltd = {0,0,0}; // Linear Torque Decoupling vector (a torque)
         if ( !rotational && b1 )
         {
-            dxBody *b0 = joint->node[0].body;
+            b0 = joint->node[0].body;
             dVector3 c;
             c[0] = REAL( 0.5 ) * ( b1->posr.pos[0] - b0->posr.pos[0] );
             c[1] = REAL( 0.5 ) * ( b1->posr.pos[1] - b0->posr.pos[1] );
@@ -688,14 +689,14 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                 
                 dReal fm_ax1_0 = fm*ax1[0], fm_ax1_1 = fm*ax1[1], fm_ax1_2 = fm*ax1[2];
                 
-                dxBody *b0 = joint->node[0].body;
+                b0 = joint->node[0].body;
                 dxWorldProcessContext *world_process_context = b0->world->UnsafeGetWorldProcessingContext(); 
 
                 world_process_context->LockForAddLimotSerialization();
 
                 if ( rotational )
                 {
-                    dxBody *b1 = joint->node[1].body;
+                    b1 = joint->node[1].body;
                     if ( b1 != NULL ) 
                     {
                         dBodyAddTorque( b1, fm_ax1_0, fm_ax1_1, fm_ax1_2 );
@@ -705,7 +706,7 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                 }
                 else
                 {
-                    dxBody *b1 = joint->node[1].body;
+                    b1 = joint->node[1].body;
                     if ( b1 != NULL )
                     {
                         // linear limot torque decoupling step: refer to above discussion
@@ -754,7 +755,6 @@ int dxJointLimitMotor::addLimot( dxJoint *joint,
                 if ( bounce > 0 )
                 {
                     // calculate joint velocity
-                    dReal vel;
                     if ( rotational )
                     {
                         vel = dCalcVectorDot3( joint->node[0].body->avel, ax1 );
@@ -908,7 +908,7 @@ int dxJointLimitMotor::addTwoPointLimot( dxJoint *joint, dReal fps,
                 if ( bounce > 0 )
                 {
                     // calculate relative velocity of the two anchor points
-                    dReal vel = 
+                    vel = 
   	                    dCalcVectorDot3( joint->node[0].body->lvel, &(info->J1l[srow])) +
   	                    dCalcVectorDot3( joint->node[0].body->avel, &(info->J1a[srow]));
   	                if (joint->node[1].body) {

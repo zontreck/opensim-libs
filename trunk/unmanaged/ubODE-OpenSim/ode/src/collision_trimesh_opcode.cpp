@@ -80,7 +80,7 @@ dxTriMeshData::Build(const void* Vertices,int VertexCount,
     Mesh.SetNbTriangles(IndexCount / 3);
     Mesh.SetNbVertices(VertexCount);
     Mesh.SetPointers((IndexedTriangle*)Indices, (Point*)Vertices);
-    Mesh.SetSingle(true);
+    //Mesh.SetSingle(true);
 
     int vertStride = Mesh.GetVertexStride();
 
@@ -265,8 +265,8 @@ void dxTriMeshData::Preprocess()
 
     meshFlags = dxTriMeshData::convex | dxTriMeshData::closedSurface;
 
-    uint8 notconvex = ~dxTriMeshData::convex;
-    uint8 notclosed = ~dxTriMeshData::closedSurface;
+    const uint8 notconvex = (uint8)~dxTriMeshData::convex;
+    const uint8 notclosed = (uint8)~dxTriMeshData::closedSurface;
 
     EdgeRecord* records = new EdgeRecord[numEdges];
 
@@ -541,7 +541,7 @@ void dxTriMesh::ClearTCCache()
     CapsuleTCCache.setSize(0);
 }
 
-
+/*
 bool dxTriMesh::controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize)
 {
     if (controlClass == dGeomColliderControlClass) {
@@ -560,7 +560,7 @@ bool dxTriMesh::controlGeometry(int controlClass, int controlCode, void *dataVal
 
     return dxGeom::controlGeometry(controlClass, controlCode, dataValue, dataSize);
 }
-
+*/
 bool dxTriMesh::controlGeometry_SetMergeSphereContacts(int dataValue)
 {
     if (dataValue == dGeomColliderMergeContactsValue__Default) {

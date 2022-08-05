@@ -63,8 +63,8 @@ public:
         return mVerts;
     }
 
-    inline_ bool SetStrides(udword tri_stride = sizeof(IndexedTriangle), udword vertex_stride = sizeof(Point)) { return true; }
-    inline_ void SetSingle(bool value) {}
+    //inline_ bool SetStrides(udword tri_stride = sizeof(IndexedTriangle), udword vertex_stride = sizeof(Point)) { return true; }
+    //inline_ void SetSingle(bool value) {}
     inline_ udword GetTriStride() const { return sizeof(IndexedTriangle); }
     inline_ udword GetVertexStride() const { return sizeof(Point); }
 

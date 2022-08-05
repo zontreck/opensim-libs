@@ -70,9 +70,9 @@ internal data structures and functions for collision detection.
 //		GEOM_DIRTY|GEOM_AABB_BAD|GEOM_POSR_BAD
 
 enum {
-    GEOM_DIRTY	= 1,    // geom is 'dirty', i.e. position unknown
+    GEOM_DIRTY	= 1,      // geom is 'dirty', i.e. position unknown
     GEOM_POSR_BAD = 2,    // geom's final posr is not valid
-    GEOM_AABB_BAD	= 4,    // geom's AABB is not valid
+    GEOM_AABB_BAD	= 4,  // geom's AABB is not valid
     GEOM_PLACEABLE = 8,   // geom is placeable
     GEOM_ENABLED = 16,    // geom is enabled
     GEOM_ZERO_SIZED = 32, // geom is zero sized
@@ -147,8 +147,12 @@ struct dxGeom : public dBase {
         return final_posr;
     };
 
-    bool checkControlValueSizeValidity(void *dataValue, int *dataSize, int iRequiresSize) { return (*dataSize == iRequiresSize && dataValue != 0) ? true : !(*dataSize = iRequiresSize); } // Here it is the intent to return true for 0 required size in any case
-    virtual bool controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize);
+//    bool checkControlValueSizeValidity(void *dataValue, int *dataSize, int iRequiresSize)
+//    {
+//        return (*dataSize == iRequiresSize && dataValue != 0) ? true : !(*dataSize = iRequiresSize);
+//    } // Here it is the intent to return true for 0 required size in any case
+    
+//    virtual bool controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize);
 
     virtual void computeAABB()=0;
     // compute the AABB for this object and put it in aabb. this function

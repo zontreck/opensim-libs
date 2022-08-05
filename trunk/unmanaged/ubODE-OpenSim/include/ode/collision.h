@@ -452,7 +452,7 @@ enum
  * @returns Boolean execution status
  * @ingroup collide
  */
-ODE_API int dGeomLowLevelControl (dGeomID geom, int controlClass, int controlCode, void *dataValue, int *dataSize);
+//ODE_API int dGeomLowLevelControl (dGeomID geom, int controlClass, int controlCode, void *dataValue, int *dataSize);
 
 
 /**

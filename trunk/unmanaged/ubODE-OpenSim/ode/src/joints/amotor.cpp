@@ -181,7 +181,7 @@ dxJointAMotor::setEulerReferenceVectors()
 void 
 dxJointAMotor::getSureMaxInfo( SureMaxInfo* info )
 {
-    info->max_m = num;
+    info->max_m = (uint8)num;
 }
 
 

@@ -249,7 +249,7 @@ struct dxTriMesh : public dxGeom
 
     void ClearTCCache();
 
-    bool controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize);
+//    bool controlGeometry(int controlClass, int controlCode, void *dataValue, int *dataSize);
 
     void computeAABB();
 

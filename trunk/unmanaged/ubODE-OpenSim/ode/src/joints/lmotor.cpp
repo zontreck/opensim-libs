@@ -69,7 +69,7 @@ dxJointLMotor::computeGlobalAxes( dVector3 ax[3] )
 void 
 dxJointLMotor::getSureMaxInfo( SureMaxInfo* info )
 {
-    info->max_m = num;
+    info->max_m = (uint8)num;
 }
 
 void

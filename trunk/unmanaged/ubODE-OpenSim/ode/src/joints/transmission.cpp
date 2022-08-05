@@ -306,22 +306,19 @@ dxJointTransmission::getInfo2( dReal worldFPS,
     // the contact points and tangents across the baseline.
     
     if (mode == dTransmissionChainDrive && delta < 0) {
-        dVector3 d;
-
         dSubtractVectors3r4(d, a[0], a[1]);
         
         for (i = 0 ; i < 2 ; i += 1) {
-            dVector3 nn;
-            dReal a;
+            dVector3 nnv;
+            dReal ra;
             
-            dCalcVectorCross3(nn, n[i], d);
-            a = dCalcVectorDot3(nn, nn);
+            dCalcVectorCross3(nnv, n[i], d);
+            ra = dCalcVectorDot3(nnv, nnv);
             dIASSERT(a > 0);
             
-            dAddScaledVectors3r4(c[i], c[i], nn,
-                               1, -2 * dCalcVectorDot3(c[i], nn) / a);
-            dAddScaledVectors3r4(l[i], l[i], nn,
-                               -1, 2 * dCalcVectorDot3(l[i], nn) / a);
+            ra = 1 / ra;
+            dAddScaledVectors3r4(c[i], c[i], nnv, 1, -2 * dCalcVectorDot3(c[i], nnv) * ra);
+            dAddScaledVectors3r4(l[i], l[i], nnv,-1, 2 * dCalcVectorDot3(l[i], nnv) * ra);
         }
     }
 

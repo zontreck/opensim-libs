@@ -879,7 +879,6 @@ static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
     obbRot.m[0][2] = capPtr[8];
     obbRot.m[1][2] = capPtr[9];
     obbRot.m[2][2] = capPtr[10];
-    
 
     Point cCenter(cData.m_vCapsulePosition[0], cData.m_vCapsulePosition[1], cData.m_vCapsulePosition[2]);
     Point cExtents(cData.m_fCapsuleRadius, cData.m_fCapsuleRadius, cData.m_fCapsuleSize);
@@ -887,8 +886,6 @@ static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
     
     Matrix4x4 MeshMatrix;
     MakeMatrix(cData.m_mTriMeshPos, cData.m_mTriMeshRot, MeshMatrix);
-
-
 
     // TC results
     if (TriMesh->doBoxTC)
@@ -918,9 +915,8 @@ static void dQueryCCTLPotentialCollisionTriangles(OBBCollider &Collider,
     else
     {
         Collider.SetTemporalCoherence(false);
-        Collider.Collide(BoxCache, obbCapsule, TriMesh->Data->BVTree, null,null /*&MeshMatrix*/);
+        Collider.Collide(BoxCache, obbCapsule, TriMesh->Data->BVTree, null, &MeshMatrix) ;
     }
-
 }
 
 // capsule - trimesh by CroTeam

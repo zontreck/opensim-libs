@@ -95,8 +95,8 @@ dxJointContact::getInfo1( dxJoint::Info1 *info )
     }
 
     the_m = m;
-    info->m = m;
-    info->nub = nub;
+    info->m = (uint8)m;
+    info->nub = (uint8)nub;
 }
 
 

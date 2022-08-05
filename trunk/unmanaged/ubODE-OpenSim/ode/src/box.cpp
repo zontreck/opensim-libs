@@ -817,8 +817,8 @@ int dBoxBox (const dVector3 p1, const dMatrix3 R1,
 
     for (j=0; j < n; j++)
     {
-        dReal k1 =  m22 * (ret[j * 2] - c1) - m12 * (ret[j * 2 + 1] - c2);
-        dReal k2 = -m21 * (ret[j * 2] - c1) + m11 * (ret[j * 2 + 1] - c2);
+        k1 =  m22 * (ret[j * 2] - c1) - m12 * (ret[j * 2 + 1] - c2);
+        k2 = -m21 * (ret[j * 2] - c1) + m11 * (ret[j * 2 + 1] - c2);
         for (i = 0; i < 3; i++)
             point[cnum * 3 + i] = center[i] + k1 * Rb[i * 4 + a1] + k2 * Rb[i * 4 + a2];
         dep[cnum] = Sa[codeN] - dCalcVectorDot3(normal2, point + cnum * 3);

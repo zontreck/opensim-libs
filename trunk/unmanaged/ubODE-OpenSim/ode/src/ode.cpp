@@ -180,8 +180,8 @@ static void checkWorld (dxWorld *w)
         for (int i=0; i<2; i++) {
             if (j->node[i].body) {
                 int ok = 0;
-                for (dxJointNode *n=j->node[i].body->firstjoint; n; n=n->next) {
-                    if (n->joint == j) ok = 1;
+                for (dxJointNode *nj = j->node[i].body->firstjoint; nj; nj = nj->next) {
+                    if (nj->joint == j) ok = 1;
                 }
                 if (ok==0) dDebug (0,"joint not in joint list of attached body");
             }
@@ -190,16 +190,16 @@ static void checkWorld (dxWorld *w)
 
     // check all body joint lists (correct body ptrs)
     for (b=w->firstbody; b; b=(dxBody*)b->next) {
-        for (dxJointNode *n=b->firstjoint; n; n=n->next) {
-            if (&n->joint->node[0] == n) {
-                if (n->joint->node[1].body != b)
+        for (dxJointNode *nj=b->firstjoint; nj; nj=nj->next) {
+            if (&nj->joint->node[0] == nj) {
+                if (nj->joint->node[1].body != b)
                     dDebug (0,"bad body pointer in joint node of body list (1)");
             }
             else {
-                if (n->joint->node[0].body != b)
+                if (nj->joint->node[0].body != b)
                     dDebug (0,"bad body pointer in joint node of body list (2)");
             }
-            if (n->joint->tag != count) dDebug (0,"bad joint node pointer in body");
+            if (nj->joint->tag != count) dDebug (0,"bad joint node pointer in body");
         }
     }
 
