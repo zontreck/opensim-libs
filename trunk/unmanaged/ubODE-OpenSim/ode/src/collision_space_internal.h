@@ -40,19 +40,19 @@ stuff common to all spaces
 // NOTE: this assumes that the geom AABBs are valid on entry
 // and that both geoms are enabled.
 
-static inline void collideAABBs (dxGeom *g1, dxGeom *g2,
+static inline void collideAABBs(dxGeom *g1, dxGeom *g2,
                                  void *data, dNearCallback *callback)
 {
     dIASSERT((g1->gflags & GEOM_AABB_BAD)==0);
     dIASSERT((g2->gflags & GEOM_AABB_BAD)==0);
 
     // no contacts if both geoms on the same body, and the body is not 0
-    if (g1->body == g2->body && g1->body) return;
+    if (g1->body && g1->body == g2->body) return;
 
     // test if the category and collide bitfields match
-    if ( ((g1->category_bits & g2->collide_bits) ||
-        (g2->category_bits & g1->collide_bits)) == 0) {
-            return;
+    if ( ((g1->category_bits & g2->collide_bits) || (g2->category_bits & g1->collide_bits)) == 0)
+    {
+        return;
     }
 
     // if the bounding boxes are disjoint then don't do anything
@@ -69,11 +69,42 @@ static inline void collideAABBs (dxGeom *g1, dxGeom *g2,
 
     // check if either object is able to prove that it doesn't intersect the
     // AABB of the other
-    if (g1->AABBTest (g2,bounds2) == 0) return;
-    if (g2->AABBTest (g1,bounds1) == 0) return;
+    //if (g1->AABBTest(g2, bounds2) == 0) return;
+    //if (g2->AABBTest(g1, bounds1) == 0) return;
 
     // the objects might actually intersect - call the space callback function
     callback (data,g1,g2);
+}
+
+static inline bool testCollideAABBs(dxGeom *g1, dxGeom *g2)
+{
+    dIASSERT((g1->gflags & GEOM_AABB_BAD) == 0);
+    dIASSERT((g2->gflags & GEOM_AABB_BAD) == 0);
+
+    // no contacts if both geoms on the same body, and the body is not 0
+    if (g1->body && g1->body == g2->body) return false;
+
+    // test if the category and collide bitfields match
+    if (((g1->category_bits & g2->collide_bits) || (g2->category_bits & g1->collide_bits)) == 0)
+    {
+        return false;
+    }
+
+    // if the bounding boxes are disjoint then don't do anything
+    dReal *bounds1 = g1->aabb;
+    dReal *bounds2 = g2->aabb;
+    if (bounds1[0] > bounds2[1] ||
+        bounds1[1] < bounds2[0] ||
+        bounds1[2] > bounds2[3] ||
+        bounds1[3] < bounds2[2] ||
+        bounds1[4] > bounds2[5] ||
+        bounds1[5] < bounds2[4]) return false;
+
+    // check if either object is able to prove that it doesn't intersect the
+    // AABB of the other
+    //if (g1->AABBTest(g2, bounds2) == 0) return false;
+    //if (g2->AABBTest(g1, bounds1) == 0) return false;
+    return true;
 }
 
 #endif

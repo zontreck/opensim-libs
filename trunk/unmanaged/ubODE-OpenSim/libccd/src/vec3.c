@@ -168,8 +168,17 @@ ccd_real_t ccdVec3PointTriDist2(const ccd_vec3_t *P,
     q = ccdVec3Dot(&a, &d2);
     r = ccdVec3Dot(&d1, &d2);
 
-    s = (q * r - w * p) / (w * v - r * r);
-    t = (-s * r - q) / w;
+    ccd_real_t d = (w * v - r * r);
+    if (ccdIsZero(d))
+    {
+        // To avoid division by zero for zero (or near zero) area triangles
+        s = t = -1.;
+    }
+    else
+    {
+        s = (q * r - w * p) / d;
+        t = (-s * r - q) / w;
+    }
 
     if ((ccdIsZero(s) || s > CCD_ZERO)
             && (ccdEq(s, CCD_ONE) || s < CCD_ONE)

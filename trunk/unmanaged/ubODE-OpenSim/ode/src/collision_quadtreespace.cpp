@@ -32,16 +32,6 @@
 
 #include "collision_space_internal.h"
 
-
-#define AXIS0 0
-#define AXIS1 1
-#define UP 2
-
-//#define DRAWBLOCKS
-
-const int SPLITAXIS = 2;
-const int SPLITS = SPLITAXIS * SPLITAXIS;
-
 #define GEOM_ENABLED(g) (((g)->gflags & GEOM_ENABLE_TEST_MASK) == GEOM_ENABLE_TEST_VALUE)
 
 class Block
@@ -60,7 +50,6 @@ public:
 
     void Collide(void* UserData, dNearCallback* Callback);
     void Collide(dGeomID g1, dGeomID g2, void* UserData, dNearCallback* Callback);
-
     void CollideLocal(dGeomID g2, void* UserData, dNearCallback* Callback);
 
     void AddObject(dGeomID Object);
@@ -73,11 +62,10 @@ public:
     Block* GetBlockChild(const dReal* AABB);
 };
 
-
-void Block::Create(const dReal MinX, const dReal MaxX, const dReal MinZ, const dReal MaxZ, Block* Parent, int Depth, Block*& Blocks)
+void Block::Create(const dReal MinX, const dReal MaxX, const dReal MinY, const dReal MaxY, Block* Parent, int Depth, Block* &Blocks)
 {
     dIASSERT(MinX <= MaxX);
-    dIASSERT(MinZ <= MaxZ);
+    dIASSERT(MinY <= MaxY);
 
     mGeomCount = 0;
     mFirst = 0;
@@ -85,43 +73,34 @@ void Block::Create(const dReal MinX, const dReal MaxX, const dReal MinZ, const d
     mMinX = MinX;
     mMaxX = MaxX;
 
-    mMinZ = MinZ;
-    mMaxZ = MaxZ;
+    mMinZ = MinY;
+    mMaxZ = MaxY;
 
     this->mParent = Parent;
 
     if (Depth > 0)
     {
-        mChildren = Blocks;
-        Blocks += SPLITS;
-
-        const dReal ChildExtentX = (MaxX - MinX) / SPLITAXIS;
-        const dReal ChildExtentZ = (MaxZ - MinZ) / SPLITAXIS;
-
         const int ChildDepth = Depth - 1;
-        int Index = 0;
 
-        dReal ChildRightX = MinX;
-        for (int i = 0; i < SPLITAXIS; i++)
-        {
-            const dReal ChildLeftX = ChildRightX;
-            ChildRightX = (i != SPLITAXIS - 1) ? ChildLeftX + ChildExtentX : MaxX;
+        mChildren = Blocks;
+        Blocks += 4;
 
-            dReal ChildRightZ = MinZ;
-            for (int j = 0; j < SPLITAXIS; j++)
-            {
-                const dReal ChildLeftZ = ChildRightZ;
-                ChildRightZ = (j != SPLITAXIS - 1) ? ChildLeftZ + ChildExtentZ : MaxZ;
+        const dReal ChildExtentX = (MaxX - MinX) * dReal(0.5);
+        const dReal ChildExtentY = (MaxY - MinY) * dReal(0.5);
+        const dReal ChildMidX = MinX + ChildExtentX;
+        const dReal ChildMidY = MinY + ChildExtentY;
+        mChildren[0].Create(MinX, ChildMidX, MinY, ChildMidY, this, ChildDepth, Blocks);
+        mChildren[1].Create(MinX, ChildMidX, ChildMidY, MaxY, this, ChildDepth, Blocks);
 
-                mChildren[Index].Create(ChildLeftX, ChildRightX, ChildLeftZ, ChildRightZ, this, ChildDepth, Blocks);
-                ++Index;
-            }
-        }
+        mChildren[2].Create(ChildMidX, MaxX, MinY, ChildMidY, this, ChildDepth, Blocks);
+        mChildren[3].Create(ChildMidX, MaxX, ChildMidY, MaxY, this, ChildDepth, Blocks);
     }
-    else mChildren = 0;
+    else
+        mChildren = 0;
 }
 
-void Block::Collide(void* UserData, dNearCallback* Callback){
+void Block::Collide(void* UserData, dNearCallback* Callback)
+{
     // Collide the local list
     dxGeom* g = mFirst;
     while (g)
@@ -136,7 +115,7 @@ void Block::Collide(void* UserData, dNearCallback* Callback){
     // Recurse for children
     if (mChildren)
     {
-        for (int i = 0; i < SPLITS; i++)
+        for (int i = 0; i < 4; i++)
         {
             Block &CurrentChild = mChildren[i];
             if (CurrentChild.mGeomCount <= 1)
@@ -149,22 +128,20 @@ void Block::Collide(void* UserData, dNearCallback* Callback){
 }
 
 // Note: g2 is assumed to be in this Block
-void Block::Collide(dxGeom* g1, dxGeom* g2, void* UserData, dNearCallback* Callback)
+void Block::Collide(dGeomID g1, dGeomID g2, void* UserData, dNearCallback* Callback)
 {
     // Collide against local list
     while (g2)
     {
-        if (GEOM_ENABLED(g2))
-        {
-            collideAABBs (g1, g2, UserData, Callback);
-        }
+        if (GEOM_ENABLED(g2) && testCollideAABBs(g1, g2))
+            Callback(UserData, g1, g2);
         g2 = g2->next_ex;
     }
 
     // Collide against children
     if (mChildren)
     {
-        for (int i = 0; i < SPLITS; i++)
+        for (int i = 0; i < 4; i++)
         {
             Block &CurrentChild = mChildren[i];
             // Early out for empty blocks
@@ -177,24 +154,24 @@ void Block::Collide(dxGeom* g1, dxGeom* g2, void* UserData, dNearCallback* Callb
             // Don't do AABB tests for single geom blocks.
             if (CurrentChild.mGeomCount > 1)
             {
-                if (g1->aabb[AXIS0 * 2 + 0] >= CurrentChild.mMaxX ||
-                    g1->aabb[AXIS0 * 2 + 1] < CurrentChild.mMinX ||
-                    g1->aabb[AXIS1 * 2 + 0] >= CurrentChild.mMaxZ ||
-                    g1->aabb[AXIS1 * 2 + 1] < CurrentChild.mMinZ)
+                if (g1->aabb[0] > CurrentChild.mMaxX ||
+                    g1->aabb[1] < CurrentChild.mMinX ||
+                    g1->aabb[2] > CurrentChild.mMaxZ ||
+                    g1->aabb[3] < CurrentChild.mMinZ)
                     continue;
             }
             CurrentChild.Collide(g1, CurrentChild.mFirst, UserData, Callback);
         }
     }
 }
-
-void Block::CollideLocal(dxGeom* g2, void* UserData, dNearCallback* Callback){
+void Block::CollideLocal(dGeomID g2, void* UserData, dNearCallback* Callback)
+{
     // Collide against local list
     dxGeom* g1 = mFirst;
-    while (g1){
-        if (GEOM_ENABLED(g1)){
-            collideAABBs (g1, g2, UserData, Callback);
-        }
+    while (g1)
+    {
+        if (GEOM_ENABLED(g1) && testCollideAABBs(g1, g2))
+            Callback(UserData, g1, g2);
         g1 = g1->next_ex;
     }
 }
@@ -229,7 +206,6 @@ void Block::DelObject(dGeomID Object)
                 Last->next_ex = g->next_ex;
             else
                 mFirst = g->next_ex;
-
             break;
         }
         Last = g;
@@ -261,12 +237,12 @@ void Block::Traverse(dGeomID Object)
     }
 }
 
-bool Block::Inside(const dReal* AABB)
+inline bool Block::Inside(const dReal* AABB)
 {
-    return AABB[AXIS0 * 2 + 0] >= mMinX &&
-           AABB[AXIS0 * 2 + 1] < mMaxX &&
-           AABB[AXIS1 * 2 + 0] >= mMinZ &&
-           AABB[AXIS1 * 2 + 1] < mMaxZ;
+    return AABB[0] > mMinX &&
+           AABB[1] < mMaxX &&
+           AABB[2] > mMinZ &&
+           AABB[3] < mMaxZ;
 }
 
 Block* Block::GetBlock(const dReal* AABB)
@@ -286,7 +262,7 @@ Block* Block::GetBlockChild(const dReal* AABB)
 {
     if (mChildren)
     {
-        for (int i = 0; i < SPLITS; i++)
+        for (int i = 0; i < 4; i++)
         {
             Block &CurrentChild = mChildren[i];
             if (CurrentChild.Inside(AABB))
@@ -350,10 +326,10 @@ dxQuadTreeSpace::dxQuadTreeSpace(dSpaceID _space, const dVector3 Center, const d
         return;
     }
 
-    dReal MinX = Center[AXIS0] - Extents[AXIS0];
-    dReal MaxX = dNextAfter((Center[AXIS0] + Extents[AXIS0]), (dReal)dInfinity);
-    dReal MinZ = Center[AXIS1] - Extents[AXIS1];
-    dReal MaxZ = dNextAfter((Center[AXIS1] + Extents[AXIS1]), (dReal)dInfinity);
+    dReal MinX = Center[0] - Extents[0];
+    dReal MaxX = dNextAfter((Center[0] + Extents[0]), (dReal)dInfinity);
+    dReal MinZ = Center[1] - Extents[1];
+    dReal MaxZ = dNextAfter((Center[1] + Extents[1]), (dReal)dInfinity);
 
     Block* nBlocks = this->Blocks + 1;	// This pointer gets modified!
     this->Blocks[0].Create(MinX, MaxX, MinZ, MaxZ, 0, Depth, nBlocks);
@@ -380,7 +356,7 @@ dxGeom* dxQuadTreeSpace::getGeom(int Index){
 
     //@@@
     dDebug (0,"dxQuadTreeSpace::getGeom() not yet implemented");
-
+    return 0;
     // This doesnt work
 /*
     if (CurrentIndex == Index){
@@ -446,7 +422,8 @@ PARENTRECURSE:
     */
 }
 
-void dxQuadTreeSpace::add(dxGeom* g){
+void dxQuadTreeSpace::add(dxGeom* g)
+{
     CHECK_NOT_LOCKED (this);
     dAASSERT(g);
     dUASSERT(g->tome_ex == 0 && g->next_ex == 0, "geom is already in a space");
@@ -465,32 +442,38 @@ void dxQuadTreeSpace::remove(dxGeom* g){
     // remove
     ((Block*)g->tome_ex)->DelObject(g);
 
-    for (int i = 0; i < DirtyList.size(); i++){
-        if (DirtyList[i] == g){
+    for (int i = 0; i < DirtyList.size(); i++)
+    {
+        if (DirtyList[i] == g)
+        {
             DirtyList.remove(i);
             // (mg) there can be multiple instances of a dirty object on stack  be sure to remove ALL and not just first, for this we decrement i
             --i;
         }
     }
-
     dxSpace::remove(g);
 }
 
-void dxQuadTreeSpace::dirty(dxGeom* g){
+void dxQuadTreeSpace::dirty(dxGeom* g)
+{
     DirtyList.push(g);
 }
 
-void dxQuadTreeSpace::computeAABB(){
+void dxQuadTreeSpace::computeAABB()
+{
     //
 }
 
-void dxQuadTreeSpace::cleanGeoms(){
+void dxQuadTreeSpace::cleanGeoms()
+{
     // compute the AABBs of all dirty geoms, and clear the dirty flags
     lock_count++;
 
-    for (int i = 0; i < DirtyList.size(); i++){
+    for (int i = 0; i < DirtyList.size(); i++)
+    {
         dxGeom* g = DirtyList[i];
-        if (IS_SPACE(g)){
+        if (IS_SPACE(g))
+        {
             ((dxSpace*)g)->cleanGeoms();
         }
         g->recomputeAABB();
@@ -503,7 +486,8 @@ void dxQuadTreeSpace::cleanGeoms(){
     lock_count--;
 }
 
-void dxQuadTreeSpace::collide(void* UserData, dNearCallback* Callback){
+void dxQuadTreeSpace::collide(void* UserData, dNearCallback* Callback)
+{
     dAASSERT(Callback);
 
     lock_count++;
@@ -515,7 +499,8 @@ void dxQuadTreeSpace::collide(void* UserData, dNearCallback* Callback){
 }
 
 
-struct DataCallback {
+struct DataCallback
+{
     void *data;
     dNearCallback *callback;
 };
@@ -527,14 +512,16 @@ static void swap_callback(void *data, dxGeom *g1, dxGeom *g2)
 }
 
 
-void dxQuadTreeSpace::collide2(void* UserData, dxGeom* g2, dNearCallback* Callback){
+void dxQuadTreeSpace::collide2(void* UserData, dxGeom* g2, dNearCallback* Callback)
+{
     dAASSERT(g2 && Callback);
 
     lock_count++;
     cleanGeoms();
     g2->recomputeAABB();
 
-    if (g2->parent_space == this){
+    if (g2->parent_space == this)
+    {
         // The block the geom is in
         Block* CurrentBlock = (Block*)g2->tome_ex;
 
@@ -545,9 +532,9 @@ void dxQuadTreeSpace::collide2(void* UserData, dxGeom* g2, dNearCallback* Callba
         // Collide against parents
         while ((CurrentBlock = CurrentBlock->mParent))
             CurrentBlock->CollideLocal(g2, UserData, Callback);
-
     }
-    else {
+    else
+    {
         DataCallback dc = {UserData, Callback};
         Blocks[0].Collide(g2, Blocks[0].mFirst, &dc, swap_callback);
     }
@@ -555,6 +542,7 @@ void dxQuadTreeSpace::collide2(void* UserData, dxGeom* g2, dNearCallback* Callba
     lock_count--;
 }
 
-dSpaceID dQuadTreeSpaceCreate(dxSpace* space, const dVector3 Center, const dVector3 Extents, int Depth){
+dSpaceID dQuadTreeSpaceCreate(dxSpace* space, const dVector3 Center, const dVector3 Extents, int Depth)
+{
     return new dxQuadTreeSpace(space, Center, Extents, Depth);
 }

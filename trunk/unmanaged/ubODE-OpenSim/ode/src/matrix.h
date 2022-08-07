@@ -35,23 +35,23 @@
 #ifdef __cplusplus
 
 template <typename element_type>
-ODE_INLINE
-void _dSetZero (element_type *a, size_t n)
+ODE_INLINE void _dSetZero (element_type *a, size_t n)
 {
     element_type *acurr = a;
     element_type *const aend = a + n;
-    while (acurr != aend) {
+    while (acurr != aend)
+    {
         *(acurr++) = 0;
     }
 }
 
 template <typename element_type>
-ODE_INLINE
-void _dSetValue (element_type *a, size_t n, element_type value)
+ODE_INLINE void _dSetValue (element_type *a, size_t n, element_type value)
 {
     element_type *acurr = a;
     element_type *const aend = a + n;
-    while (acurr != aend) {
+    while (acurr != aend)
+    {
         *(acurr++) = value;
     }
 }
@@ -59,22 +59,22 @@ void _dSetValue (element_type *a, size_t n, element_type value)
 
 #else // #ifndef __cplusplus
 
-ODE_PURE_INLINE
-void _dSetZero (dReal *a, size_t n)
+ODE_PURE_INLINE void _dSetZero (dReal *a, size_t n)
 {
     dReal *acurr = a;
     dReal *const aend = a + n;
-    while (acurr != aend) {
+    while (acurr != aend)
+    {
         *(acurr++) = 0;
     }
 }
 
-ODE_PURE_INLINE
-void _dSetValue (dReal *a, size_t n, dReal value)
+ODE_PURE_INLINE void _dSetValue (dReal *a, size_t n, dReal value)
 {
     dReal *acurr = a;
     dReal *const aend = a + n;
-    while (acurr != aend) {
+    while (acurr != aend)
+    {
         *(acurr++) = value;
     }
 }

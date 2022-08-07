@@ -474,8 +474,8 @@ dReal dJointGetAMotorAngleRate( dJointID j, int anum )
     if (joint->node[0].body) {
       dVector3 axis;
       dJointGetAMotorAxis (joint, anum, axis);
-      dReal rate = dDOT(axis,joint->node[0].body->avel);
-      if (joint->node[1].body) rate -= dDOT(axis,joint->node[1].body->avel);
+      dReal rate = dCalcVectorDot3(axis,joint->node[0].body->avel);
+      if (joint->node[1].body) rate -= dCalcVectorDot3(axis,joint->node[1].body->avel);
       return rate;
     }
     return 0;

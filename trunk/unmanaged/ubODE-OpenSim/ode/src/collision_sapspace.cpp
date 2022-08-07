@@ -210,7 +210,8 @@ private:
 };
 
 // Creation
-dSpaceID dSweepAndPruneSpaceCreate( dxSpace* space, int axisorder ) {
+dSpaceID dSweepAndPruneSpaceCreate( dxSpace* space, int axisorder )
+{
     return new dxSAPSpace( space, axisorder );
 }
 
@@ -237,11 +238,11 @@ static void collideGeomsNoAABBs( dxGeom *g1, dxGeom *g2, void *data, dNearCallba
     dIASSERT( (g2->gflags & GEOM_AABB_BAD)==0 );
 
     // no contacts if both geoms on the same body, and the body is not 0
-    if (g1->body == g2->body && g1->body) return;
+    if (g1->body && g1->body == g2->body) return;
 
     // test if the category and collide bitfields match
-    if ( ((g1->category_bits & g2->collide_bits) ||
-        (g2->category_bits & g1->collide_bits)) == 0) {
+    if ( ((g1->category_bits & g2->collide_bits) || (g2->category_bits & g1->collide_bits)) == 0)
+    {
             return;
     }
 

@@ -98,7 +98,8 @@ enum dxContactMergeOptions {
 // the pos and R of the body (if body nonzero).
 // a dGeomID is a pointer to this object.
 
-struct dxGeom : public dBase {
+struct dxGeom : public dBase
+{
     int type;		// geom type number, set by subclass constructor
     int gflags;		// flags used by geom and space
     void *data;		// user-defined data pointer
@@ -170,8 +171,10 @@ struct dxGeom : public dBase {
     // compute the AABB only if it is not current. this function manipulates
     // the GEOM_AABB_BAD flag.
 
-    void recomputeAABB() {
-        if (gflags & GEOM_AABB_BAD) {
+    void recomputeAABB()
+    {
+        if (gflags & GEOM_AABB_BAD)
+        {
             // our aabb functions assume final_posr is up to date
             recomputePosr(); 
             computeAABB();
@@ -183,10 +186,12 @@ struct dxGeom : public dBase {
 
     // add and remove this geom from a linked list maintained by a space.
 
-    void spaceAdd (dxGeom **first_ptr) {
+    void spaceAdd (dxGeom **first_ptr)
+    {
         next = *first_ptr;
         tome = first_ptr;
-        if (*first_ptr) (*first_ptr)->tome = &next;
+        if (*first_ptr)
+            (*first_ptr)->tome = &next;
         *first_ptr = this;
     }
     void spaceRemove() {
@@ -196,7 +201,8 @@ struct dxGeom : public dBase {
 
     // add and remove this geom from a linked list maintained by a body.
 
-    void bodyAdd (dxBody *b) {
+    void bodyAdd (dxBody *b)
+    {
         body = b;
         body_next = b->geom;
         b->geom = this;
@@ -221,7 +227,8 @@ struct dxGeom : public dBase {
 #define dSPACE_TLS_KIND_MANUAL_VALUE 0
 #endif
 
-struct dxSpace : public dxGeom {
+struct dxSpace : public dxGeom
+{
     int count;			// number of geoms in this space
     dxGeom *first;		// first geom in list
     int cleanup;			// cleanup mode, 1=destroy geoms on exit
@@ -269,8 +276,8 @@ struct dxSpace : public dxGeom {
 
 //////////////////////////////////////////////////////////////////////////
 
-/*inline */
-void dxGeom::markAABBBad() {
+inline void dxGeom::markAABBBad()
+{
     gflags |= (GEOM_DIRTY | GEOM_AABB_BAD);
     CHECK_NOT_LOCKED(parent_space);
 }

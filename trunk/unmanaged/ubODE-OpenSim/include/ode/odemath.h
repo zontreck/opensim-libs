@@ -1108,15 +1108,23 @@ ODE_PURE_INLINE dReal dCalcVectorDot4(const dReal *a, const dReal *b)
 */
 ODE_PURE_INLINE dReal _dCalcVectorDot3(const dReal *a, const dReal *b, unsigned step_a, unsigned step_b)
 {
-  return a[0] * b[0] + a[step_a] * b[step_b] + a[2 * step_a] * b[2 * step_b];
+    return a[0] * b[0] + a[step_a] * b[step_b] + a[2 * step_a] * b[2 * step_b];
 }
 
 ODE_PURE_INLINE dReal dCalcVectorDot3_13 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,1,3); }
 ODE_PURE_INLINE dReal dCalcVectorDot3_31 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,3,1); }
 ODE_PURE_INLINE dReal dCalcVectorDot3_33 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,3,3); }
 ODE_PURE_INLINE dReal dCalcVectorDot3_14 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,1,4); }
-ODE_PURE_INLINE dReal dCalcVectorDot3_41 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,4,1); }
-ODE_PURE_INLINE dReal dCalcVectorDot3_44 (const dReal *a, const dReal *b) { return _dCalcVectorDot3(a,b,4,4); }
+ODE_PURE_INLINE dReal dCalcVectorDot3_41 (const dReal *a, const dReal *b)
+{
+    //return _dCalcVectorDot3(a,b,4,1);
+    return a[0] * b[0] + a[4] * b[1] + a[8] * b[2];
+}
+ODE_PURE_INLINE dReal dCalcVectorDot3_44 (const dReal *a, const dReal *b)
+{
+    //return _dCalcVectorDot3(a,b,4,4);
+    return a[0] * b[0] + a[4] * b[4] + a[8] * b[8];
+}
 
 #if defined(__AVX__)
 ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b)
@@ -1126,12 +1134,15 @@ ODE_PURE_INLINE void dCalcVectorCross3(dReal *res, const dReal *a, const dReal *
     mb = _mm_loadu_ps(b);
 
     t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
-    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b3
 
     t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
 
-    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
-    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+    //t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    //t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
+
 
     t4 = _mm_mul_ps(t1, t2);
     ma = _mm_sub_ps(t3, t4);
@@ -1154,12 +1165,14 @@ ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal
     mb = _mm_loadu_ps(b);
 
     t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 0, 2, 1)); // a1 a2 a0 a3
-    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b2
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 1, 0, 2)); // b2 b0 b1 b3
 
     t3 = _mm_mul_ps(t1, t2); //a1b2 a2b0 a0b1 a3b2
 
-    t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
-    t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+    //t1 = _mm_shuffle_ps(t1, t1, _MM_SHUFFLE(3, 0, 2, 1));
+    //t2 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(3, 1, 0, 2));
+    t1 = _mm_shuffle_ps(ma, ma, _MM_SHUFFLE(3, 1, 0, 2));
+    t2 = _mm_shuffle_ps(mb, mb, _MM_SHUFFLE(3, 0, 2, 1));
 
     t4 = _mm_mul_ps(t1, t2);
     ma = _mm_sub_ps(t3, t4);
@@ -1181,12 +1194,19 @@ ODE_PURE_INLINE void dCalcVectorCross3r4(dReal *res, const dReal *a, const dReal
 
 ODE_PURE_INLINE void _dCalcVectorCross3(dReal *res, const dReal *a, const dReal *b, unsigned step_res, unsigned step_a, unsigned step_b)
 {
-    res[           0] = a[  step_a] * b[2*step_b] - a[2*step_a] *b [  step_b];
-    res[    step_res] = a[2*step_a] * b[       0] - a[       0] *b [2*step_b];
-    res[2 * step_res] = a[       0] * b[  step_b] - a[  step_a] *b [       0];
+    res[0] = a[step_a] * b[2 * step_b] - a[2 * step_a] * b[step_b];
+    res[step_res] = a[2 * step_a] * b[0] - a[0] * b[2 * step_b];
+    res[2 * step_res] = a[0] * b[step_b] - a[step_a] * b[0];
 }
 
-ODE_PURE_INLINE void dCalcVectorCross3_114(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 1, 1, 4); }
+ODE_PURE_INLINE void dCalcVectorCross3_114(dReal *res, const dReal *a, const dReal *b)
+{
+    //_dCalcVectorCross3(res, a, b, 1, 1, 4);
+    res[0] = a[1] * b[8] - a[2] * b[4];
+    res[1] = a[2] * b[0] - a[0] * b[8];
+    res[2] = a[0] * b[4] - a[1] * b[0];
+}
+
 ODE_PURE_INLINE void dCalcVectorCross3_141(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 1, 4, 1); }
 ODE_PURE_INLINE void dCalcVectorCross3_144(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 1, 4, 4); }
 ODE_PURE_INLINE void dCalcVectorCross3_411(dReal *res, const dReal *a, const dReal *b) { _dCalcVectorCross3(res, a, b, 4, 1, 1); }
@@ -1562,32 +1582,27 @@ ODE_PURE_INLINE void dMultVector3r4(dReal *res, const dReal *a)
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, mb, mc;
-    dReal restmp[3];
 
     mb = _mm_loadu_ps(b);
    
     ma = _mm_loadu_ps(a);
     mc = _mm_dp_ps(ma, mb, 0x71);
-    restmp[0] = (dReal)_mm_cvtss_f32(mc);
+    res[0] = (dReal)_mm_cvtss_f32(mc);
 
     ma = _mm_loadu_ps(a + 4);
     mc = _mm_dp_ps(ma, mb, 0x71);
-    restmp[1] = (dReal)_mm_cvtss_f32(mc);
+    res[1] = (dReal)_mm_cvtss_f32(mc);
 
     ma = _mm_loadu_ps(a + 8);
     mc = _mm_dp_ps(ma, mb, 0x71);
-    restmp[2] = (dReal)_mm_cvtss_f32(mc);
-
-    res[0] = restmp[0];
-    res[1] = restmp[1];
-    res[2] = restmp[2];
+    res[2] = (dReal)_mm_cvtss_f32(mc);
 }
 #else
 ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 {
-    res[0] = dCalcVectorDot3(a, b);
-    res[1] = dCalcVectorDot3(a + 4, b);
-    res[2] = dCalcVectorDot3(a + 8, b);
+    res[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    res[1] = a[4] * b[0] + a[5] * b[1] + a[6] * b[2];
+    res[2] = a[8] * b[0] + a[9] * b[1] + a[10] * b[2];
 }
 #endif
 
@@ -1595,7 +1610,6 @@ ODE_PURE_INLINE void dMultiply0_331(dReal *res, const dReal *a, const dReal *b)
 ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
 {
     __m128 ma, t0, t1, t2, m0, m1, m2, m3;
-    dReal restmp[3];
 
     t0 = _mm_loadu_ps(a); // a0 a1 a2 a3
     t1 = _mm_loadu_ps(a + 4); // a4 a5 a6 a7
@@ -1613,22 +1627,18 @@ ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
     t2 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(2, 2, 2, 0)); // a2 a6 a10 a10
 
     m0 = _mm_dp_ps(ma, t0, 0x71);
-    restmp[0] = _mm_cvtss_f32(m0);
+    res[0] = _mm_cvtss_f32(m0);
     m1 = _mm_dp_ps(ma, t1, 0x71);
-    restmp[1] = _mm_cvtss_f32(m1);
+    res[1] = _mm_cvtss_f32(m1);
     m2 = _mm_dp_ps(ma, t2, 0x71);
-    restmp[2] = _mm_cvtss_f32(m2);
-
-    res[0] = restmp[0];
-    res[1] = restmp[1];
-    res[2] = restmp[2];
+    res[2] = _mm_cvtss_f32(m2);
 }
 #else
 ODE_PURE_INLINE void dMultiply1_331(dReal *res, const dReal *a, const dReal *b)
 {
-    res[0] = dCalcVectorDot3_41(a, b);
-    res[1] = dCalcVectorDot3_41(a + 1, b);
-    res[2] = dCalcVectorDot3_41(a + 2, b);
+    res[0] = a[0] * b[0] + a[4] * b[1] + a[8] * b[2];
+    res[1] = a[1] * b[0] + a[5] * b[1] + a[9] * b[2];
+    res[2] = a[2] * b[0] + a[6] * b[1] + a[10] * b[2];
 }
 #endif
 
