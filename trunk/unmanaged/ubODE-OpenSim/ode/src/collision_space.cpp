@@ -259,7 +259,6 @@ dxSimpleSpace::dxSimpleSpace(dSpaceID _space) : dxSpace(_space)
     type = dSimpleSpaceClass;
 }
 
-
 void dxSimpleSpace::cleanGeoms()
 {
     // compute the AABBs of all dirty geoms, and clear the dirty flags
@@ -847,8 +846,8 @@ void dSpaceCollide2(dxGeom *g1, dxGeom *g2, void *data, dNearCallback *callback)
     dxSpace *s1, *s2;
 
     // see if either geom is a space
-    if (IS_SPACE(g1)) s1 = (dxSpace*)g1; else s1 = 0;
-    if (IS_SPACE(g2)) s2 = (dxSpace*)g2; else s2 = 0;
+    s1 = (IS_SPACE(g1)) ? (dxSpace*)g1 : 0;
+    s2 = (IS_SPACE(g2)) ? (dxSpace*)g2 : 0;
 
     if (s1 && s2)
     {
@@ -919,7 +918,8 @@ void dSpaceCollide2(dxGeom *g1, dxGeom *g2, void *data, dNearCallback *callback)
             // make sure they have valid AABBs
             g1->recomputeAABB();
             g2->recomputeAABB();
-            collideAABBs(g1, g2, data, callback);
+            if (testCollideAABBs(g1, g2))
+                callback(data, g1, g2);
         }
     }
 }

@@ -247,15 +247,7 @@ inline bool Block::Inside(const dReal* AABB)
 
 Block* Block::GetBlock(const dReal* AABB)
 {
-    if (Inside(AABB))
-    {
-        return GetBlockChild(AABB);	// Child or this will have a good block
-    }
-    else if (mParent)
-    {
-        return mParent->GetBlock(AABB);	// Parent has a good block
-    }
-    else return this;	// We are at the root, so we have little choice
+    return Inside(AABB) ? GetBlockChild(AABB) : ( mParent ? mParent->GetBlock(AABB) : this );
 }
 
 Block* Block::GetBlockChild(const dReal* AABB)
