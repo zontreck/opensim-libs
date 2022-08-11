@@ -38,17 +38,17 @@ you may need to do chmod +x bootstrap before since git keeps losing it
 == On Linux 32-bit ==
 ./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
-cp ode/src/.libs/libubode.so.6.1.0 $OPENSIM/bin/lib32/libubode.so	 (possible name is not ..so.6.1.0 )
+cp ode/src/.libs/libubode.so.5.1.0 $OPENSIM/bin/lib32/libubode.so	 (possible name is not ..so.5.1.0 )
 
 == On Linux 64-bit ==
 ./configure --disable-asserts --enable-shared --disable-threading-intf 
 make
-cp ode/src/.libs/libubode.so.6.1.0 $OPENSIM/bin/lib64/libubode-x86_64.so (possible name is not ..so.6.1.0 )
+cp ode/src/.libs/libubode.so.5.1.0 $OPENSIM/bin/lib64/libubode-x86_64.so (possible name is not ..so.5.1.0 )
 
 == On Linux 64-bit to cross-compile to 32-bit ==
 CFLAGS=-m32 CPPFLAGS=-m32 LDFLAGS=-m32 ./configure --build=i686-pc-linux-gnu --disable-asserts --enable-shared --disable-threading-intf
 make
-cp ode/src/.libs/libubode.so.6.1.0 $OPENSIM/bin/lib32/libubode.so
+cp ode/src/.libs/libubode.so.5.1.0 $OPENSIM/bin/lib32/libubode.so
 
 you can run strip to remove debug information and reduce file size
 
