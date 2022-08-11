@@ -8,13 +8,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 noinst_LTLIBRARIES = libfast.la
 libfast_la_SOURCES = fastldlt.c fastltsolve.c fastdot.c fastlsolve.c
 
-lib_LTLIBRARIES = libode.la
+lib_LTLIBRARIES = libubode.la
 
-libode_la_LDFLAGS = @EXTRA_LIBTOOL_LDFLAGS@ @ODE_VERSION_INFO@
-libode_la_LIBADD = libfast.la joints/libjoints.la
+libubode_la_LDFLAGS = @EXTRA_LIBTOOL_LDFLAGS@ @ODE_VERSION_INFO@
+libubode_la_LIBADD = libfast.la joints/libjoints.la
 
 # please, let's keep the filenames sorted
-libode_la_SOURCES =     nextafterf.c \
+libubode_la_SOURCES =   nextafterf.c \
                         array.cpp array.h \
                         box.cpp \
                         capsule.cpp \
@@ -71,8 +71,8 @@ libode_la_SOURCES =     nextafterf.c \
 if ENABLE_OU
 
 AM_CPPFLAGS += -I$(top_srcdir)/ou/include
-libode_la_LIBADD += $(top_builddir)/ou/src/ou/libou.la
-libode_la_SOURCES +=    odetls.cpp odetls.h \
+libubode_la_LIBADD += $(top_builddir)/ou/src/ou/libou.la
+libubode_la_SOURCES +=  odetls.cpp odetls.h \
                         odeou.cpp odeou.h
 
 endif
@@ -82,10 +82,10 @@ endif
 #################################
 
 AM_CPPFLAGS += -I$(top_srcdir)/OPCODE -I$(top_srcdir)/OPCODE/Ice -DdTRIMESH_ENABLED -DdTRIMESH_OPCODE
-libode_la_LIBADD += $(top_builddir)/OPCODE/libOPCODE.la \
+libubode_la_LIBADD += $(top_builddir)/OPCODE/libOPCODE.la \
                     $(top_builddir)/OPCODE/Ice/libIce.la
 
-libode_la_SOURCES+=     collision_trimesh_trimesh.cpp \
+libubode_la_SOURCES+=   collision_trimesh_trimesh.cpp \
                         collision_trimesh_sphere.cpp \
                         collision_trimesh_ray.cpp \
                         collision_trimesh_opcode.cpp \

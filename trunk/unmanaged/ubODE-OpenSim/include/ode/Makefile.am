@@ -1,5 +1,5 @@
-libode_la_includedir = $(includedir)/ode
-libode_la_include_HEADERS = \
+libubode_la_includedir = $(includedir)/ode
+libubode_la_include_HEADERS = \
     collision.h \
     collision_space.h \
     collision_trimesh.h \
@@ -27,6 +27,6 @@ libode_la_include_HEADERS = \
 
 EXTRA_DIST = README precision.h.in version.h.in
 
-dist_libode_la_include_HEADERS = precision.h version.h
+dist_libubode_la_include_HEADERS = precision.h version.h
 
 
