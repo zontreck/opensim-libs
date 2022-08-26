@@ -314,7 +314,7 @@ dxJointTransmission::getInfo2( dReal worldFPS,
             
             dCalcVectorCross3(nnv, n[i], d);
             ra = dCalcVectorDot3(nnv, nnv);
-            dIASSERT(a > 0);
+            dIASSERT(ra > 0);
             
             ra = 1 / ra;
             dAddScaledVectors3r4(c[i], c[i], nnv, 1, -2 * dCalcVectorDot3(c[i], nnv) * ra);
