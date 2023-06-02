@@ -9,7 +9,8 @@
 //
 
 using System;
-
+using System.Diagnostics;
+using System.Threading;
 using Mono.Collections.Generic;
 
 namespace Mono.Cecil {
@@ -38,6 +39,7 @@ namespace Mono.Cecil {
 		Collection<SecurityDeclaration> SecurityDeclarations { get; }
 	}
 
+	[DebuggerDisplay ("{AttributeType}")]
 	public sealed class SecurityAttribute : ICustomAttribute {
 
 		TypeReference attribute_type;
@@ -55,15 +57,25 @@ namespace Mono.Cecil {
 		}
 
 		public Collection<CustomAttributeNamedArgument> Fields {
-			get { return fields ?? (fields = new Collection<CustomAttributeNamedArgument> ()); }
+			get {
+				if (fields == null)
+					Interlocked.CompareExchange (ref fields, new Collection<CustomAttributeNamedArgument> (), null);
+
+				return fields;
+			}
 		}
 
 		public bool HasProperties {
 			get { return !properties.IsNullOrEmpty (); }
 		}
+		
+		public Collection<CustomAttributeNamedArgument> Properties { 
+			get {
+				if (properties == null)
+					Interlocked.CompareExchange (ref properties, new Collection<CustomAttributeNamedArgument> (), null);
 
-		public Collection<CustomAttributeNamedArgument> Properties {
-			get { return properties ?? (properties = new Collection<CustomAttributeNamedArgument> ()); }
+				return properties;
+			}
 		}
 
 		public SecurityAttribute (TypeReference attributeType)
@@ -107,7 +119,10 @@ namespace Mono.Cecil {
 			get {
 				Resolve ();
 
-				return security_attributes ?? (security_attributes = new Collection<SecurityAttribute> ());
+				if (security_attributes == null) 
+					Interlocked.CompareExchange (ref security_attributes, new Collection<SecurityAttribute> (), null);
+
+				return security_attributes;
 			}
 		}
 
@@ -143,7 +158,7 @@ namespace Mono.Cecil {
 			if (!HasImage || signature == 0)
 				throw new NotSupportedException ();
 
-			return blob = module.Read (this, (declaration, reader) => reader.ReadSecurityDeclarationBlob (declaration.signature));
+			return module.Read (ref blob, this, (declaration, reader) => reader.ReadSecurityDeclarationBlob (declaration.signature));
 		}
 
 		void Resolve ()
@@ -151,8 +166,14 @@ namespace Mono.Cecil {
 			if (resolved || !HasImage)
 				return;
 
-			module.Read (this, (declaration, reader) => reader.ReadSecurityDeclarationSignature (declaration));
-			resolved = true;
+			lock (module.SyncRoot) {
+
+				if (resolved)
+					return;
+
+				module.Read (this, (declaration, reader) => reader.ReadSecurityDeclarationSignature (declaration));
+				resolved = true;
+			}
 		}
 	}
 
@@ -170,9 +191,11 @@ namespace Mono.Cecil {
 			ref Collection<SecurityDeclaration> variable,
 			ModuleDefinition module)
 		{
-			return module.HasImage ()
-				? module.Read (ref variable, self, (provider, reader) => reader.ReadSecurityDeclarations (provider))
-				: variable = new Collection<SecurityDeclaration>();
+			if (module.HasImage)
+				return module.Read (ref variable, self, (provider, reader) => reader.ReadSecurityDeclarations (provider));
+
+			Interlocked.CompareExchange (ref variable, new Collection<SecurityDeclaration> (), null);
+			return variable;
 		}
 	}
 }

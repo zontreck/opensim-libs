@@ -119,7 +119,7 @@ namespace Mono.Addins.Description
 		bool HasProperty (string name);
 	}
 	
-	class AddinPropertyCollectionImpl: List<AddinProperty>, AddinPropertyCollection
+	public class AddinPropertyCollectionImpl: List<AddinProperty>, AddinPropertyCollection
 	{
 		AddinDescription desc;
 
@@ -246,7 +246,11 @@ namespace Mono.Addins.Description
 		
 		public bool HasProperty (string name)
 		{
-			return this.Any (p => p.Name == name);
+			foreach (var p in this) {
+				if (p.Name == name)
+					return true;
+			}
+			return false;
 		}
 		
 		internal string ExtractCoreProperty (string name, bool removeProperty)

@@ -11,8 +11,6 @@
 using System;
 using System.IO;
 
-#if !READ_ONLY
-
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 
@@ -50,6 +48,8 @@ namespace Mono.Cecil.PE {
 
 		ushort sections;
 
+		internal long debug_header_entries_position;
+
 		ImageWriter (ModuleDefinition module, string runtime_version, MetadataBuilder metadata, Disposable<Stream> stream, bool metadataOnly = false)
 			: base (stream.value)
 		{
@@ -66,7 +66,7 @@ namespace Mono.Cecil.PE {
 			this.GetDebugHeader ();
 			this.GetWin32Resources ();
 			this.BuildTextMap ();
-			this.sections = (ushort) (has_reloc ? 2 : 1); // text + reloc?
+			this.sections = (ushort)(has_reloc ? 2 : 1); // text + reloc?
 		}
 
 		void GetDebugHeader ()
@@ -100,7 +100,7 @@ namespace Mono.Cecil.PE {
 
 		public static ImageWriter CreateWriter (ModuleDefinition module, MetadataBuilder metadata, Disposable<Stream> stream)
 		{
-			var writer = new ImageWriter (module, module.runtime_version, metadata, stream);
+			var writer = new ImageWriter (module, module.runtime_version, metadata, stream, metadataOnly: false);
 			writer.BuildSections ();
 			return writer;
 		}
@@ -196,12 +196,18 @@ namespace Mono.Cecil.PE {
 			WriteUInt32 (metadata.timestamp);
 			WriteUInt32 (0);	// PointerToSymbolTable
 			WriteUInt32 (0);	// NumberOfSymbols
-			WriteUInt16 (SizeOfOptionalHeader ());	// SizeOfOptionalHeader
+			WriteUInt16 (SizeOfOptionalHeader ());  // SizeOfOptionalHeader
 
-			// ExecutableImage | (pe64 ? 32BitsMachine : LargeAddressAware)
-			var characteristics = (ushort) (0x0002 | (!pe64 ? 0x0100 : 0x0020));
+			const ushort LargeAddressAware = 0x0020;
+
+			// ExecutableImage | (!pe64 ? 32BitsMachine : LargeAddressAware)
+			var characteristics = (ushort) (0x0002 | (!pe64 ? 0x0100 : LargeAddressAware));
 			if (module.Kind == ModuleKind.Dll || module.Kind == ModuleKind.NetModule)
 				characteristics |= 0x2000;
+
+			if (module.Image != null && (module.Image.Characteristics & LargeAddressAware) != 0)
+				characteristics |= LargeAddressAware;
+
 			WriteUInt16 (characteristics);	// Characteristics
 		}
 
@@ -218,9 +224,8 @@ namespace Mono.Cecil.PE {
 
 		void WriteOptionalHeaders ()
 		{
-			WriteUInt16 ((ushort) (!pe64 ? 0x10b : 0x20b));	// Magic
-			WriteByte (8);	// LMajor
-			WriteByte (0);	// LMinor
+			WriteUInt16 ((ushort) (!pe64 ? 0x10b : 0x20b)); // Magic
+			WriteUInt16 (module.linker_version);
 			WriteUInt32 (text.SizeOfRawData);	// CodeSize
 			WriteUInt32 ((reloc != null ? reloc.SizeOfRawData : 0)
 				+ (rsrc != null ? rsrc.SizeOfRawData : 0));	// InitializedDataSize
@@ -244,8 +249,8 @@ namespace Mono.Cecil.PE {
 			WriteUInt16 (0);	// OSMinor
 			WriteUInt16 (0);	// UserMajor
 			WriteUInt16 (0);	// UserMinor
-			WriteUInt16 (4);	// SubSysMajor
-			WriteUInt16 (0);	// SubSysMinor
+			WriteUInt16 (module.subsystem_major);	// SubSysMajor
+			WriteUInt16 (module.subsystem_minor);	// SubSysMinor
 			WriteUInt32 (0);	// Reserved
 
 			var last_section = LastSection();
@@ -256,17 +261,22 @@ namespace Mono.Cecil.PE {
 			WriteUInt16 (GetSubSystem ());	// SubSystem
 			WriteUInt16 ((ushort) module.Characteristics);	// DLLFlags
 
-			const ulong stack_reserve = 0x100000;
-			const ulong stack_commit = 0x1000;
-			const ulong heap_reserve = 0x100000;
-			const ulong heap_commit = 0x1000;
-
 			if (!pe64) {
-				WriteUInt32 ((uint) stack_reserve);
-				WriteUInt32 ((uint) stack_commit);
-				WriteUInt32 ((uint) heap_reserve);
-				WriteUInt32 ((uint) heap_commit);
+				const uint stack_reserve = 0x100000;
+				const uint stack_commit = 0x1000;
+				const uint heap_reserve = 0x100000;
+				const uint heap_commit = 0x1000;
+
+				WriteUInt32 (stack_reserve);
+				WriteUInt32 (stack_commit);
+				WriteUInt32 (heap_reserve);
+				WriteUInt32 (heap_commit);
 			} else {
+				const ulong stack_reserve = 0x400000;
+				const ulong stack_commit = 0x4000;
+				const ulong heap_reserve = 0x100000;
+				const ulong heap_commit = 0x2000;
+
 				WriteUInt64 (stack_reserve);
 				WriteUInt64 (stack_commit);
 				WriteUInt64 (heap_reserve);
@@ -356,6 +366,11 @@ namespace Mono.Cecil.PE {
 			WriteUInt32 (characteristics);
 		}
 
+		uint GetRVAFileOffset (Section section, RVA rva)
+		{
+			return section.PointerToRawData + rva - section.VirtualAddress;
+		}
+
 		void MoveTo (uint pointer)
 		{
 			BaseStream.Seek (pointer, SeekOrigin.Begin);
@@ -363,10 +378,10 @@ namespace Mono.Cecil.PE {
 
 		void MoveToRVA (Section section, RVA rva)
 		{
-			BaseStream.Seek (section.PointerToRawData + rva - section.VirtualAddress, SeekOrigin.Begin);
+			BaseStream.Seek (GetRVAFileOffset (section, rva), SeekOrigin.Begin);
 		}
 
-		void MoveToRVA (TextSegment segment)
+		internal void MoveToRVA (TextSegment segment)
 		{
 			MoveToRVA (text, text_map.GetRVA (segment));
 		}
@@ -587,7 +602,9 @@ namespace Mono.Cecil.PE {
 
 				data_start += entry.Data.Length;
 			}
-			
+
+			debug_header_entries_position = BaseStream.Position;
+
 			for (var i = 0; i < debug_header.Entries.Length; i++) {
 				var entry = debug_header.Entries [i];
 				WriteBytes (entry.Data);
@@ -681,7 +698,7 @@ namespace Mono.Cecil.PE {
 
 			map.AddMap (TextSegment.Code, metadata.code.length, !pe64 ? 4 : 16);
 			map.AddMap (TextSegment.Resources, metadata.resources.length, 8);
-			map.AddMap (TextSegment.Data, metadata.data.length, 4);
+			map.AddMap (TextSegment.Data, metadata.data.length, metadata.data.BufferAlign);
 			if (metadata.data.length > 0)
 				metadata.table_heap.FixupData (map.GetRVA (TextSegment.Data));
 			map.AddMap (TextSegment.StrongNameSignature, GetStrongNameLength (), 4);
@@ -702,7 +719,7 @@ namespace Mono.Cecil.PE {
 					entry.Directory = directory;
 
 					data_len += entry.Data.Length;
-					data_address += data_len;
+					data_address += entry.Data.Length;
 				}
 
 				debug_dir_len = directories_len + data_len;
@@ -777,7 +794,7 @@ namespace Mono.Cecil.PE {
 
 		int GetStrongNameLength ()
 		{
-			if (module.Assembly == null)
+			if (module.kind == ModuleKind.NetModule || module.Assembly == null)
 				return 0;
 
 			var public_key = module.Assembly.Name.PublicKey;
@@ -847,5 +864,3 @@ namespace Mono.Cecil.PE {
 		}
 	}
 }
-
-#endif

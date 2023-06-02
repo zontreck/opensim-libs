@@ -10,7 +10,8 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Metadata;
 using Mono.Collections.Generic;
@@ -56,7 +57,7 @@ namespace Mono.Cecil {
 		internal Dictionary<uint, Row<MethodSemanticsAttributes, MetadataToken>> Semantics;
 		internal Dictionary<uint, Row<PInvokeAttributes, uint, uint>> PInvokes;
 		internal Dictionary<MetadataToken, Range []> GenericParameters;
-		internal Dictionary<uint, Collection<MetadataToken>> GenericConstraints;
+		internal Dictionary<uint, Collection<Row<uint, MetadataToken>>> GenericConstraints;
 
 		internal Document [] Documents;
 		internal Dictionary<uint, Collection<Row<uint, Range, Range, uint, uint, uint>>> LocalScopes;
@@ -68,7 +69,7 @@ namespace Mono.Cecil {
 
 		static void InitializePrimitives ()
 		{
-			primitive_value_types = new Dictionary<string, Row<ElementType, bool>> (18, StringComparer.Ordinal) {
+			var types = new Dictionary<string, Row<ElementType, bool>> (18, StringComparer.Ordinal) {
 				{ "Void", new Row<ElementType, bool> (ElementType.Void, false) },
 				{ "Boolean", new Row<ElementType, bool> (ElementType.Boolean, true) },
 				{ "Char", new Row<ElementType, bool> (ElementType.Char, true) },
@@ -88,6 +89,8 @@ namespace Mono.Cecil {
 				{ "UIntPtr", new Row<ElementType, bool> (ElementType.U, true) },
 				{ "Object", new Row<ElementType, bool> (ElementType.Object, false) },
 			};
+
+			Interlocked.CompareExchange (ref primitive_value_types, types, null);
 		}
 
 		public static void TryProcessPrimitiveTypeReference (TypeReference type)
@@ -149,7 +152,7 @@ namespace Mono.Cecil {
 			if (Semantics != null) Semantics = new Dictionary<uint, Row<MethodSemanticsAttributes, MetadataToken>> (capacity: 0);
 			if (PInvokes != null) PInvokes = new Dictionary<uint, Row<PInvokeAttributes, uint, uint>> (capacity: 0);
 			if (GenericParameters != null) GenericParameters = new Dictionary<MetadataToken, Range []> (capacity: 0);
-			if (GenericConstraints != null) GenericConstraints = new Dictionary<uint, Collection<MetadataToken>> (capacity: 0);
+			if (GenericConstraints != null) GenericConstraints = new Dictionary<uint, Collection<Row<uint, MetadataToken>>> (capacity: 0);
 
 			Documents = Empty<Document>.Array;
 			ImportScopes = Empty<ImportDebugInformation>.Array;
@@ -240,11 +243,6 @@ namespace Mono.Cecil {
 			NestedTypes [type_rid] = mapping;
 		}
 
-		public void RemoveNestedTypeMapping (TypeDefinition type)
-		{
-			NestedTypes.Remove (type.token.RID);
-		}
-
 		public bool TryGetReverseNestedTypeMapping (TypeDefinition type, out uint declaring)
 		{
 			return ReverseNestedTypes.TryGetValue (type.token.RID, out declaring);
@@ -253,11 +251,6 @@ namespace Mono.Cecil {
 		public void SetReverseNestedTypeMapping (uint nested, uint declaring)
 		{
 			ReverseNestedTypes [nested] = declaring;
-		}
-
-		public void RemoveReverseNestedTypeMapping (TypeDefinition type)
-		{
-			ReverseNestedTypes.Remove (type.token.RID);
 		}
 
 		public bool TryGetInterfaceMapping (TypeDefinition type, out Collection<Row<uint, MetadataToken>> mapping)
@@ -270,11 +263,6 @@ namespace Mono.Cecil {
 			Interfaces [type_rid] = mapping;
 		}
 
-		public void RemoveInterfaceMapping (TypeDefinition type)
-		{
-			Interfaces.Remove (type.token.RID);
-		}
-
 		public void AddPropertiesRange (uint type_rid, Range range)
 		{
 			Properties.Add (type_rid, range);
@@ -283,11 +271,6 @@ namespace Mono.Cecil {
 		public bool TryGetPropertiesRange (TypeDefinition type, out Range range)
 		{
 			return Properties.TryGetValue (type.token.RID, out range);
-		}
-
-		public void RemovePropertiesRange (TypeDefinition type)
-		{
-			Properties.Remove (type.token.RID);
 		}
 
 		public void AddEventsRange (uint type_rid, Range range)
@@ -300,19 +283,9 @@ namespace Mono.Cecil {
 			return Events.TryGetValue (type.token.RID, out range);
 		}
 
-		public void RemoveEventsRange (TypeDefinition type)
-		{
-			Events.Remove (type.token.RID);
-		}
-
 		public bool TryGetGenericParameterRanges (IGenericParameterProvider owner, out Range [] ranges)
 		{
 			return GenericParameters.TryGetValue (owner.MetadataToken, out ranges);
-		}
-
-		public void RemoveGenericParameterRange (IGenericParameterProvider owner)
-		{
-			GenericParameters.Remove (owner.MetadataToken);
 		}
 
 		public bool TryGetCustomAttributeRanges (ICustomAttributeProvider owner, out Range [] ranges)
@@ -320,34 +293,19 @@ namespace Mono.Cecil {
 			return CustomAttributes.TryGetValue (owner.MetadataToken, out ranges);
 		}
 
-		public void RemoveCustomAttributeRange (ICustomAttributeProvider owner)
-		{
-			CustomAttributes.Remove (owner.MetadataToken);
-		}
-
 		public bool TryGetSecurityDeclarationRanges (ISecurityDeclarationProvider owner, out Range [] ranges)
 		{
 			return SecurityDeclarations.TryGetValue (owner.MetadataToken, out ranges);
 		}
 
-		public void RemoveSecurityDeclarationRange (ISecurityDeclarationProvider owner)
-		{
-			SecurityDeclarations.Remove (owner.MetadataToken);
-		}
-
-		public bool TryGetGenericConstraintMapping (GenericParameter generic_parameter, out Collection<MetadataToken> mapping)
+		public bool TryGetGenericConstraintMapping (GenericParameter generic_parameter, out Collection<Row<uint, MetadataToken>> mapping)
 		{
 			return GenericConstraints.TryGetValue (generic_parameter.token.RID, out mapping);
 		}
 
-		public void SetGenericConstraintMapping (uint gp_rid, Collection<MetadataToken> mapping)
+		public void SetGenericConstraintMapping (uint gp_rid, Collection<Row<uint, MetadataToken>> mapping)
 		{
 			GenericConstraints [gp_rid] = mapping;
-		}
-
-		public void RemoveGenericConstraintMapping (GenericParameter generic_parameter)
-		{
-			GenericConstraints.Remove (generic_parameter.token.RID);
 		}
 
 		public bool TryGetOverrideMapping (MethodDefinition method, out Collection<MetadataToken> mapping)
@@ -358,11 +316,6 @@ namespace Mono.Cecil {
 		public void SetOverrideMapping (uint rid, Collection<MetadataToken> mapping)
 		{
 			Overrides [rid] = mapping;
-		}
-
-		public void RemoveOverrideMapping (MethodDefinition method)
-		{
-			Overrides.Remove (method.token.RID);
 		}
 
 		public Document GetDocument (uint rid)

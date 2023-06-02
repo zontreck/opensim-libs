@@ -27,6 +27,7 @@ namespace Mono.Cecil.PE {
 		DataDirectory metadata;
 
 		uint table_heap_offset;
+		uint pdb_heap_offset;
 
 		public ImageReader (Disposable<Stream> stream, string file_name)
 			: base (stream.value)
@@ -88,8 +89,9 @@ namespace Mono.Cecil.PE {
 			ReadMetadata ();
 			ReadDebugHeader ();
 
+			image.Characteristics = characteristics;
 			image.Kind = GetModuleKind (characteristics, subsystem);
-			image.Characteristics = (ModuleCharacteristics) dll_characteristics;
+			image.DllCharacteristics = (ModuleCharacteristics) dll_characteristics;
 		}
 
 		TargetArchitecture ReadArchitecture ()
@@ -118,8 +120,7 @@ namespace Mono.Cecil.PE {
 
 			//						pe32 || pe64
 
-			// LMajor				1
-			// LMinor				1
+			image.LinkerVersion = ReadUInt16 ();
 			// CodeSize				4
 			// InitializedDataSize	4
 			// UninitializedDataSize4
@@ -138,11 +139,16 @@ namespace Mono.Cecil.PE {
 			// UserMinor			2
 			// SubSysMajor			2
 			// SubSysMinor			2
+			Advance(44);
+
+			image.SubSystemMajor = ReadUInt16 ();
+			image.SubSystemMinor = ReadUInt16 ();
+
 			// Reserved				4
 			// ImageSize			4
 			// HeaderSize			4
 			// FileChecksum			4
-			Advance (66);
+			Advance (16);
 
 			// SubSystem			2
 			subsystem = ReadUInt16 ();
@@ -346,7 +352,7 @@ namespace Mono.Cecil.PE {
 					PointerToRawData = ReadInt32 (),
 				};
 
-				if (directory.AddressOfRawData == 0) {
+				if (directory.PointerToRawData == 0 || directory.SizeOfData < 0) {
 					entries [i] = new ImageDebugHeaderEntry (directory, Empty<byte>.Array);
 					continue;
 				}
@@ -395,6 +401,7 @@ namespace Mono.Cecil.PE {
 				break;
 			case "#Pdb":
 				image.PdbHeap = new PdbHeap (data);
+				pdb_heap_offset = offset;
 				break;
 			}
 		}
@@ -477,7 +484,7 @@ namespace Mono.Cecil.PE {
 		{
 			uint offset = (uint) BaseStream.Position - table_heap_offset - image.MetadataSection.PointerToRawData; // header
 
-			int stridx_size = image.StringHeap.IndexSize;
+			int stridx_size = image.StringHeap != null ? image.StringHeap.IndexSize : 2;
 			int guididx_size = image.GuidHeap != null ? image.GuidHeap.IndexSize : 2;
 			int blobidx_size = image.BlobHeap != null ? image.BlobHeap.IndexSize : 2;
 
@@ -763,7 +770,7 @@ namespace Mono.Cecil.PE {
 			}
 		}
 
-		public static Image ReadPortablePdb (Disposable<Stream> stream, string file_name)
+		public static Image ReadPortablePdb (Disposable<Stream> stream, string file_name, out uint pdb_heap_offset)
 		{
 			try {
 				var reader = new ImageReader (stream, file_name);
@@ -780,6 +787,7 @@ namespace Mono.Cecil.PE {
 
 				reader.metadata = new DataDirectory (0, length);
 				reader.ReadMetadata ();
+				pdb_heap_offset = reader.pdb_heap_offset;
 				return reader.image;
 			} catch (EndOfStreamException e) {
 				throw new BadImageFormatException (stream.value.GetFileName (), e);
