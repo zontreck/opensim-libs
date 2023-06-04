@@ -1,27 +1,30 @@
 ﻿using System.Configuration;
 using DotNetOpenId.RelyingParty;
 
-namespace DotNetOpenId.Configuration {
-	internal class RelyingPartySection : ConfigurationSection {
-		internal static RelyingPartySection Configuration {
-			get { return (RelyingPartySection)ConfigurationManager.GetSection("dotNetOpenId/relyingParty") ?? new RelyingPartySection(); }
-		}
+namespace DotNetOpenId.Configuration;
 
-		public RelyingPartySection() {
-		}
+internal class RelyingPartySection : ConfigurationSection
+{
+    private const string securitySettingsConfigName = "security";
 
-		const string securitySettingsConfigName = "security";
-		[ConfigurationProperty(securitySettingsConfigName)]
-		public RelyingPartySecuritySettingsElement SecuritySettings {
-			get { return (RelyingPartySecuritySettingsElement)this[securitySettingsConfigName] ?? new RelyingPartySecuritySettingsElement(); }
-			set { this[securitySettingsConfigName] = value; }
-		}
+    private const string storeConfigName = "store";
 
-		const string storeConfigName = "store";
-		[ConfigurationProperty(storeConfigName)]
-		public StoreConfigurationElement<IRelyingPartyApplicationStore> Store {
-			get { return (StoreConfigurationElement<IRelyingPartyApplicationStore>)this[storeConfigName] ?? new StoreConfigurationElement<IRelyingPartyApplicationStore>(); }
-			set { this[storeConfigName] = value; }
-		}
-	}
+    internal static RelyingPartySection Configuration =>
+        (RelyingPartySection)ConfigurationManager.GetSection("dotNetOpenId/relyingParty") ?? new RelyingPartySection();
+
+    [ConfigurationProperty(securitySettingsConfigName)]
+    public RelyingPartySecuritySettingsElement SecuritySettings
+    {
+        get => (RelyingPartySecuritySettingsElement)this[securitySettingsConfigName] ??
+               new RelyingPartySecuritySettingsElement();
+        set => this[securitySettingsConfigName] = value;
+    }
+
+    [ConfigurationProperty(storeConfigName)]
+    public StoreConfigurationElement<IRelyingPartyApplicationStore> Store
+    {
+        get => (StoreConfigurationElement<IRelyingPartyApplicationStore>)this[storeConfigName] ??
+               new StoreConfigurationElement<IRelyingPartyApplicationStore>();
+        set => this[storeConfigName] = value;
+    }
 }

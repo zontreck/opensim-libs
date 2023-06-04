@@ -1,66 +1,67 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
-using System.Web;
-using DotNetOpenId;
 
+namespace DotNetOpenId;
 
-namespace DotNetOpenId {
+internal class AssociationMemoryStore<TKey> : IAssociationStore<TKey>
+{
+    private readonly Dictionary<TKey, Associations> serverAssocsTable = new();
 
-	internal class AssociationMemoryStore<TKey> : IAssociationStore<TKey> {
-		Dictionary<TKey, Associations> serverAssocsTable = new Dictionary<TKey, Associations>();
+    public void StoreAssociation(TKey distinguishingFactor, Association assoc)
+    {
+        lock (this)
+        {
+            if (!serverAssocsTable.ContainsKey(distinguishingFactor))
+                serverAssocsTable.Add(distinguishingFactor, new Associations());
 
-		internal Associations GetServerAssocs(TKey distinguishingFactor) {
-			lock (this) {
+            var server_assocs = serverAssocsTable[distinguishingFactor];
 
-				if (!serverAssocsTable.ContainsKey(distinguishingFactor)) {
-					serverAssocsTable.Add(distinguishingFactor, new Associations());
-				}
+            server_assocs.Set(assoc);
+        }
+    }
 
-				return serverAssocsTable[distinguishingFactor];
-			}
-		}
+    public Association GetAssociation(TKey distinguishingFactor)
+    {
+        lock (this)
+        {
+            return GetServerAssocs(distinguishingFactor).Best;
+        }
+    }
 
-		public void StoreAssociation(TKey distinguishingFactor, Association assoc) {
-			lock (this) {
-				if (!serverAssocsTable.ContainsKey(distinguishingFactor))
-					serverAssocsTable.Add(distinguishingFactor, new Associations());
+    public Association GetAssociation(TKey distinguishingFactor, string handle)
+    {
+        lock (this)
+        {
+            return GetServerAssocs(distinguishingFactor).Get(handle);
+        }
+    }
 
-				Associations server_assocs = serverAssocsTable[distinguishingFactor];
+    public bool RemoveAssociation(TKey distinguishingFactor, string handle)
+    {
+        lock (this)
+        {
+            return GetServerAssocs(distinguishingFactor).Remove(handle);
+        }
+    }
 
-				server_assocs.Set(assoc);
-			}
-		}
+    /// <summary>
+    ///     Clears all expired associations from the store.
+    /// </summary>
+    public void ClearExpiredAssociations()
+    {
+        lock (this)
+        {
+            foreach (var assocs in serverAssocsTable.Values) assocs.ClearExpired();
+        }
+    }
 
-		public Association GetAssociation(TKey distinguishingFactor) {
-			lock (this) {
-				return GetServerAssocs(distinguishingFactor).Best;
-			}
-		}
+    internal Associations GetServerAssocs(TKey distinguishingFactor)
+    {
+        lock (this)
+        {
+            if (!serverAssocsTable.ContainsKey(distinguishingFactor))
+                serverAssocsTable.Add(distinguishingFactor, new Associations());
 
-		public Association GetAssociation(TKey distinguishingFactor, string handle) {
-			lock (this) {
-				return GetServerAssocs(distinguishingFactor).Get(handle);
-			}
-		}
-
-		public bool RemoveAssociation(TKey distinguishingFactor, string handle) {
-			lock (this) {
-				return GetServerAssocs(distinguishingFactor).Remove(handle);
-			}
-		}
-
-		/// <summary>
-		/// Clears all expired associations from the store.
-		/// </summary>
-		public void ClearExpiredAssociations() {
-			lock (this) {
-				foreach (Associations assocs in serverAssocsTable.Values) {
-					assocs.ClearExpired();
-				}
-			}
-		}
-	}
+            return serverAssocsTable[distinguishingFactor];
+        }
+    }
 }

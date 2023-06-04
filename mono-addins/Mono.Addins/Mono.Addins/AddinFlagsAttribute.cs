@@ -23,32 +23,31 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using Mono.Addins.Description;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Addin flags attribute.
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinFlagsAttribute : Attribute
 {
 	/// <summary>
-	/// Addin flags attribute.
+	///     Initializes the attribute
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple=false)]
-	public class AddinFlagsAttribute: Attribute
-	{
-		/// <summary>
-		/// Initializes the attribute
-		/// </summary>
-		/// <param name="flags">
-		/// Add-in flags
-		/// </param>
-		public AddinFlagsAttribute (AddinFlags flags)
-		{
-			this.Flags = flags;
-		}
+	/// <param name="flags">
+	///     Add-in flags
+	/// </param>
+	public AddinFlagsAttribute(AddinFlags flags)
+    {
+        Flags = flags;
+    }
 
-		/// <summary>
-		/// Add-in flags
-		/// </summary>
-		public AddinFlags Flags { get; set; }
-	}
+	/// <summary>
+	///     Add-in flags
+	/// </summary>
+	public AddinFlags Flags { get; set; }
 }
-

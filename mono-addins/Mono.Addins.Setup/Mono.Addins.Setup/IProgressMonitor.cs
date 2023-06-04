@@ -30,22 +30,20 @@
 using System;
 using System.IO;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+public interface IProgressMonitor : IDisposable
 {
-	public interface IProgressMonitor: IDisposable
-	{
-		void BeginTask (string name, int totalWork);
-		void BeginStepTask (string name, int totalWork, int stepSize);
-		void EndTask ();
-		void Step (int work);
-		
-		TextWriter Log { get; }
-		int LogLevel { get; }
-		
-		void ReportWarning (string message);
-		void ReportError (string message, Exception exception);
-		
-		bool IsCancelRequested { get; }
-		void Cancel ();
-	}
+    TextWriter Log { get; }
+    int LogLevel { get; }
+
+    bool IsCancelRequested { get; }
+    void BeginTask(string name, int totalWork);
+    void BeginStepTask(string name, int totalWork, int stepSize);
+    void EndTask();
+    void Step(int work);
+
+    void ReportWarning(string message);
+    void ReportError(string message, Exception exception);
+    void Cancel();
 }

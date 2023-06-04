@@ -10,97 +10,94 @@
 
 using System;
 using System.Text;
-
 using Mono.Collections.Generic;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public sealed class CallSite : IMethodSignature {
+public sealed class CallSite : IMethodSignature
+{
+    private readonly MethodReference signature;
 
-		readonly MethodReference signature;
+    internal CallSite()
+    {
+        signature = new MethodReference();
+        signature.token = new MetadataToken(TokenType.Signature, 0);
+    }
 
-		public bool HasThis {
-			get { return signature.HasThis; }
-			set { signature.HasThis = value; }
-		}
+    public CallSite(TypeReference returnType)
+        : this()
+    {
+        if (returnType == null)
+            throw new ArgumentNullException("returnType");
 
-		public bool ExplicitThis {
-			get { return signature.ExplicitThis; }
-			set { signature.ExplicitThis = value; }
-		}
+        signature.ReturnType = returnType;
+    }
 
-		public MethodCallingConvention CallingConvention {
-			get { return signature.CallingConvention; }
-			set { signature.CallingConvention = value; }
-		}
+    public string Name
+    {
+        get => string.Empty;
+        set => throw new InvalidOperationException();
+    }
 
-		public bool HasParameters {
-			get { return signature.HasParameters; }
-		}
+    public string Namespace
+    {
+        get => string.Empty;
+        set => throw new InvalidOperationException();
+    }
 
-		public Collection<ParameterDefinition> Parameters {
-			get { return signature.Parameters; }
-		}
+    public ModuleDefinition Module => ReturnType.Module;
 
-		public TypeReference ReturnType {
-			get { return signature.MethodReturnType.ReturnType; }
-			set { signature.MethodReturnType.ReturnType = value; }
-		}
+    public IMetadataScope Scope => signature.ReturnType.Scope;
 
-		public MethodReturnType MethodReturnType {
-			get { return signature.MethodReturnType; }
-		}
+    public string FullName
+    {
+        get
+        {
+            var signature = new StringBuilder();
+            signature.Append(ReturnType.FullName);
+            this.MethodSignatureFullName(signature);
+            return signature.ToString();
+        }
+    }
 
-		public string Name {
-			get { return string.Empty; }
-			set { throw new InvalidOperationException (); }
-		}
+    public bool HasThis
+    {
+        get => signature.HasThis;
+        set => signature.HasThis = value;
+    }
 
-		public string Namespace {
-			get { return string.Empty; }
-			set { throw new InvalidOperationException (); }
-		}
+    public bool ExplicitThis
+    {
+        get => signature.ExplicitThis;
+        set => signature.ExplicitThis = value;
+    }
 
-		public ModuleDefinition Module {
-			get { return ReturnType.Module; }
-		}
+    public MethodCallingConvention CallingConvention
+    {
+        get => signature.CallingConvention;
+        set => signature.CallingConvention = value;
+    }
 
-		public IMetadataScope Scope {
-			get { return signature.ReturnType.Scope; }
-		}
+    public bool HasParameters => signature.HasParameters;
 
-		public MetadataToken MetadataToken {
-			get { return signature.token; }
-			set { signature.token = value; }
-		}
+    public Collection<ParameterDefinition> Parameters => signature.Parameters;
 
-		public string FullName {
-			get {
-				var signature = new StringBuilder ();
-				signature.Append (ReturnType.FullName);
-				this.MethodSignatureFullName (signature);
-				return signature.ToString ();
-			}
-		}
+    public TypeReference ReturnType
+    {
+        get => signature.MethodReturnType.ReturnType;
+        set => signature.MethodReturnType.ReturnType = value;
+    }
 
-		internal CallSite ()
-		{
-			this.signature = new MethodReference ();
-			this.signature.token = new MetadataToken (TokenType.Signature, 0);
-		}
+    public MethodReturnType MethodReturnType => signature.MethodReturnType;
 
-		public CallSite (TypeReference returnType)
-			: this ()
-		{
-			if (returnType == null)
-				throw new ArgumentNullException ("returnType");
+    public MetadataToken MetadataToken
+    {
+        get => signature.token;
+        set => signature.token = value;
+    }
 
-			this.signature.ReturnType = returnType;
-		}
-
-		public override string ToString ()
-		{
-			return FullName;
-		}
-	}
+    public override string ToString()
+    {
+        return FullName;
+    }
 }

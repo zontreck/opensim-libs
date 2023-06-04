@@ -8,17 +8,15 @@
 // Licensed under the MIT/X11 license.
 //
 
-using System;
-
 using RVA = System.UInt32;
 
-namespace Mono.Cecil.PE {
+namespace Mono.Cecil.PE;
 
-	sealed class Section {
-		public string Name;
-		public RVA VirtualAddress;
-		public uint VirtualSize;
-		public uint SizeOfRawData;
-		public uint PointerToRawData;
-	}
+internal sealed class Section
+{
+    public string Name;
+    public uint PointerToRawData;
+    public uint SizeOfRawData;
+    public uint VirtualAddress;
+    public uint VirtualSize;
 }

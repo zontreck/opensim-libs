@@ -27,181 +27,195 @@
 //
 
 using System;
-using System.Collections;
-using System.Xml;
-using System.Xml.Serialization;
 using System.IO;
-using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+public class Repository
 {
-	public class Repository
-	{
-		RepositoryEntryCollection repositories;
-		RepositoryEntryCollection addins;
-		string name;
-		internal string url;
-		
-		public string Name {
-			get { return name; }
-			set { name = value; }
-		}
-		
-		public string Url {
-			get { return url; }
-			set { url = value; }
-		}
-		
-		internal string CachedFilesDir { get; set; }
-	
-		[XmlElement ("Repository", Type = typeof(ReferenceRepositoryEntry))]
-		public RepositoryEntryCollection Repositories {
-			get {
-				if (repositories == null)	
-					repositories = new RepositoryEntryCollection (this);
-				return repositories;
-			}
-		}
-	
-		[XmlElement ("Addin", Type = typeof(PackageRepositoryEntry))]
-		public RepositoryEntryCollection Addins {
-			get {
-				if (addins == null)
-					addins = new RepositoryEntryCollection (this);
-				return addins;
-			}
-		}
-		
-		public RepositoryEntry FindEntry (string url)
-		{
-			if (Repositories != null) {
-				foreach (RepositoryEntry e in Repositories)
-					if (e.Url == url) return e;
-			}
-			if (Addins != null) {
-				foreach (RepositoryEntry e in Addins)
-					if (e.Url == url) return e;
-			}
-			return null;
-		}
-		
-		public void AddEntry (RepositoryEntry entry)
-		{
-			entry.owner = this;
-			if (entry is ReferenceRepositoryEntry) {
-				Repositories.Add (entry);
-			} else {
-				Addins.Add (entry);
-			}
-		}
-		
-		public void RemoveEntry (RepositoryEntry entry)
-		{
-			if (entry is PackageRepositoryEntry)
-				Addins.Remove (entry);
-			else
-				Repositories.Remove (entry);
-		}
-		
-		public IAsyncResult BeginDownloadSupportFile (string name, AsyncCallback cb, object state)
-		{
-			FileAsyncResult res = new FileAsyncResult ();
-			res.AsyncState = state;
-			res.Callback = cb;
-			
-			string cachedFile = Path.Combine (CachedFilesDir, Path.GetFileName (name));
-			if (File.Exists (cachedFile)) {
-				res.FilePath = cachedFile;
-				res.CompletedSynchronously = true;
-				res.SetDone ();
-				return res;
-			}
-			
-			Uri u = new Uri (new Uri (Url), name);
-			if (u.Scheme == "file") {
-				res.FilePath = u.AbsolutePath;
-				res.CompletedSynchronously = true;
-				res.SetDone ();
-				return res;
-			}
+    private RepositoryEntryCollection addins;
+    private RepositoryEntryCollection repositories;
+    internal string url;
 
-			res.FilePath = cachedFile;
-			var request = DownloadFileRequest.DownloadFile (u.ToString (), false).ContinueWith (t => {
-				try {
-					using (var resp = t.Result) {
-						string dir = Path.GetDirectoryName (res.FilePath);
-						lock (this) {
-							if (!Directory.Exists (dir))
-								Directory.CreateDirectory (dir);
-						}
-						if (File.Exists (res.FilePath)) {
-							res.SetDone ();
-							return;
-						}
-						byte [] buffer = new byte [8092];
-						using (var s = resp.Stream) {
-							using (var f = File.OpenWrite (res.FilePath)) {
-								int nr = 0;
-								while ((nr = s.Read (buffer, 0, buffer.Length)) > 0)
-									f.Write (buffer, 0, nr);
-							}
-						}
-						res.SetDone ();
-					}
-				} catch (Exception ex) {
-					res.Error = ex;
-				}
-			});
-			return res;
-		}
-		
-		public Stream EndDownloadSupportFile (IAsyncResult ares)
-		{
-			FileAsyncResult res = ares as FileAsyncResult;
-			if (res == null)
-				throw new InvalidOperationException ("Invalid IAsyncResult instance");
-			if (res.Error != null)
-				throw res.Error;
-			return File.OpenRead (res.FilePath);
-		}
-	}
+    public string Name { get; set; }
 
-	class FileAsyncResult: IAsyncResult
-	{
-		ManualResetEvent done;
-		
-		public string FilePath;
-		public AsyncCallback Callback;
-		public Exception Error;
-		
-		public void SetDone ()
-		{
-			lock (this) {
-				IsCompleted = true;
-				if (done != null)
-					done.Set ();
-			}
-			if (Callback != null)
-				Callback (this);
-		}
-		
-		public object AsyncState { get; set; }
-	
-		public WaitHandle AsyncWaitHandle {
-			get {
-				lock (this) {
-					if (done == null)
-						done = new ManualResetEvent (IsCompleted);
-				}
-				return done;
-			}
-		}
-	
-		public bool CompletedSynchronously { get; set; }
-	
-		public bool IsCompleted { get; set; }
-	}
-	
+    public string Url
+    {
+        get => url;
+        set => url = value;
+    }
+
+    internal string CachedFilesDir { get; set; }
+
+    [XmlElement("Repository", Type = typeof(ReferenceRepositoryEntry))]
+    public RepositoryEntryCollection Repositories
+    {
+        get
+        {
+            if (repositories == null)
+                repositories = new RepositoryEntryCollection(this);
+            return repositories;
+        }
+    }
+
+    [XmlElement("Addin", Type = typeof(PackageRepositoryEntry))]
+    public RepositoryEntryCollection Addins
+    {
+        get
+        {
+            if (addins == null)
+                addins = new RepositoryEntryCollection(this);
+            return addins;
+        }
+    }
+
+    public RepositoryEntry FindEntry(string url)
+    {
+        if (Repositories != null)
+            foreach (RepositoryEntry e in Repositories)
+                if (e.Url == url)
+                    return e;
+        if (Addins != null)
+            foreach (RepositoryEntry e in Addins)
+                if (e.Url == url)
+                    return e;
+        return null;
+    }
+
+    public void AddEntry(RepositoryEntry entry)
+    {
+        entry.owner = this;
+        if (entry is ReferenceRepositoryEntry)
+            Repositories.Add(entry);
+        else
+            Addins.Add(entry);
+    }
+
+    public void RemoveEntry(RepositoryEntry entry)
+    {
+        if (entry is PackageRepositoryEntry)
+            Addins.Remove(entry);
+        else
+            Repositories.Remove(entry);
+    }
+
+    public IAsyncResult BeginDownloadSupportFile(string name, AsyncCallback cb, object state)
+    {
+        var res = new FileAsyncResult();
+        res.AsyncState = state;
+        res.Callback = cb;
+
+        var cachedFile = Path.Combine(CachedFilesDir, Path.GetFileName(name));
+        if (File.Exists(cachedFile))
+        {
+            res.FilePath = cachedFile;
+            res.CompletedSynchronously = true;
+            res.SetDone();
+            return res;
+        }
+
+        var u = new Uri(new Uri(Url), name);
+        if (u.Scheme == "file")
+        {
+            res.FilePath = u.AbsolutePath;
+            res.CompletedSynchronously = true;
+            res.SetDone();
+            return res;
+        }
+
+        res.FilePath = cachedFile;
+        var request = DownloadFileRequest.DownloadFile(u.ToString(), false).ContinueWith(t =>
+        {
+            try
+            {
+                using (var resp = t.Result)
+                {
+                    var dir = Path.GetDirectoryName(res.FilePath);
+                    lock (this)
+                    {
+                        if (!Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+                    }
+
+                    if (File.Exists(res.FilePath))
+                    {
+                        res.SetDone();
+                        return;
+                    }
+
+                    var buffer = new byte [8092];
+                    using (var s = resp.Stream)
+                    {
+                        using (var f = File.OpenWrite(res.FilePath))
+                        {
+                            var nr = 0;
+                            while ((nr = s.Read(buffer, 0, buffer.Length)) > 0)
+                                f.Write(buffer, 0, nr);
+                        }
+                    }
+
+                    res.SetDone();
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Error = ex;
+            }
+        });
+        return res;
+    }
+
+    public Stream EndDownloadSupportFile(IAsyncResult ares)
+    {
+        var res = ares as FileAsyncResult;
+        if (res == null)
+            throw new InvalidOperationException("Invalid IAsyncResult instance");
+        if (res.Error != null)
+            throw res.Error;
+        return File.OpenRead(res.FilePath);
+    }
+}
+
+internal class FileAsyncResult : IAsyncResult
+{
+    public AsyncCallback Callback;
+    private ManualResetEvent done;
+    public Exception Error;
+
+    public string FilePath;
+
+    public object AsyncState { get; set; }
+
+    public WaitHandle AsyncWaitHandle
+    {
+        get
+        {
+            lock (this)
+            {
+                if (done == null)
+                    done = new ManualResetEvent(IsCompleted);
+            }
+
+            return done;
+        }
+    }
+
+    public bool CompletedSynchronously { get; set; }
+
+    public bool IsCompleted { get; set; }
+
+    public void SetDone()
+    {
+        lock (this)
+        {
+            IsCompleted = true;
+            if (done != null)
+                done.Set();
+        }
+
+        if (Callback != null)
+            Callback(this);
+    }
 }

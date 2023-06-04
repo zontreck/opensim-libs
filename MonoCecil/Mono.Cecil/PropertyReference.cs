@@ -8,38 +8,28 @@
 // Licensed under the MIT/X11 license.
 //
 
-using System;
-
 using Mono.Collections.Generic;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public abstract class PropertyReference : MemberReference {
+public abstract class PropertyReference : MemberReference
+{
+    internal PropertyReference(string name, TypeReference propertyType)
+        : base(name)
+    {
+        Mixin.CheckType(propertyType, Mixin.Argument.propertyType);
 
-		TypeReference property_type;
+        PropertyType = propertyType;
+    }
 
-		public TypeReference PropertyType {
-			get { return property_type; }
-			set { property_type = value; }
-		}
+    public TypeReference PropertyType { get; set; }
 
-		public abstract Collection<ParameterDefinition> Parameters {
-			get;
-		}
+    public abstract Collection<ParameterDefinition> Parameters { get; }
 
-		internal PropertyReference (string name, TypeReference propertyType)
-			: base (name)
-		{
-			Mixin.CheckType (propertyType, Mixin.Argument.propertyType);
+    protected override IMemberDefinition ResolveDefinition()
+    {
+        return Resolve();
+    }
 
-			property_type = propertyType;
-		}
-
-		protected override IMemberDefinition ResolveDefinition ()
-		{
-			return this.Resolve ();
-		}
-
-		public new abstract PropertyDefinition Resolve ();
-	}
+    public new abstract PropertyDefinition Resolve();
 }

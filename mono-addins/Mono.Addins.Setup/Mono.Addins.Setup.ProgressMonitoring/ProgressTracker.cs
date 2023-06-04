@@ -28,125 +28,131 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
-namespace Mono.Addins.Setup.ProgressMonitoring
-{
-	internal class ProgressTracker
-	{
-		bool done;
-		
-		List<Task> tasks = new List<Task> ();
-		class Task
-		{
-			public string Name;
-			public int TotalWork;
-			public int CurrentWork;
-			public int StepSize = 1;
-			public bool IsStep;
-			
-			public double GetWorkPercent (double part)
-			{
-				if (TotalWork <= 0) return 0;
-				if (CurrentWork >= TotalWork) return 1.0;
-				return ((double)CurrentWork + part) / (double)TotalWork;
-			}
-		}
-		
-		public void Reset ()
-		{
-			done = false;
-			tasks.Clear ();
-		}
-		
-		public void BeginTask (string name, int totalWork)
-		{
-			Task t = new Task (); 
-			t.Name = name;
-			t.TotalWork = totalWork;
-			tasks.Add (t);
-		}
-		
-		public void BeginStepTask (string name, int totalWork, int stepSize)
-		{
-			Task t = new Task (); 
-			t.StepSize = stepSize;
-			t.IsStep = true;
-			t.Name = name;
-			t.TotalWork = totalWork;
-			tasks.Add (t);
-		}
-		
-		public void EndTask ()
-		{
-			if (tasks.Count > 0) {
-				Task t = LastTask;
-				tasks.RemoveAt (tasks.Count - 1);
-				if (t.IsStep)
-					Step (t.StepSize);
-			}
-		}
-		
-		public void Step (int work)
-		{
-			if (tasks.Count == 0) return;
-			Task t = LastTask;
-			t.CurrentWork += work;
-			if (t.CurrentWork > t.TotalWork)
-				t.CurrentWork = t.TotalWork;
-		}
-		
-		Task LastTask {
-			get { return tasks [tasks.Count - 1]; }
-		}
-		
-		public string CurrentTask {
-			get {
-				if (tasks.Count == 0) return null;
-				return LastTask.Name;
-			}
-		}
-		
-		public double CurrentTaskWork {
-			get {
-				if (tasks.Count == 0) return 0;
-				return LastTask.GetWorkPercent (0);
-			}
-		}
-		
-		public bool UnknownWork {
-			get {
-				if (tasks.Count == 0) return false;
-				return LastTask.TotalWork <= 1;
-			}
-		}
-		
-		public double GlobalWork {
-			get {
-				if (done) return 1.0;
+namespace Mono.Addins.Setup.ProgressMonitoring;
 
-				double work = 0;
-				double totalSize = 0;
-				for (int n = tasks.Count - 1; n >= 0; n--) {
-					Task t = (Task) tasks [n];
-					work += Math.Max (0, t.GetWorkPercent (work) * (double)t.StepSize);
-					totalSize += t.StepSize;
-				}
-				if (totalSize > 0)
-					work /= totalSize;
-				return Math.Min (1.0, work);
-			}
-		}
-		
-		public bool InProgress {
-			get { return !done; }
-		}
-		
-		public void Done ()
-		{
-			done = true;
-			tasks.Clear ();
-		}
-	}
+internal class ProgressTracker
+{
+    private bool done;
+
+    private readonly List<Task> tasks = new();
+
+    private Task LastTask => tasks[tasks.Count - 1];
+
+    public string CurrentTask
+    {
+        get
+        {
+            if (tasks.Count == 0) return null;
+            return LastTask.Name;
+        }
+    }
+
+    public double CurrentTaskWork
+    {
+        get
+        {
+            if (tasks.Count == 0) return 0;
+            return LastTask.GetWorkPercent(0);
+        }
+    }
+
+    public bool UnknownWork
+    {
+        get
+        {
+            if (tasks.Count == 0) return false;
+            return LastTask.TotalWork <= 1;
+        }
+    }
+
+    public double GlobalWork
+    {
+        get
+        {
+            if (done) return 1.0;
+
+            double work = 0;
+            double totalSize = 0;
+            for (var n = tasks.Count - 1; n >= 0; n--)
+            {
+                var t = tasks[n];
+                work += Math.Max(0, t.GetWorkPercent(work) * t.StepSize);
+                totalSize += t.StepSize;
+            }
+
+            if (totalSize > 0)
+                work /= totalSize;
+            return Math.Min(1.0, work);
+        }
+    }
+
+    public bool InProgress => !done;
+
+    public void Reset()
+    {
+        done = false;
+        tasks.Clear();
+    }
+
+    public void BeginTask(string name, int totalWork)
+    {
+        var t = new Task();
+        t.Name = name;
+        t.TotalWork = totalWork;
+        tasks.Add(t);
+    }
+
+    public void BeginStepTask(string name, int totalWork, int stepSize)
+    {
+        var t = new Task();
+        t.StepSize = stepSize;
+        t.IsStep = true;
+        t.Name = name;
+        t.TotalWork = totalWork;
+        tasks.Add(t);
+    }
+
+    public void EndTask()
+    {
+        if (tasks.Count > 0)
+        {
+            var t = LastTask;
+            tasks.RemoveAt(tasks.Count - 1);
+            if (t.IsStep)
+                Step(t.StepSize);
+        }
+    }
+
+    public void Step(int work)
+    {
+        if (tasks.Count == 0) return;
+        var t = LastTask;
+        t.CurrentWork += work;
+        if (t.CurrentWork > t.TotalWork)
+            t.CurrentWork = t.TotalWork;
+    }
+
+    public void Done()
+    {
+        done = true;
+        tasks.Clear();
+    }
+
+    private class Task
+    {
+        public int CurrentWork;
+        public bool IsStep;
+        public string Name;
+        public int StepSize = 1;
+        public int TotalWork;
+
+        public double GetWorkPercent(double part)
+        {
+            if (TotalWork <= 0) return 0;
+            if (CurrentWork >= TotalWork) return 1.0;
+            return (CurrentWork + part) / TotalWork;
+        }
+    }
 }

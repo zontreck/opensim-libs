@@ -1,81 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Xml.XPath;
 
-namespace DotNetOpenId.Yadis {
-	class ServiceElement : XrdsNode, IComparable<ServiceElement> {
-		public ServiceElement(XPathNavigator serviceElement, XrdElement parent) :
-			base(serviceElement, parent) {
-		}
+namespace DotNetOpenId.Yadis;
 
-		public XrdElement Xrd {
-			get { return (XrdElement)ParentNode; }
-		}
+internal class ServiceElement : XrdsNode, IComparable<ServiceElement>
+{
+    public ServiceElement(XPathNavigator serviceElement, XrdElement parent) :
+        base(serviceElement, parent)
+    {
+    }
 
-		public int? Priority {
-			get {
-				XPathNavigator n = Node.SelectSingleNode("@priority", XmlNamespaceResolver);
-				return n != null ? n.ValueAsInt : (int?)null;
-			}
-		}
+    public XrdElement Xrd => (XrdElement)ParentNode;
 
-		public IEnumerable<UriElement> UriElements {
-			get {
-				List<UriElement> uris = new List<UriElement>();
-				foreach (XPathNavigator node in Node.Select("xrd:URI", XmlNamespaceResolver)) {
-					uris.Add(new UriElement(node, this));
-				}
-				uris.Sort();
-				return uris;
-			}
-		}
+    public int? Priority
+    {
+        get
+        {
+            var n = Node.SelectSingleNode("@priority", XmlNamespaceResolver);
+            return n != null ? n.ValueAsInt : null;
+        }
+    }
 
-		public IEnumerable<TypeElement> TypeElements {
-			get {
-				foreach (XPathNavigator node in Node.Select("xrd:Type", XmlNamespaceResolver)) {
-					yield return new TypeElement(node, this);
-				}
-			}
-		}
+    public IEnumerable<UriElement> UriElements
+    {
+        get
+        {
+            var uris = new List<UriElement>();
+            foreach (XPathNavigator node in Node.Select("xrd:URI", XmlNamespaceResolver))
+                uris.Add(new UriElement(node, this));
+            uris.Sort();
+            return uris;
+        }
+    }
 
-		public string[] TypeElementUris {
-			get {
-				XPathNodeIterator types = Node.Select("xrd:Type", XmlNamespaceResolver);
-				string[] typeUris = new string[types.Count];
-				int i = 0;
-				foreach (XPathNavigator type in types) {
-					typeUris[i++] = type.Value;
-				}
-				return typeUris;
-			}
-		}
+    public IEnumerable<TypeElement> TypeElements
+    {
+        get
+        {
+            foreach (XPathNavigator node in Node.Select("xrd:Type", XmlNamespaceResolver))
+                yield return new TypeElement(node, this);
+        }
+    }
 
-		public Identifier ProviderLocalIdentifier {
-			get {
-				var n = Node.SelectSingleNode("xrd:LocalID", XmlNamespaceResolver)
-					?? Node.SelectSingleNode("openid10:Delegate", XmlNamespaceResolver);
-				return (n != null) ? n.Value : null;
-			}
-		}
+    public string[] TypeElementUris
+    {
+        get
+        {
+            var types = Node.Select("xrd:Type", XmlNamespaceResolver);
+            var typeUris = new string[types.Count];
+            var i = 0;
+            foreach (XPathNavigator type in types) typeUris[i++] = type.Value;
+            return typeUris;
+        }
+    }
 
-		#region IComparable<ServiceElement> Members
+    public Identifier ProviderLocalIdentifier
+    {
+        get
+        {
+            var n = Node.SelectSingleNode("xrd:LocalID", XmlNamespaceResolver)
+                    ?? Node.SelectSingleNode("openid10:Delegate", XmlNamespaceResolver);
+            return n != null ? n.Value : null;
+        }
+    }
 
-		public int CompareTo(ServiceElement other) {
-			if (other == null) return -1;
-			if (Priority.HasValue && other.Priority.HasValue) {
-				return Priority.Value.CompareTo(other.Priority.Value);
-			} else {
-				if (Priority.HasValue) {
-					return -1;
-				} else if (other.Priority.HasValue) {
-					return 1;
-				} else {
-					return 0;
-				}
-			}
-		}
+    #region IComparable<ServiceElement> Members
 
-		#endregion
-	}
+    public int CompareTo(ServiceElement other)
+    {
+        if (other == null) return -1;
+        if (Priority.HasValue && other.Priority.HasValue) return Priority.Value.CompareTo(other.Priority.Value);
+
+        if (Priority.HasValue)
+            return -1;
+        if (other.Priority.HasValue)
+            return 1;
+        return 0;
+    }
+
+    #endregion
 }

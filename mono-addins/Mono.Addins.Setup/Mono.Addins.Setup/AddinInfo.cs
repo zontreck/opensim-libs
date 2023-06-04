@@ -26,373 +26,338 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.IO;
-using System.Collections;
 using System.Xml;
 using System.Xml.Serialization;
 using Mono.Addins.Description;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+public class AddinInfo : AddinHeader
 {
-	public class AddinInfo: AddinHeader
-	{
-		string id = "";
-		string namspace = "";
-		string name = "";
-		string version = "";
-		string baseVersion = "";
-		string author = "";
-		string copyright = "";
-		string url = "";
-		string description = "";
-		string category = "";
-		DependencyCollection dependencies;
-		DependencyCollection optionalDependencies;
-		AddinPropertyCollectionImpl properties;
-		
-		public AddinInfo ()
-		{
-			dependencies = new DependencyCollection ();
-			optionalDependencies = new DependencyCollection ();
-			properties = new AddinPropertyCollectionImpl ();
-		}
-		
-		public string Id {
-			get { return Addin.GetFullId (namspace, id, version); }
-		}
-		
-		[XmlElement ("Id")]
-		public string LocalId {
-			get { return id; }
-			set { id = value; }
-		}
-		
-		public string Namespace {
-			get { return namspace; }
-			set { namspace = value; }
-		}
-		
-		public string Name {
-			get {
-				string s = Properties.GetPropertyValue ("Name");
-				if (s.Length > 0)
-					return s;
-				if (name != null && name.Length > 0)
-					return name;
-				string sid = id;
-				if (sid.StartsWith ("__"))
-					sid = sid.Substring (2);
-				return Addin.GetFullId (namspace, sid, null); 
-			}
-			set { name = value; }
-		}
-		
-		public string Version {
-			get { return version; }
-			set { version = value; }
-		}
-		
-		public string BaseVersion {
-			get { return baseVersion; }
-			set { baseVersion = value; }
-		}
-		
-		public string Author {
-			get {
-				string s = Properties.GetPropertyValue ("Author");
-				if (s.Length > 0)
-					return s;
-				return author;
-			}
-			set { author = value; }
-		}
-		
-		public string Copyright {
-			get {
-				string s = Properties.GetPropertyValue ("Copyright");
-				if (s.Length > 0)
-					return s;
-				return copyright;
-			}
-			set { copyright = value; }
-		}
-		
-		public string Url {
-			get {
-				string s = Properties.GetPropertyValue ("Url");
-				if (s.Length > 0)
-					return s;
-				return url;
-			}
-			set { url = value; }
-		}
-		
-		public string Description {
-			get {
-				string s = Properties.GetPropertyValue ("Description");
-				if (s.Length > 0)
-					return s;
-				return description;
-			}
-			set { description = value; }
-		}
-		
-		public string Category {
-			get {
-				string s = Properties.GetPropertyValue ("Category");
-				if (s.Length > 0)
-					return s;
-				return category;
-			}
-			set { category = value; }
-		}
-		
-		#pragma warning disable CS0612 // Type or member is obsolete
+    private string author = "";
+    private string category = "";
+    private string copyright = "";
+    private string description = "";
+    private string name = "";
+    private string url = "";
 
-		[XmlArrayItem ("AddinDependency", typeof(AddinDependency))]
-		[XmlArrayItem ("NativeDependency", typeof(NativeDependency))]
-		[XmlArrayItem ("AssemblyDependency", typeof(AssemblyDependency))]
-		public DependencyCollection Dependencies {
-			get { return dependencies; }
-		}
-		
-		[XmlArrayItem ("AddinDependency", typeof(AddinDependency))]
-		[XmlArrayItem ("NativeDependency", typeof(NativeDependency))]
-		[XmlArrayItem ("AssemblyDependency", typeof(AssemblyDependency))]
-		public DependencyCollection OptionalDependencies {
-			get { return optionalDependencies; }
-		}
+    public AddinInfo()
+    {
+        Dependencies = new DependencyCollection();
+        OptionalDependencies = new DependencyCollection();
+        Properties = new AddinPropertyCollectionImpl();
+    }
 
-		#pragma warning restore CS0612 // Type or member is obsolete
+    [XmlElement("Id")] public string LocalId { get; set; } = "";
 
-		[XmlArrayItem ("Property", typeof(AddinProperty))]
-		public AddinPropertyCollectionImpl Properties {
-			get { return properties; }
-		}
-		
-		AddinPropertyCollection AddinHeader.Properties {
-			get { return properties; }
-		}
-		
-		public static AddinInfo ReadFromAddinFile (StreamReader r)
-		{
-			XmlDocument doc = new XmlDocument ();
-			doc.Load (r);
-			r.Close ();
-			
-			AddinInfo info = new AddinInfo ();
-			info.id = doc.DocumentElement.GetAttribute ("id");
-			info.namspace = doc.DocumentElement.GetAttribute ("namespace");
-			info.name = doc.DocumentElement.GetAttribute ("name");
-			if (info.id == "") info.id = info.name;
-			info.version = doc.DocumentElement.GetAttribute ("version");
-			info.author = doc.DocumentElement.GetAttribute ("author");
-			info.copyright = doc.DocumentElement.GetAttribute ("copyright");
-			info.url = doc.DocumentElement.GetAttribute ("url");
-			info.description = doc.DocumentElement.GetAttribute ("description");
-			info.category = doc.DocumentElement.GetAttribute ("category");
-			info.baseVersion = doc.DocumentElement.GetAttribute ("compatVersion");
-			AddinPropertyCollectionImpl props = new AddinPropertyCollectionImpl ();
-			info.properties = props;
-			ReadHeader (info, props, doc.DocumentElement);
-			ReadDependencies (info.Dependencies, info.OptionalDependencies, doc.DocumentElement);
-			return info;
-		}
-		
-		static void ReadDependencies (DependencyCollection deps, DependencyCollection opDeps, XmlElement elem)
-		{
-			foreach (XmlElement dep in elem.SelectNodes ("Dependencies/Addin")) {
-				AddinDependency adep = new AddinDependency ();
-				adep.AddinId = dep.GetAttribute ("id");
-				string v = dep.GetAttribute ("version");
-				if (v.Length != 0)
-					adep.Version = v;
-				deps.Add (adep);
-			}
-			
-			foreach (XmlElement dep in elem.SelectNodes ("Dependencies/Assembly")) {
-				AssemblyDependency adep = new AssemblyDependency ();
-				adep.FullName = dep.GetAttribute ("name");
-				adep.Package = dep.GetAttribute ("package");
-				deps.Add (adep);
-			}
-			
-			foreach (XmlElement mod in elem.SelectNodes ("Module"))
-				ReadDependencies (opDeps, opDeps, mod);
-		}
-		
-		static void ReadHeader (AddinInfo info, AddinPropertyCollectionImpl properties, XmlElement elem)
-		{
-			elem = elem.SelectSingleNode ("Header") as XmlElement;
-			if (elem == null)
-				return;
-			foreach (XmlNode xprop in elem.ChildNodes) {
-				XmlElement prop = xprop as XmlElement;
-				if (prop != null) {
-					switch (prop.LocalName) {
-					case "Id": info.id = prop.InnerText; break;
-					case "Namespace": info.namspace = prop.InnerText; break;
-					case "Version": info.version = prop.InnerText; break;
-					case "CompatVersion": info.baseVersion = prop.InnerText; break;
-					default: {
-						AddinProperty aprop = new AddinProperty ();
-						aprop.Name = prop.LocalName;
-						if (prop.HasAttribute ("locale"))
-							aprop.Locale = prop.GetAttribute ("locale");
-						aprop.Value = prop.InnerText;
-						properties.Add (aprop);
-						break;
-					}}
-				}
-			}
-		}
-		
-		internal static AddinInfo ReadFromDescription (AddinDescription description)
-		{
-			AddinInfo info = new AddinInfo ();
-			info.id = description.LocalId;
-			info.namspace = description.Namespace;
-			info.name = description.Name;
-			info.version = description.Version;
-			info.author = description.Author;
-			info.copyright = description.Copyright;
-			info.url = description.Url;
-			info.description = description.Description;
-			info.category = description.Category;
-			info.baseVersion = description.CompatVersion;
-			info.properties = new AddinPropertyCollectionImpl (description.Properties);
-			
-			foreach (Dependency dep in description.MainModule.Dependencies)
-				info.Dependencies.Add (dep);
-				
-			foreach (ModuleDescription mod in description.OptionalModules) {
-				foreach (Dependency dep in mod.Dependencies)
-					info.OptionalDependencies.Add (dep);
-			}
-			return info;
-		}
-		
-		public bool SupportsVersion (string version)
-		{
-			if (Addin.CompareVersions (Version, version) > 0)
-				return false;
-			if (baseVersion == "")
-				return true;
-			return Addin.CompareVersions (BaseVersion, version) >= 0;
-		}
-		
-		public int CompareVersionTo (AddinHeader other)
-		{
-			return Addin.CompareVersions (this.version, other.Version);
-		}
-	}
+    [XmlArrayItem("Property", typeof(AddinProperty))]
+    public AddinPropertyCollectionImpl Properties { get; private set; }
+
+    public string Id => Addin.GetFullId(Namespace, LocalId, Version);
+
+    public string Namespace { get; set; } = "";
+
+    public string Name
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Name");
+            if (s.Length > 0)
+                return s;
+            if (name != null && name.Length > 0)
+                return name;
+            var sid = LocalId;
+            if (sid.StartsWith("__"))
+                sid = sid.Substring(2);
+            return Addin.GetFullId(Namespace, sid, null);
+        }
+        set => name = value;
+    }
+
+    public string Version { get; set; } = "";
+
+    public string BaseVersion { get; set; } = "";
+
+    public string Author
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Author");
+            if (s.Length > 0)
+                return s;
+            return author;
+        }
+        set => author = value;
+    }
+
+    public string Copyright
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Copyright");
+            if (s.Length > 0)
+                return s;
+            return copyright;
+        }
+        set => copyright = value;
+    }
+
+    public string Url
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Url");
+            if (s.Length > 0)
+                return s;
+            return url;
+        }
+        set => url = value;
+    }
+
+    public string Description
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Description");
+            if (s.Length > 0)
+                return s;
+            return description;
+        }
+        set => description = value;
+    }
+
+    public string Category
+    {
+        get
+        {
+            var s = Properties.GetPropertyValue("Category");
+            if (s.Length > 0)
+                return s;
+            return category;
+        }
+        set => category = value;
+    }
+
+    AddinPropertyCollection AddinHeader.Properties => Properties;
+
+    public int CompareVersionTo(AddinHeader other)
+    {
+        return Addin.CompareVersions(Version, other.Version);
+    }
+
+    public static AddinInfo ReadFromAddinFile(StreamReader r)
+    {
+        var doc = new XmlDocument();
+        doc.Load(r);
+        r.Close();
+
+        var info = new AddinInfo();
+        info.LocalId = doc.DocumentElement.GetAttribute("id");
+        info.Namespace = doc.DocumentElement.GetAttribute("namespace");
+        info.name = doc.DocumentElement.GetAttribute("name");
+        if (info.LocalId == "") info.LocalId = info.name;
+        info.Version = doc.DocumentElement.GetAttribute("version");
+        info.author = doc.DocumentElement.GetAttribute("author");
+        info.copyright = doc.DocumentElement.GetAttribute("copyright");
+        info.url = doc.DocumentElement.GetAttribute("url");
+        info.description = doc.DocumentElement.GetAttribute("description");
+        info.category = doc.DocumentElement.GetAttribute("category");
+        info.BaseVersion = doc.DocumentElement.GetAttribute("compatVersion");
+        var props = new AddinPropertyCollectionImpl();
+        info.Properties = props;
+        ReadHeader(info, props, doc.DocumentElement);
+        ReadDependencies(info.Dependencies, info.OptionalDependencies, doc.DocumentElement);
+        return info;
+    }
+
+    private static void ReadDependencies(DependencyCollection deps, DependencyCollection opDeps, XmlElement elem)
+    {
+        foreach (XmlElement dep in elem.SelectNodes("Dependencies/Addin"))
+        {
+            var adep = new AddinDependency();
+            adep.AddinId = dep.GetAttribute("id");
+            var v = dep.GetAttribute("version");
+            if (v.Length != 0)
+                adep.Version = v;
+            deps.Add(adep);
+        }
+
+        foreach (XmlElement dep in elem.SelectNodes("Dependencies/Assembly"))
+        {
+            var adep = new AssemblyDependency();
+            adep.FullName = dep.GetAttribute("name");
+            adep.Package = dep.GetAttribute("package");
+            deps.Add(adep);
+        }
+
+        foreach (XmlElement mod in elem.SelectNodes("Module"))
+            ReadDependencies(opDeps, opDeps, mod);
+    }
+
+    private static void ReadHeader(AddinInfo info, AddinPropertyCollectionImpl properties, XmlElement elem)
+    {
+        elem = elem.SelectSingleNode("Header") as XmlElement;
+        if (elem == null)
+            return;
+        foreach (XmlNode xprop in elem.ChildNodes)
+        {
+            var prop = xprop as XmlElement;
+            if (prop != null)
+                switch (prop.LocalName)
+                {
+                    case "Id":
+                        info.LocalId = prop.InnerText;
+                        break;
+                    case "Namespace":
+                        info.Namespace = prop.InnerText;
+                        break;
+                    case "Version":
+                        info.Version = prop.InnerText;
+                        break;
+                    case "CompatVersion":
+                        info.BaseVersion = prop.InnerText;
+                        break;
+                    default:
+                    {
+                        var aprop = new AddinProperty();
+                        aprop.Name = prop.LocalName;
+                        if (prop.HasAttribute("locale"))
+                            aprop.Locale = prop.GetAttribute("locale");
+                        aprop.Value = prop.InnerText;
+                        properties.Add(aprop);
+                        break;
+                    }
+                }
+        }
+    }
+
+    internal static AddinInfo ReadFromDescription(AddinDescription description)
+    {
+        var info = new AddinInfo();
+        info.LocalId = description.LocalId;
+        info.Namespace = description.Namespace;
+        info.name = description.Name;
+        info.Version = description.Version;
+        info.author = description.Author;
+        info.copyright = description.Copyright;
+        info.url = description.Url;
+        info.description = description.Description;
+        info.category = description.Category;
+        info.BaseVersion = description.CompatVersion;
+        info.Properties = new AddinPropertyCollectionImpl(description.Properties);
+
+        foreach (Dependency dep in description.MainModule.Dependencies)
+            info.Dependencies.Add(dep);
+
+        foreach (ModuleDescription mod in description.OptionalModules)
+        foreach (Dependency dep in mod.Dependencies)
+            info.OptionalDependencies.Add(dep);
+        return info;
+    }
+
+    public bool SupportsVersion(string version)
+    {
+        if (Addin.CompareVersions(Version, version) > 0)
+            return false;
+        if (BaseVersion == "")
+            return true;
+        return Addin.CompareVersions(BaseVersion, version) >= 0;
+    }
+
+#pragma warning disable CS0612 // Type or member is obsolete
+
+    [XmlArrayItem("AddinDependency", typeof(AddinDependency))]
+    [XmlArrayItem("NativeDependency", typeof(NativeDependency))]
+    [XmlArrayItem("AssemblyDependency", typeof(AssemblyDependency))]
+    public DependencyCollection Dependencies { get; }
+
+    [XmlArrayItem("AddinDependency", typeof(AddinDependency))]
+    [XmlArrayItem("NativeDependency", typeof(NativeDependency))]
+    [XmlArrayItem("AssemblyDependency", typeof(AssemblyDependency))]
+    public DependencyCollection OptionalDependencies { get; }
+
+#pragma warning restore CS0612 // Type or member is obsolete
+}
+
+/// <summary>
+///     Basic add-in information
+/// </summary>
+public interface AddinHeader
+{
+	/// <summary>
+	///     Full identifier of the add-in
+	/// </summary>
+	string Id { get; }
 
 	/// <summary>
-	/// Basic add-in information
+	///     Display name of the add-in
 	/// </summary>
-	public interface AddinHeader
-	{
-		/// <summary>
-		/// Full identifier of the add-in
-		/// </summary>
-		string Id {
-			get;
-		}
-		
-		/// <summary>
-		/// Display name of the add-in
-		/// </summary>
-		string Name {
-			get;
-		}
-		
-		/// <summary>
-		/// Namespace of the add-in
-		/// </summary>
-		string Namespace {
-			get;
-		}
-		
-		/// <summary>
-		/// Version of the add-in
-		/// </summary>
-		string Version {
-			get;
-		}
-		
-		/// <summary>
-		/// Version with which this add-in is compatible
-		/// </summary>
-		string BaseVersion {
-			get;
-		}
-		
-		/// <summary>
-		/// Add-in author
-		/// </summary>
-		string Author {
-			get;
-		}
-		
-		/// <summary>
-		/// Add-in copyright
-		/// </summary>
-		string Copyright {
-			get;
-		}
-		
-		/// <summary>
-		/// Web page URL with more information about the add-in
-		/// </summary>
-		string Url {
-			get;
-		}
-		
-		/// <summary>
-		/// Description of the add-in
-		/// </summary>
-		string Description {
-			get;
-		}
-		
-		/// <summary>
-		/// Category of the add-in
-		/// </summary>
-		string Category {
-			get;
-		}
-		
-		/// <summary>
-		/// Dependencies of the add-in
-		/// </summary>
-		DependencyCollection Dependencies {
-			get;
-		}
-		
-		/// <summary>
-		/// Optional dependencies of the add-in
-		/// </summary>
-		DependencyCollection OptionalDependencies {
-			get;
-		}
-		
-		/// <summary>
-		/// Custom properties specified in the add-in header
-		/// </summary>
-		AddinPropertyCollection Properties {
-			get;
-		}
-		
-		/// <summary>
-		/// Compares the versions of two add-ins
-		/// </summary>
-		/// <param name="other">
-		/// Another add-in
-		/// </param>
-		/// <returns>
-		/// Result of comparison
-		/// </returns>
-		int CompareVersionTo (AddinHeader other);
-	}
+	string Name { get; }
+
+	/// <summary>
+	///     Namespace of the add-in
+	/// </summary>
+	string Namespace { get; }
+
+	/// <summary>
+	///     Version of the add-in
+	/// </summary>
+	string Version { get; }
+
+	/// <summary>
+	///     Version with which this add-in is compatible
+	/// </summary>
+	string BaseVersion { get; }
+
+	/// <summary>
+	///     Add-in author
+	/// </summary>
+	string Author { get; }
+
+	/// <summary>
+	///     Add-in copyright
+	/// </summary>
+	string Copyright { get; }
+
+	/// <summary>
+	///     Web page URL with more information about the add-in
+	/// </summary>
+	string Url { get; }
+
+	/// <summary>
+	///     Description of the add-in
+	/// </summary>
+	string Description { get; }
+
+	/// <summary>
+	///     Category of the add-in
+	/// </summary>
+	string Category { get; }
+
+	/// <summary>
+	///     Dependencies of the add-in
+	/// </summary>
+	DependencyCollection Dependencies { get; }
+
+	/// <summary>
+	///     Optional dependencies of the add-in
+	/// </summary>
+	DependencyCollection OptionalDependencies { get; }
+
+	/// <summary>
+	///     Custom properties specified in the add-in header
+	/// </summary>
+	AddinPropertyCollection Properties { get; }
+
+	/// <summary>
+	///     Compares the versions of two add-ins
+	/// </summary>
+	/// <param name="other">
+	///     Another add-in
+	/// </param>
+	/// <returns>
+	///     Result of comparison
+	/// </returns>
+	int CompareVersionTo(AddinHeader other);
 }

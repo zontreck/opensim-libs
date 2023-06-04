@@ -27,133 +27,133 @@
 //
 
 
-using System;
 using System.Collections;
-using Mono.Addins.Serialization;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using Mono.Addins.Serialization;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AddinHostIndex : IBinaryXmlElement
 {
-	class AddinHostIndex: IBinaryXmlElement
-	{
-		static BinaryXmlTypeMap typeMap = new BinaryXmlTypeMap (typeof(AddinHostIndex));
+    private static readonly BinaryXmlTypeMap typeMap = new(typeof(AddinHostIndex));
 
-		Dictionary<string, string> index;
+    private readonly Dictionary<string, string> index;
 
-		public AddinHostIndex ()
-		{
-			index = new Dictionary<string, string> ();
-		}
+    public AddinHostIndex()
+    {
+        index = new Dictionary<string, string>();
+    }
 
-		public AddinHostIndex (ImmutableAddinHostIndex immutableIndex)
-		{
-			this.index = immutableIndex.ToDictionary();
-		}
+    public AddinHostIndex(ImmutableAddinHostIndex immutableIndex)
+    {
+        index = immutableIndex.ToDictionary();
+    }
 
-		public ImmutableAddinHostIndex ToImmutableAddinHostIndex ()
-		{
-			return new ImmutableAddinHostIndex (new Dictionary<string, string> (index));
-		}
+    void IBinaryXmlElement.Write(BinaryXmlWriter writer)
+    {
+        writer.WriteValue("index", index);
+    }
 
-		public void RegisterAssembly (string assemblyLocation, string addinId, string addinLocation, string domain)
-		{
-			assemblyLocation = NormalizeFileName (assemblyLocation);
-			index [Path.GetFullPath (assemblyLocation)] = addinId + " " + addinLocation + " " + domain;
-		}
+    void IBinaryXmlElement.Read(BinaryXmlReader reader)
+    {
+        reader.ReadValue("index", index);
+    }
 
-		public bool GetAddinForAssembly (string assemblyLocation, out string addinId, out string addinLocation, out string domain)
-		{
-			return LookupAddinForAssembly (index, assemblyLocation, out addinId, out addinLocation, out domain);
-		}
+    public ImmutableAddinHostIndex ToImmutableAddinHostIndex()
+    {
+        return new ImmutableAddinHostIndex(new Dictionary<string, string>(index));
+    }
 
-		internal static bool LookupAddinForAssembly (Dictionary<string, string> index, string assemblyLocation, out string addinId, out string addinLocation, out string domain)
-		{
-			assemblyLocation = NormalizeFileName (assemblyLocation);
-			if (!index.TryGetValue(Path.GetFullPath (assemblyLocation), out var s)) {
-				addinId = null;
-				addinLocation = null;
-				domain = null;
-				return false;
-			}
-			else {
-				int i = s.IndexOf (' ');
-				int j = s.LastIndexOf (' ');
-				addinId = s.Substring (0, i);
-				addinLocation = s.Substring (i+1, j-i-1);
-				domain = s.Substring (j+1);
-				return true;
-			}
-		}
-		
-		public void RemoveHostData (string addinId, string addinLocation)
-		{
-			string loc = addinId + " " + Path.GetFullPath (addinLocation) + " ";
-			ArrayList todelete = new ArrayList ();
-			foreach (var e in index) {
-				if (((string)e.Value).StartsWith (loc))
-					todelete.Add (e.Key);
-			}
-			foreach (string s in todelete)
-				index.Remove (s);
-		}
-		
-		public static AddinHostIndex Read (FileDatabase fileDatabase, string file)
-		{
-			return (AddinHostIndex) fileDatabase.ReadObject (file, typeMap);
-		}
+    public void RegisterAssembly(string assemblyLocation, string addinId, string addinLocation, string domain)
+    {
+        assemblyLocation = NormalizeFileName(assemblyLocation);
+        index[Path.GetFullPath(assemblyLocation)] = addinId + " " + addinLocation + " " + domain;
+    }
 
-		public static ImmutableAddinHostIndex ReadAsImmutable (FileDatabase fileDatabase, string file)
-		{
-			var hostIndex = (AddinHostIndex)fileDatabase.ReadObject (file, typeMap);
-			return new ImmutableAddinHostIndex (hostIndex.index);
-		}
+    public bool GetAddinForAssembly(string assemblyLocation, out string addinId, out string addinLocation,
+        out string domain)
+    {
+        return LookupAddinForAssembly(index, assemblyLocation, out addinId, out addinLocation, out domain);
+    }
 
-		public void Write (FileDatabase fileDatabase, string file)
-		{
-			fileDatabase.WriteObject (file, this, typeMap);
-		}
-		
-		void IBinaryXmlElement.Write (BinaryXmlWriter writer)
-		{
-			writer.WriteValue ("index", index);
-		}
-		
-		void IBinaryXmlElement.Read (BinaryXmlReader reader)
-		{
-			reader.ReadValue ("index", index);
-		}
-		
-		internal static string NormalizeFileName (string name)
-		{
-			if (Util.IsWindows)
-				return name.ToLower ();
-			else
-				return name;
-		}
-	}
+    internal static bool LookupAddinForAssembly(Dictionary<string, string> index, string assemblyLocation,
+        out string addinId, out string addinLocation, out string domain)
+    {
+        assemblyLocation = NormalizeFileName(assemblyLocation);
+        if (!index.TryGetValue(Path.GetFullPath(assemblyLocation), out var s))
+        {
+            addinId = null;
+            addinLocation = null;
+            domain = null;
+            return false;
+        }
 
-	class ImmutableAddinHostIndex
-	{
-		Dictionary<string, string> index;
+        var i = s.IndexOf(' ');
+        var j = s.LastIndexOf(' ');
+        addinId = s.Substring(0, i);
+        addinLocation = s.Substring(i + 1, j - i - 1);
+        domain = s.Substring(j + 1);
+        return true;
+    }
 
-		public ImmutableAddinHostIndex () : this (new Dictionary<string, string> ())
-		{
-		}
+    public void RemoveHostData(string addinId, string addinLocation)
+    {
+        var loc = addinId + " " + Path.GetFullPath(addinLocation) + " ";
+        var todelete = new ArrayList();
+        foreach (var e in index)
+            if (e.Value.StartsWith(loc))
+                todelete.Add(e.Key);
+        foreach (string s in todelete)
+            index.Remove(s);
+    }
 
-		public ImmutableAddinHostIndex (Dictionary<string, string> index)
-		{
-			this.index = index;
-		}
+    public static AddinHostIndex Read(FileDatabase fileDatabase, string file)
+    {
+        return (AddinHostIndex)fileDatabase.ReadObject(file, typeMap);
+    }
 
-		public bool GetAddinForAssembly (string assemblyLocation, out string addinId, out string addinLocation, out string domain)
-		{
-			return AddinHostIndex.LookupAddinForAssembly (index, assemblyLocation, out addinId, out addinLocation, out domain);
-		}
+    public static ImmutableAddinHostIndex ReadAsImmutable(FileDatabase fileDatabase, string file)
+    {
+        var hostIndex = (AddinHostIndex)fileDatabase.ReadObject(file, typeMap);
+        return new ImmutableAddinHostIndex(hostIndex.index);
+    }
 
-		public Dictionary<string, string> ToDictionary ()
-		{
-			return new Dictionary<string, string> (index);
-		}
-	}
+    public void Write(FileDatabase fileDatabase, string file)
+    {
+        fileDatabase.WriteObject(file, this, typeMap);
+    }
+
+    internal static string NormalizeFileName(string name)
+    {
+        if (Util.IsWindows)
+            return name.ToLower();
+        return name;
+    }
+}
+
+internal class ImmutableAddinHostIndex
+{
+    private readonly Dictionary<string, string> index;
+
+    public ImmutableAddinHostIndex() : this(new Dictionary<string, string>())
+    {
+    }
+
+    public ImmutableAddinHostIndex(Dictionary<string, string> index)
+    {
+        this.index = index;
+    }
+
+    public bool GetAddinForAssembly(string assemblyLocation, out string addinId, out string addinLocation,
+        out string domain)
+    {
+        return AddinHostIndex.LookupAddinForAssembly(index, assemblyLocation, out addinId, out addinLocation,
+            out domain);
+    }
+
+    public Dictionary<string, string> ToDictionary()
+    {
+        return new Dictionary<string, string>(index);
+    }
 }

@@ -28,16 +28,9 @@
 
 using System;
 
+namespace Mono.Addins.Setup;
 
-namespace Mono.Addins.Setup
+internal class ReferenceRepositoryEntry : RepositoryEntry
 {
-	internal class ReferenceRepositoryEntry: RepositoryEntry
-	{
-		DateTime lastModified;
-		
-		public DateTime LastModified {
-			get { return lastModified; }
-			set { lastModified = value; }
-		}
-	}
+    public DateTime LastModified { get; set; }
 }

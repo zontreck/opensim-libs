@@ -29,46 +29,44 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Marks an assembly as being an add-in root.
+/// </summary>
+/// <remarks>
+///     An add-in root is an assembly which can be extended by add-ins.
+/// </remarks>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinRootAttribute : AddinAttribute
 {
 	/// <summary>
-	/// Marks an assembly as being an add-in root.
+	///     Initializes a new instance
 	/// </summary>
-	/// <remarks>
-	/// An add-in root is an assembly which can be extended by add-ins.
-	/// </remarks>
-	[AttributeUsage (AttributeTargets.Assembly)]
-	public class AddinRootAttribute: AddinAttribute
-	{
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		public AddinRootAttribute ()
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="id">
-		/// Identifier of the add-in root
-		/// </param>
-		public AddinRootAttribute (string id): base (id)
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="id">
-		/// Identifier of the add-in root
-		/// </param>
-		/// <param name="version">
-		/// Version of the add-in root
-		/// </param>
-		public AddinRootAttribute (string id, string version): base (id, version)
-		{
-		}
-		
-	}
+	public AddinRootAttribute()
+    {
+    }
+
+	/// <summary>
+	///     Initializes a new instance
+	/// </summary>
+	/// <param name="id">
+	///     Identifier of the add-in root
+	/// </param>
+	public AddinRootAttribute(string id) : base(id)
+    {
+    }
+
+	/// <summary>
+	///     Initializes a new instance
+	/// </summary>
+	/// <param name="id">
+	///     Identifier of the add-in root
+	/// </param>
+	/// <param name="version">
+	///     Version of the add-in root
+	/// </param>
+	public AddinRootAttribute(string id, string version) : base(id, version)
+    {
+    }
 }

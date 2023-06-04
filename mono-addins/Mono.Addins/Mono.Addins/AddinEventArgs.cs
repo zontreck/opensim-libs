@@ -29,36 +29,31 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Delegate to be used in add-in engine events
+/// </summary>
+public delegate void AddinEventHandler(object sender, AddinEventArgs args);
+
+/// <summary>
+///     Provides information about an add-in engine event.
+/// </summary>
+public class AddinEventArgs : EventArgs
 {
 	/// <summary>
-	/// Delegate to be used in add-in engine events
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinEventArgs" /> class.
 	/// </summary>
-	public delegate void AddinEventHandler (object sender, AddinEventArgs args);
-	
-	/// <summary>
-	/// Provides information about an add-in engine event.
-	/// </summary>
-	public class AddinEventArgs: EventArgs
-	{
-		string addinId;
+	/// <param name='addinId'>
+	///     Add-in identifier.
+	/// </param>
+	public AddinEventArgs(string addinId)
+    {
+        AddinId = addinId;
+    }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinEventArgs"/> class.
-		/// </summary>
-		/// <param name='addinId'>
-		/// Add-in identifier.
-		/// </param>
-		public AddinEventArgs (string addinId)
-		{
-			this.addinId = addinId;
-		}
-		
-		/// <summary>
-		/// Identifier of the add-in that generated the event.
-		/// </summary>
-		public string AddinId {
-			get { return addinId; }
-		}
-	}
+	/// <summary>
+	///     Identifier of the add-in that generated the event.
+	/// </summary>
+	public string AddinId { get; }
 }

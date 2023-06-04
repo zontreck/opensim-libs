@@ -26,23 +26,13 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
+namespace Mono.Addins.Setup;
 
-
-namespace Mono.Addins.Setup
+public class RepositoryEntry
 {
-	public class RepositoryEntry
-	{
-		string url;
-		internal Repository owner;
+    internal Repository owner;
 
-		public string Url {
-			get { return url; }
-			set { url = value; }
-		}
-		
-		internal Repository Repository {
-			get { return owner; }
-		}
-	}
+    public string Url { get; set; }
+
+    internal Repository Repository => owner;
 }

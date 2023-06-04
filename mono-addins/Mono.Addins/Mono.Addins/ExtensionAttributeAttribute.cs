@@ -26,112 +26,104 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Assigns an attribute value to an extension
+/// </summary>
+/// <remarks>
+///     This attribute can be used together with the [Extension] attribute to specify
+///     a value for an attribute of the extension.
+/// </remarks>
+public class ExtensionAttributeAttribute : Attribute
 {
-	/// <summary>
-	/// Assigns an attribute value to an extension
-	/// </summary>
-	/// <remarks>
-	/// This attribute can be used together with the [Extension] attribute to specify
-	/// a value for an attribute of the extension.
-	/// </remarks>
-	public class ExtensionAttributeAttribute: Attribute
-	{
-		Type targetType;
-		string targetTypeName;
-		string name;
-		string val;
-		string path;
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute"/> class.
-		/// </summary>
-		/// <param name='name'>
-		/// Name of the attribute
-		/// </param>
-		/// <param name='value'>
-		/// Value of the attribute
-		/// </param>
-		public ExtensionAttributeAttribute (string name, string value)
-		{
-			Name = name;
-			Value = value;
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute"/> class.
-		/// </summary>
-		/// <param name='type'>
-		/// Type of the extension for which the attribute value is being set
-		/// </param>
-		/// <param name='name'>
-		/// Name of the attribute
-		/// </param>
-		/// <param name='value'>
-		/// Value of the attribute
-		/// </param>
-		public ExtensionAttributeAttribute (Type type, string name, string value)
-		{
-			Name = name;
-			Value = value;
-			Type = type;
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute"/> class.
-		/// </summary>
-		/// <param name='path'>
-		/// Path of the extension for which the attribute value is being set
-		/// </param>
-		/// <param name='name'>
-		/// Name of the attribute
-		/// </param>
-		/// <param name='value'>
-		/// Value of the attribute
-		/// </param>
-		public ExtensionAttributeAttribute (string path, string name, string value)
-		{
-			Name = name;
-			Value = value;
-			Path = path;
-		}
-		
-		/// <summary>
-		/// Name of the attribute
-		/// </summary>
-		public string Name {
-			get { return this.name; }
-			set { this.name = value; }
-		}
+    private Type targetType;
+    private string targetTypeName;
 
-		/// <summary>
-		/// Value of the attribute
-		/// </summary>
-		public string Value {
-			get { return this.val; }
-			set { this.val = value; }
-		}
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute" /> class.
+    /// </summary>
+    /// <param name='name'>
+    ///     Name of the attribute
+    /// </param>
+    /// <param name='value'>
+    ///     Value of the attribute
+    /// </param>
+    public ExtensionAttributeAttribute(string name, string value)
+    {
+        Name = name;
+        Value = value;
+    }
 
-		/// <summary>
-		/// Path of the extension for which the attribute value is being set
-		/// </summary>
-		public string Path {
-			get { return this.path; }
-			set { this.path = value; }
-		}
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute" /> class.
+    /// </summary>
+    /// <param name='type'>
+    ///     Type of the extension for which the attribute value is being set
+    /// </param>
+    /// <param name='name'>
+    ///     Name of the attribute
+    /// </param>
+    /// <param name='value'>
+    ///     Value of the attribute
+    /// </param>
+    public ExtensionAttributeAttribute(Type type, string name, string value)
+    {
+        Name = name;
+        Value = value;
+        Type = type;
+    }
 
-		/// <summary>
-		/// Type of the extension for which the attribute value is being set
-		/// </summary>
-		public Type Type {
-			get { return targetType; }
-			set { targetType = value; targetTypeName = targetType.AssemblyQualifiedName; }
-		}
-		
-		internal string TypeName {
-			get { return targetTypeName ?? string.Empty; }
-			set { targetTypeName = value; }
-		}
-	}
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.ExtensionAttributeAttribute" /> class.
+    /// </summary>
+    /// <param name='path'>
+    ///     Path of the extension for which the attribute value is being set
+    /// </param>
+    /// <param name='name'>
+    ///     Name of the attribute
+    /// </param>
+    /// <param name='value'>
+    ///     Value of the attribute
+    /// </param>
+    public ExtensionAttributeAttribute(string path, string name, string value)
+    {
+        Name = name;
+        Value = value;
+        Path = path;
+    }
+
+    /// <summary>
+    ///     Name of the attribute
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    ///     Value of the attribute
+    /// </summary>
+    public string Value { get; set; }
+
+    /// <summary>
+    ///     Path of the extension for which the attribute value is being set
+    /// </summary>
+    public string Path { get; set; }
+
+    /// <summary>
+    ///     Type of the extension for which the attribute value is being set
+    /// </summary>
+    public Type Type
+    {
+        get => targetType;
+        set
+        {
+            targetType = value;
+            targetTypeName = targetType.AssemblyQualifiedName;
+        }
+    }
+
+    internal string TypeName
+    {
+        get => targetTypeName ?? string.Empty;
+        set => targetTypeName = value;
+    }
 }
-

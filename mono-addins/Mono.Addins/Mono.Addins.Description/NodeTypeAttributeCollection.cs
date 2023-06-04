@@ -27,34 +27,29 @@
 //
 
 
-using System;
+namespace Mono.Addins.Description;
 
-namespace Mono.Addins.Description
+/// <summary>
+///     A collection of node attributes
+/// </summary>
+public class NodeTypeAttributeCollection : ObjectDescriptionCollection<NodeTypeAttribute>
 {
 	/// <summary>
-	/// A collection of node attributes
+	///     Initializes a new instance of the <see cref="Mono.Addins.Description.NodeTypeAttributeCollection" /> class.
 	/// </summary>
-	public class NodeTypeAttributeCollection: ObjectDescriptionCollection<NodeTypeAttribute>
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.Description.NodeTypeAttributeCollection"/> class.
-		/// </summary>
-		public NodeTypeAttributeCollection ()
-		{
-		}
-		
-		internal NodeTypeAttributeCollection (object owner): base (owner)
-		{
-		}
-		
-		/// <summary>
-		/// Gets the <see cref="Mono.Addins.Description.NodeTypeAttribute"/> at the specified index.
-		/// </summary>
-		/// <param name='n'>
-		/// The index.
-		/// </param>
-		public NodeTypeAttribute this [int n] {
-			get { return (NodeTypeAttribute) List [n]; }
-		}
-	}
+	public NodeTypeAttributeCollection()
+    {
+    }
+
+    internal NodeTypeAttributeCollection(object owner) : base(owner)
+    {
+    }
+
+    /// <summary>
+    ///     Gets the <see cref="Mono.Addins.Description.NodeTypeAttribute" /> at the specified index.
+    /// </summary>
+    /// <param name='n'>
+    ///     The index.
+    /// </param>
+    public NodeTypeAttribute this[int n] => (NodeTypeAttribute)List[n];
 }

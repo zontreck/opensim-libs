@@ -10,59 +10,50 @@
 
 using System;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public class FieldReference : MemberReference {
+public class FieldReference : MemberReference
+{
+    internal FieldReference()
+    {
+        token = new MetadataToken(TokenType.MemberRef);
+    }
 
-		TypeReference field_type;
+    public FieldReference(string name, TypeReference fieldType)
+        : base(name)
+    {
+        Mixin.CheckType(fieldType, Mixin.Argument.fieldType);
 
-		public TypeReference FieldType {
-			get { return field_type; }
-			set { field_type = value; }
-		}
+        FieldType = fieldType;
+        token = new MetadataToken(TokenType.MemberRef);
+    }
 
-		public override string FullName {
-			get { return field_type.FullName + " " + MemberFullName (); }
-		}
+    public FieldReference(string name, TypeReference fieldType, TypeReference declaringType)
+        : this(name, fieldType)
+    {
+        Mixin.CheckType(declaringType, Mixin.Argument.declaringType);
 
-		public override bool ContainsGenericParameter {
-			get { return field_type.ContainsGenericParameter || base.ContainsGenericParameter; }
-		}
+        DeclaringType = declaringType;
+    }
 
-		internal FieldReference ()
-		{
-			this.token = new MetadataToken (TokenType.MemberRef);
-		}
+    public TypeReference FieldType { get; set; }
 
-		public FieldReference (string name, TypeReference fieldType)
-			: base (name)
-		{
-			Mixin.CheckType (fieldType, Mixin.Argument.fieldType);
+    public override string FullName => FieldType.FullName + " " + MemberFullName();
 
-			this.field_type = fieldType;
-			this.token = new MetadataToken (TokenType.MemberRef);
-		}
+    public override bool ContainsGenericParameter =>
+        FieldType.ContainsGenericParameter || base.ContainsGenericParameter;
 
-		public FieldReference (string name, TypeReference fieldType, TypeReference declaringType)
-			: this (name, fieldType)
-		{
-			Mixin.CheckType (declaringType, Mixin.Argument.declaringType);
+    protected override IMemberDefinition ResolveDefinition()
+    {
+        return Resolve();
+    }
 
-			this.DeclaringType = declaringType;
-		}
+    public new virtual FieldDefinition Resolve()
+    {
+        var module = Module;
+        if (module == null)
+            throw new NotSupportedException();
 
-		protected override IMemberDefinition ResolveDefinition ()
-		{
-			return this.Resolve ();
-		}
-
-		public new virtual FieldDefinition Resolve ()
-		{
-			var module = this.Module;
-			if (module == null)
-				throw new NotSupportedException ();
-
-			return module.Resolve (this);
-		}
-	}
+        return module.Resolve(this);
+    }
 }

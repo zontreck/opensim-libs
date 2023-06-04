@@ -30,100 +30,95 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+internal abstract class DownloadFileRequest : IDisposable
 {
-	abstract class DownloadFileRequest : IDisposable
-	{
-		public abstract void Dispose ();
-		public abstract int ContentLength { get; }
-		public abstract Stream Stream { get; }
+    public abstract int ContentLength { get; }
+    public abstract Stream Stream { get; }
+    public abstract void Dispose();
 
-		public static Task<DownloadFileRequest> DownloadFile (string url, bool noCache)
-		{
-			if (HttpClientProvider.HasCustomCreation || !WebRequestHelper.HasCustomRequestHandler)
-				return HttpClientDownloadFileRequest.Create (url, noCache);
+    public static Task<DownloadFileRequest> DownloadFile(string url, bool noCache)
+    {
+        if (HttpClientProvider.HasCustomCreation || !WebRequestHelper.HasCustomRequestHandler)
+            return HttpClientDownloadFileRequest.Create(url, noCache);
 
-			return WebRequestDownloadFileRequest.Create (url, noCache);
-		}
-	}
+        return WebRequestDownloadFileRequest.Create(url, noCache);
+    }
+}
 
-	class HttpClientDownloadFileRequest : DownloadFileRequest
-	{
-		HttpClient client;
-		HttpResponseMessage response;
-		Stream stream;
+internal class HttpClientDownloadFileRequest : DownloadFileRequest
+{
+    private HttpClient client;
+    private HttpResponseMessage response;
+    private Stream stream;
 
-		public static Task<DownloadFileRequest> Create (string url, bool noCache)
-		{
-			// Use Task.Run to avoid hanging the UI thread when waiting for the GetAsync method to return
-			// with the response for an .mpack file download.
-			return Task.Run<DownloadFileRequest> (async () => {
-				var client = HttpClientProvider.CreateHttpClient (url);
-				if (noCache)
-					client.DefaultRequestHeaders.Add ("Pragma", "no-cache");
+    public override int ContentLength => (int)response.Content.Headers.ContentLength;
 
-				var response = await client.GetAsync (url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait (false);
-				var stream = await response.Content.ReadAsStreamAsync ().ConfigureAwait (false);
+    public override Stream Stream => stream;
 
-				return new HttpClientDownloadFileRequest {
-					client = client,
-					response = response,
-					stream = stream
-				};
-			});
-		}
+    public static Task<DownloadFileRequest> Create(string url, bool noCache)
+    {
+        // Use Task.Run to avoid hanging the UI thread when waiting for the GetAsync method to return
+        // with the response for an .mpack file download.
+        return Task.Run<DownloadFileRequest>(async () =>
+        {
+            var client = HttpClientProvider.CreateHttpClient(url);
+            if (noCache)
+                client.DefaultRequestHeaders.Add("Pragma", "no-cache");
 
-		public override int ContentLength {
-			get { return (int)response.Content.Headers.ContentLength; }
-		}
+            var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-		public override Stream Stream {
-			get { return stream; }
-		}
+            return new HttpClientDownloadFileRequest
+            {
+                client = client,
+                response = response,
+                stream = stream
+            };
+        });
+    }
 
-		public override void Dispose ()
-		{
-			stream?.Dispose ();
-			response?.Dispose ();
-			client.Dispose ();
-		}
-	}
+    public override void Dispose()
+    {
+        stream?.Dispose();
+        response?.Dispose();
+        client.Dispose();
+    }
+}
 
-	class WebRequestDownloadFileRequest : DownloadFileRequest
-	{
-		WebResponse response;
-		Stream stream;
+internal class WebRequestDownloadFileRequest : DownloadFileRequest
+{
+    private WebResponse response;
+    private Stream stream;
 
-		public static Task<DownloadFileRequest> Create (string url, bool noCache)
-		{
-			var response = WebRequestHelper.GetResponse (
-				() => (HttpWebRequest)WebRequest.Create (url),
-				r => {
-					if (noCache)
-						r.Headers ["Pragma"] = "no-cache";
-				}
-			);
+    public override int ContentLength => (int)response.ContentLength;
 
-			var request = new WebRequestDownloadFileRequest {
-				response = response,
-				stream = response.GetResponseStream ()
-			};
+    public override Stream Stream => stream;
 
-			return Task.FromResult<DownloadFileRequest> (request);
-		}
+    public static Task<DownloadFileRequest> Create(string url, bool noCache)
+    {
+        var response = WebRequestHelper.GetResponse(
+            () => (HttpWebRequest)WebRequest.Create(url),
+            r =>
+            {
+                if (noCache)
+                    r.Headers["Pragma"] = "no-cache";
+            }
+        );
 
-		public override int ContentLength {
-			get { return (int)response.ContentLength; }
-		}
+        var request = new WebRequestDownloadFileRequest
+        {
+            response = response,
+            stream = response.GetResponseStream()
+        };
 
-		public override Stream Stream {
-			get { return stream; }
-		}
+        return Task.FromResult<DownloadFileRequest>(request);
+    }
 
-		public override void Dispose ()
-		{
-			stream?.Dispose ();
-			response.Dispose ();
-		}
-	}
+    public override void Dispose()
+    {
+        stream?.Dispose();
+        response.Dispose();
+    }
 }

@@ -23,21 +23,20 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Base class for custom condition attributes.
+/// </summary>
+/// <remarks>
+///     Custom condition attributes can be used to apply conditions to extensions.
+///     All custom condition attributes must subclass CustomConditionAttribute.
+///     All arguments and properties must be tagged with NodeAttribute.
+///     The ID of the condition is the simple name of this class without the "Attribute"
+///     or "ConditionAttribute" suffix. For example "FooConditionAttribute" maps to the
+///     condition ID "Foo" and "BarAttribute" maps to "Bar".
+/// </remarks>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public abstract class CustomConditionAttribute : Attribute
 {
-	/// <summary>
-	/// Base class for custom condition attributes.
-	/// </summary>
-	/// <remarks>
-	/// Custom condition attributes can be used to apply conditions to extensions.
-	/// All custom condition attributes must subclass CustomConditionAttribute.
-	/// All arguments and properties must be tagged with NodeAttribute.
-	/// The ID of the condition is the simple name of this class without the "Attribute"
-	/// or "ConditionAttribute" suffix. For example "FooConditionAttribute" maps to the
-	/// condition ID "Foo" and "BarAttribute" maps to "Bar".
-	/// </remarks>
-	[AttributeUsage (AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-	public abstract class CustomConditionAttribute : Attribute
-	{
-	}
 }

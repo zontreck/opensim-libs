@@ -1,45 +1,54 @@
 ﻿using System.Configuration;
 using DotNetOpenId.RelyingParty;
 
-namespace DotNetOpenId.Configuration {
-	internal class RelyingPartySecuritySettingsElement : ConfigurationElement {
-		public RelyingPartySecuritySettingsElement() { }
+namespace DotNetOpenId.Configuration;
 
-		public RelyingPartySecuritySettings CreateSecuritySettings() {
-			RelyingPartySecuritySettings settings = new RelyingPartySecuritySettings();
-			settings.RequireSsl = RequireSsl;
-			settings.MinimumRequiredOpenIdVersion = MinimumRequiredOpenIdVersion;
-			settings.MinimumHashBitLength = MinimumHashBitLength;
-			settings.MaximumHashBitLength = MaximumHashBitLength;
-			return settings;
-		}
+internal class RelyingPartySecuritySettingsElement : ConfigurationElement
+{
+    private const string requireSslConfigName = "requireSsl";
 
-		const string requireSslConfigName = "requireSsl";
-		[ConfigurationProperty(requireSslConfigName, DefaultValue = false)]
-		public bool RequireSsl {
-			get { return (bool)this[requireSslConfigName]; }
-			set { this[requireSslConfigName] = value; }
-		}
+    private const string minimumRequiredOpenIdVersionConfigName = "minimumRequiredOpenIdVersion";
 
-		const string minimumRequiredOpenIdVersionConfigName = "minimumRequiredOpenIdVersion";
-		[ConfigurationProperty(minimumRequiredOpenIdVersionConfigName, DefaultValue = "V10")]
-		public ProtocolVersion MinimumRequiredOpenIdVersion {
-			get { return (ProtocolVersion)this[minimumRequiredOpenIdVersionConfigName]; }
-			set { this[minimumRequiredOpenIdVersionConfigName] = value; }
-		}
+    private const string minimumHashBitLengthConfigName = "minimumHashBitLength";
 
-		const string minimumHashBitLengthConfigName = "minimumHashBitLength";
-		[ConfigurationProperty(minimumHashBitLengthConfigName, DefaultValue = DotNetOpenId.SecuritySettings.minimumHashBitLengthDefault)]
-		public int MinimumHashBitLength {
-			get { return (int)this[minimumHashBitLengthConfigName]; }
-			set { this[minimumHashBitLengthConfigName] = value; }
-		}
+    private const string maximumHashBitLengthConfigName = "maximumHashBitLength";
 
-		const string maximumHashBitLengthConfigName = "maximumHashBitLength";
-		[ConfigurationProperty(maximumHashBitLengthConfigName, DefaultValue = DotNetOpenId.SecuritySettings.maximumHashBitLengthRPDefault)]
-		public int MaximumHashBitLength {
-			get { return (int)this[maximumHashBitLengthConfigName]; }
-			set { this[maximumHashBitLengthConfigName] = value; }
-		}
-	}
+    [ConfigurationProperty(requireSslConfigName, DefaultValue = false)]
+    public bool RequireSsl
+    {
+        get => (bool)this[requireSslConfigName];
+        set => this[requireSslConfigName] = value;
+    }
+
+    [ConfigurationProperty(minimumRequiredOpenIdVersionConfigName, DefaultValue = "V10")]
+    public ProtocolVersion MinimumRequiredOpenIdVersion
+    {
+        get => (ProtocolVersion)this[minimumRequiredOpenIdVersionConfigName];
+        set => this[minimumRequiredOpenIdVersionConfigName] = value;
+    }
+
+    [ConfigurationProperty(minimumHashBitLengthConfigName, DefaultValue = SecuritySettings.minimumHashBitLengthDefault)]
+    public int MinimumHashBitLength
+    {
+        get => (int)this[minimumHashBitLengthConfigName];
+        set => this[minimumHashBitLengthConfigName] = value;
+    }
+
+    [ConfigurationProperty(maximumHashBitLengthConfigName,
+        DefaultValue = SecuritySettings.maximumHashBitLengthRPDefault)]
+    public int MaximumHashBitLength
+    {
+        get => (int)this[maximumHashBitLengthConfigName];
+        set => this[maximumHashBitLengthConfigName] = value;
+    }
+
+    public RelyingPartySecuritySettings CreateSecuritySettings()
+    {
+        var settings = new RelyingPartySecuritySettings();
+        settings.RequireSsl = RequireSsl;
+        settings.MinimumRequiredOpenIdVersion = MinimumRequiredOpenIdVersion;
+        settings.MinimumHashBitLength = MinimumHashBitLength;
+        settings.MaximumHashBitLength = MaximumHashBitLength;
+        return settings;
+    }
 }

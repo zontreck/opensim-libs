@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.IO;
 
-namespace DotNetOpenId {
-	internal static class ProtocolMessages {
-		public readonly static HttpEncoding Http = new HttpEncoding();
-		public readonly static KeyValueFormEncoding KeyValueForm = new KeyValueFormEncoding();
-	}
+namespace DotNetOpenId;
 
-	internal interface IProtocolMessageEncoding {
-		byte[] GetBytes(IDictionary<string, string> dictionary);
-		IDictionary<string, string> GetDictionary(Stream data);
-	}
+internal static class ProtocolMessages
+{
+    public static readonly HttpEncoding Http = new();
+    public static readonly KeyValueFormEncoding KeyValueForm = new();
+}
+
+internal interface IProtocolMessageEncoding
+{
+    byte[] GetBytes(IDictionary<string, string> dictionary);
+    IDictionary<string, string> GetDictionary(Stream data);
 }

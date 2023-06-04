@@ -27,158 +27,104 @@
 //
 
 using System;
-using System.Collections;
+using System.ComponentModel;
 using System.IO;
-using System.Xml;
 using System.Xml.Serialization;
 
+namespace Mono.Addins.Setup;
 
-namespace Mono.Addins.Setup
+internal class RepositoryRecord : AddinRepository
 {
-	internal class RepositoryRecord: AddinRepository
-	{
-		string id;
-		bool isReference;
-		string file;
-		string url;
-		string name;
-		bool enabled = true;
-		DateTime lastModified = new DateTime (1900,1,1);
-		
-		[XmlAttribute ("id")]
-		public string Id {
-			get { return id; }
-			set { id = value; }
-		}
+    [XmlAttribute("id")] public string Id { get; set; }
 
-		public string ProviderId { get; set; }
-		
-		public bool IsReference {
-			get { return isReference; }
-			set { isReference = value; }
-		}
-		
-		public string File {
-			get { return file; }
-			set { file = value; }
-		}
-		
-		public string CachedFilesDir {
-			get {
-				return Path.Combine (Path.GetDirectoryName (File), Path.GetFileNameWithoutExtension (File) + "_files");
-			}
-		}
-		
-		public string Url {
-			get { return url; }
-			set { url = value; }
-		}
-		
-		public string Name {
-			get { return name; }
-			set { name = value; }
-		}
-		
-		public string Title {
-			get { return Name != null && Name != "" ? Name : Url; }
-		}
-				
-		public DateTime LastModified {
-			get { return lastModified; }
-			set { lastModified = value; }
-		}
-		
-		[System.ComponentModel.DefaultValue (true)]
-		public bool Enabled {
-			get { return this.enabled; }
-			set { enabled = value; }
-		}
-		
-		public Repository GetCachedRepository ()
-		{
-			Repository repo = (Repository) AddinStore.ReadObject (File, typeof(Repository));
-			if (repo != null)
-				repo.CachedFilesDir = CachedFilesDir;
-			return repo;
-		}
-		
-		public void ClearCachedRepository ()
-		{
-			if (System.IO.File.Exists (File))
-				System.IO.File.Delete (File);
-			if (Directory.Exists (CachedFilesDir))
-				Directory.Delete (CachedFilesDir, true);
-		}
-		
-		internal void UpdateCachedRepository (Repository newRep)
-		{
-			newRep.url = Url;
-			if (newRep.Name == null)
-				newRep.Name = new Uri (Url).Host;
-			AddinStore.WriteObject (File, newRep);
-			if (name == null)
-				name = newRep.Name;
-			newRep.CachedFilesDir = CachedFilesDir;
-		}
-	}
+    public bool IsReference { get; set; }
+
+    public string CachedFilesDir =>
+        Path.Combine(Path.GetDirectoryName(File), Path.GetFileNameWithoutExtension(File) + "_files");
+
+    public string ProviderId { get; set; }
+
+    public string File { get; set; }
+
+    public string Url { get; set; }
+
+    public string Name { get; set; }
+
+    public string Title => Name != null && Name != "" ? Name : Url;
+
+    public DateTime LastModified { get; set; } = new(1900, 1, 1);
+
+    [DefaultValue(true)] public bool Enabled { get; set; } = true;
+
+    public Repository GetCachedRepository()
+    {
+        var repo = (Repository)AddinStore.ReadObject(File, typeof(Repository));
+        if (repo != null)
+            repo.CachedFilesDir = CachedFilesDir;
+        return repo;
+    }
+
+    public void ClearCachedRepository()
+    {
+        if (System.IO.File.Exists(File))
+            System.IO.File.Delete(File);
+        if (Directory.Exists(CachedFilesDir))
+            Directory.Delete(CachedFilesDir, true);
+    }
+
+    internal void UpdateCachedRepository(Repository newRep)
+    {
+        newRep.url = Url;
+        if (newRep.Name == null)
+            newRep.Name = new Uri(Url).Host;
+        AddinStore.WriteObject(File, newRep);
+        if (Name == null)
+            Name = newRep.Name;
+        newRep.CachedFilesDir = CachedFilesDir;
+    }
+}
+
+/// <summary>
+///     An on-line add-in repository
+/// </summary>
+public interface AddinRepository
+{
+	/// <summary>
+	///     Path to the cached add-in repository file
+	/// </summary>
+	string File { get; }
 
 	/// <summary>
-	/// An on-line add-in repository
+	///     Url of the repository
 	/// </summary>
-	public interface AddinRepository
-	{
-		/// <summary>
-		/// Path to the cached add-in repository file
-		/// </summary>
-		string File {
-			get;
-		}
-		
-		/// <summary>
-		/// Url of the repository
-		/// </summary>
-		string Url {
-			get;
-		}
-		
-		/// <summary>
-		/// Do not use. Use Title instead.
-		/// </summary>
-		string Name {
-			get;
-			set;
-		}
-		
-		/// <summary>
-		/// Title of the repository
-		/// </summary>
-		string Title {
-			get;
-		}
-		
-		/// <summary>
-		/// Last change timestamp
-		/// </summary>
-		DateTime LastModified {
-			get;
-		}
-		
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="Mono.Addins.Setup.AddinRepository"/> is enabled.
-		/// </summary>
-		/// <value>
-		/// <c>true</c> if enabled; otherwise, <c>false</c>.
-		/// </value>
-		bool Enabled {
-			get;
-		}
+	string Url { get; }
 
-		/// <summary>
-		/// Defineds type of repository provider.
-		/// </summary>
-		/// <value>Provider string id.</value>
-		string ProviderId {
-			get;
-		}
-	}
+	/// <summary>
+	///     Do not use. Use Title instead.
+	/// </summary>
+	string Name { get; set; }
+
+	/// <summary>
+	///     Title of the repository
+	/// </summary>
+	string Title { get; }
+
+	/// <summary>
+	///     Last change timestamp
+	/// </summary>
+	DateTime LastModified { get; }
+
+	/// <summary>
+	///     Gets a value indicating whether this <see cref="Mono.Addins.Setup.AddinRepository" /> is enabled.
+	/// </summary>
+	/// <value>
+	///     <c>true</c> if enabled; otherwise, <c>false</c>.
+	/// </value>
+	bool Enabled { get; }
+
+	/// <summary>
+	///     Defineds type of repository provider.
+	/// </summary>
+	/// <value>Provider string id.</value>
+	string ProviderId { get; }
 }

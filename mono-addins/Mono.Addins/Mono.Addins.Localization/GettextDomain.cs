@@ -31,110 +31,120 @@
 //
 
 using System;
-using System.Runtime.InteropServices;
 using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Mono.Addins.Localization
-{
-	class GettextDomain
-	{
-		[DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr bindtextdomain (IntPtr domainname, IntPtr dirname);
-		[DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr bind_textdomain_codeset (IntPtr domainname, IntPtr codeset);
-		[DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr dgettext (IntPtr domainname, IntPtr instring);
-		[DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr dngettext (IntPtr domainname, IntPtr instring, IntPtr plural, int n);
-		
-		IntPtr ipackage;
-		
-		public void Init (String package, string localedir)
-		{
-			if (localedir == null) {
-				localedir = System.Reflection.Assembly.GetEntryAssembly ().CodeBase;
-				FileInfo f = new FileInfo (localedir);
-				string prefix = f.Directory.Parent.Parent.Parent.ToString ();
-				prefix = Path.Combine (Path.Combine (prefix, "share"), "locale");
-			}
-			
-			ipackage = StringToPtr (package);
-			IntPtr ilocaledir = StringToPtr (localedir);
-			IntPtr iutf8 = StringToPtr ("UTF-8");
-			
-			try {
-				if (bindtextdomain (ipackage, ilocaledir) == IntPtr.Zero)
-					throw new InvalidOperationException ("Gettext localizer: bindtextdomain failed");
-				if (bind_textdomain_codeset (ipackage, iutf8) == IntPtr.Zero)
-					throw new InvalidOperationException ("Gettext localizer: bind_textdomain_codeset failed");
-			}
-			finally {
-				Marshal.FreeHGlobal (ilocaledir);
-				Marshal.FreeHGlobal (iutf8);
-			}
-		}
-		
-		~GettextDomain ()
-		{
-			Marshal.FreeHGlobal (ipackage);
-		}
+namespace Mono.Addins.Localization;
 
-		public String GetString (String s)
-		{
-			IntPtr ints = StringToPtr (s);
-			try {
-				// gettext(3) returns the input pointer if no translation is found
-				IntPtr r = dgettext (ipackage, ints);
-				if (r != ints)
-					return PtrToString (r);
-				return s;
-			}
-			finally {
-				Marshal.FreeHGlobal (ints);
-			}
-		}
-		
-		public String GetPluralString (String singular, String defaultPlural, int n)
-		{
-			IntPtr ints = StringToPtr (singular);
-			IntPtr intp = StringToPtr (defaultPlural);
-			try {
-				// gettext(3) returns the input pointer if no translation is found
-				IntPtr r = dngettext (ipackage, ints, intp, n);
-				if (r == ints)
-					return singular;
-				if (r == intp)
-					return defaultPlural;
-				return PtrToString (r);
-			}
-			finally {
-				Marshal.FreeHGlobal (ints);
-				Marshal.FreeHGlobal (intp);
-			}
-		}
-		
-		static IntPtr StringToPtr (string s)
-		{
-			if (s == null)
-				return IntPtr.Zero;
-            byte[] marshal = Encoding.UTF8.GetBytes (s);
-            IntPtr mem = Marshal.AllocHGlobal (marshal.Length + 1);
-            Marshal.Copy (marshal, 0, mem, marshal.Length);
-            Marshal.WriteByte (mem, marshal.Length, 0);
-            return mem;		
-		}
-		
-		static string PtrToString (IntPtr ptr)
-		{
-            if (ptr == IntPtr.Zero)
-                return null;
-			int sz = 0;
-			while (Marshal.ReadByte (ptr, sz) != 0)
-				sz++;
-            byte[] bytes = new byte [sz];
-            Marshal.Copy (ptr, bytes, 0, sz);
-            return Encoding.UTF8.GetString (bytes);
-		}
-	}
+internal class GettextDomain
+{
+    private IntPtr ipackage;
+
+    [DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr bindtextdomain(IntPtr domainname, IntPtr dirname);
+
+    [DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr bind_textdomain_codeset(IntPtr domainname, IntPtr codeset);
+
+    [DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr dgettext(IntPtr domainname, IntPtr instring);
+
+    [DllImport("intl", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr dngettext(IntPtr domainname, IntPtr instring, IntPtr plural, int n);
+
+    public void Init(string package, string localedir)
+    {
+        if (localedir == null)
+        {
+            localedir = Assembly.GetEntryAssembly().CodeBase;
+            var f = new FileInfo(localedir);
+            var prefix = f.Directory.Parent.Parent.Parent.ToString();
+            prefix = Path.Combine(Path.Combine(prefix, "share"), "locale");
+        }
+
+        ipackage = StringToPtr(package);
+        var ilocaledir = StringToPtr(localedir);
+        var iutf8 = StringToPtr("UTF-8");
+
+        try
+        {
+            if (bindtextdomain(ipackage, ilocaledir) == IntPtr.Zero)
+                throw new InvalidOperationException("Gettext localizer: bindtextdomain failed");
+            if (bind_textdomain_codeset(ipackage, iutf8) == IntPtr.Zero)
+                throw new InvalidOperationException("Gettext localizer: bind_textdomain_codeset failed");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ilocaledir);
+            Marshal.FreeHGlobal(iutf8);
+        }
+    }
+
+    ~GettextDomain()
+    {
+        Marshal.FreeHGlobal(ipackage);
+    }
+
+    public string GetString(string s)
+    {
+        var ints = StringToPtr(s);
+        try
+        {
+            // gettext(3) returns the input pointer if no translation is found
+            var r = dgettext(ipackage, ints);
+            if (r != ints)
+                return PtrToString(r);
+            return s;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ints);
+        }
+    }
+
+    public string GetPluralString(string singular, string defaultPlural, int n)
+    {
+        var ints = StringToPtr(singular);
+        var intp = StringToPtr(defaultPlural);
+        try
+        {
+            // gettext(3) returns the input pointer if no translation is found
+            var r = dngettext(ipackage, ints, intp, n);
+            if (r == ints)
+                return singular;
+            if (r == intp)
+                return defaultPlural;
+            return PtrToString(r);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(ints);
+            Marshal.FreeHGlobal(intp);
+        }
+    }
+
+    private static IntPtr StringToPtr(string s)
+    {
+        if (s == null)
+            return IntPtr.Zero;
+        var marshal = Encoding.UTF8.GetBytes(s);
+        var mem = Marshal.AllocHGlobal(marshal.Length + 1);
+        Marshal.Copy(marshal, 0, mem, marshal.Length);
+        Marshal.WriteByte(mem, marshal.Length, 0);
+        return mem;
+    }
+
+    private static string PtrToString(IntPtr ptr)
+    {
+        if (ptr == IntPtr.Zero)
+            return null;
+        var sz = 0;
+        while (Marshal.ReadByte(ptr, sz) != 0)
+            sz++;
+        var bytes = new byte [sz];
+        Marshal.Copy(ptr, bytes, 0, sz);
+        return Encoding.UTF8.GetString(bytes);
+    }
 }

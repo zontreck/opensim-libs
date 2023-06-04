@@ -25,17 +25,14 @@
 //
 //
 
-using System;
+namespace Mono.Addins.Localization;
 
-namespace Mono.Addins.Localization
+internal class NullLocalizer : IAddinLocalizer
 {
-	class NullLocalizer: IAddinLocalizer
-	{
-		public static AddinLocalizer Instance = new AddinLocalizer (new NullLocalizer ());
-		
-		public string GetString (string msgid)
-		{
-			return msgid;
-		}
-	}
+    public static AddinLocalizer Instance = new(new NullLocalizer());
+
+    public string GetString(string msgid)
+    {
+        return msgid;
+    }
 }

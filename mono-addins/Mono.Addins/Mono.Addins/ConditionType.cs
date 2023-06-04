@@ -28,213 +28,211 @@
 
 
 using System;
-using System.Xml;
-using Mono.Addins.Description;
-using System.Collections;
 using System.Collections.Generic;
+using Mono.Addins.Description;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     A condition evaluator.
+/// </summary>
+/// <remarks>
+///     Add-ins may use conditions to register nodes in an extension point which
+///     are only visible under some contexts. For example, an add-in registering
+///     a custom menu option to the main menu of a sample text editor might want
+///     to make that option visible only for some kind of files. To allow add-ins
+///     to do this kind of check, the host application needs to define a new condition.
+/// </remarks>
+public abstract class ConditionType
 {
-	/// <summary>
-	/// A condition evaluator.
-	/// </summary>
-	/// <remarks>
-	/// Add-ins may use conditions to register nodes in an extension point which
-	/// are only visible under some contexts. For example, an add-in registering
-	/// a custom menu option to the main menu of a sample text editor might want
-	/// to make that option visible only for some kind of files. To allow add-ins
-	/// to do this kind of check, the host application needs to define a new condition.
-	/// </remarks>
-	public abstract class ConditionType
-	{
-		internal event EventHandler Changed;
-		string id;
-		
-		/// <summary>
-		/// Evaluates the condition.
-		/// </summary>
-		/// <param name="conditionNode">
-		/// Condition node information.
-		/// </param>
-		/// <returns>
-		/// 'true' if the condition is satisfied.
-		/// </returns>
-		public abstract bool Evaluate (NodeElement conditionNode);
-		
-		/// <summary>
-		/// Notifies that the condition has changed, and that it has to be re-evaluated.
-		/// </summary>
-		/// This method must be called when there is a change in the state that determines
-		/// the result of the evaluation. When this method is called, all node conditions
-		/// depending on it are reevaluated and the corresponding events for adding or
-		/// removing extension nodes are fired.
-		/// <remarks>
-		/// </remarks>
-		public void NotifyChanged ()
-		{
-			if (Changed != null)
-				Changed (this, EventArgs.Empty);
-		}
-		
-		internal string Id {
-			get { return id; }
-			set { id = value; }
-		}
-	}
-	
-	internal class BaseCondition
-	{
-		BaseCondition parent;
-		
-		internal BaseCondition (BaseCondition parent)
-		{
-			this.parent = parent;
-		}
-		
-		public virtual bool Evaluate (ExtensionContext ctx)
-		{
-			return parent == null || parent.Evaluate (ctx);
-		}
-		
-		internal virtual void GetConditionTypes (List<string> listToFill)
-		{
-		}
-	}
-	
-	internal class NullCondition: BaseCondition
-	{
-		public NullCondition (): base (null)
-		{
-		}
-		
-		public override bool Evaluate (ExtensionContext ctx)
-		{
-			return false;
-		}
-	}
-	
-	class OrCondition: BaseCondition
-	{
-		BaseCondition[] conditions;
-		
-		public OrCondition (BaseCondition[] conditions, BaseCondition parent): base (parent)
-		{
-			this.conditions = conditions;
-		}
-		
-		public override bool Evaluate (ExtensionContext ctx)
-		{
-			if (!base.Evaluate (ctx))
-				return false;
-			foreach (BaseCondition cond in conditions)
-				if (cond.Evaluate (ctx))
-					return true;
-			return false;
-		}
-		
-		internal override void GetConditionTypes (List<string> listToFill)
-		{
-			foreach (BaseCondition cond in conditions)
-				cond.GetConditionTypes (listToFill);
-		}
-	}
-	
-	class AndCondition: BaseCondition
-	{
-		BaseCondition[] conditions;
-		
-		public AndCondition (BaseCondition[] conditions, BaseCondition parent): base (parent)
-		{
-			this.conditions = conditions;
-		}
-		
-		public override bool Evaluate (ExtensionContext ctx)
-		{
-			if (!base.Evaluate (ctx))
-				return false;
-			foreach (BaseCondition cond in conditions)
-				if (!cond.Evaluate (ctx))
-					return false;
-			return true;
-		}
-		
-		internal override void GetConditionTypes (List<string> listToFill)
-		{
-			foreach (BaseCondition cond in conditions)
-				cond.GetConditionTypes (listToFill);
-		}
-	}
-	
-	class NotCondition: BaseCondition
-	{
-		BaseCondition baseCond;
-		
-		public NotCondition (BaseCondition baseCond, BaseCondition parent): base (parent)
-		{
-			this.baseCond = baseCond;
-		}
-		
-		public override bool Evaluate (ExtensionContext ctx)
-		{
-			return !baseCond.Evaluate (ctx);
-		}
-		
-		internal override void GetConditionTypes (List<string> listToFill)
-		{
-			baseCond.GetConditionTypes (listToFill);
-		}
-	}
+    internal string Id { get; set; }
 
-	
-	internal sealed class Condition: BaseCondition
-	{
-		ExtensionNodeDescription node;
-		string typeId;
-		AddinEngine addinEngine;
-		string addin;
+    internal event EventHandler Changed;
 
-		internal const string SourceAddinAttribute = "__sourceAddin"; 
-		
-		internal Condition (AddinEngine addinEngine, ExtensionNodeDescription element, BaseCondition parent): base (parent)
-		{
-			this.addinEngine = addinEngine;
-			typeId = element.GetAttribute ("id");
-			addin = element.GetAttribute (SourceAddinAttribute);
-			node = element;
-		}
-		
-		public override bool Evaluate (ExtensionContext ctx)
-		{
-			if (!base.Evaluate (ctx))
-				return false;
+    /// <summary>
+    ///     Evaluates the condition.
+    /// </summary>
+    /// <param name="conditionNode">
+    ///     Condition node information.
+    /// </param>
+    /// <returns>
+    ///     'true' if the condition is satisfied.
+    /// </returns>
+    public abstract bool Evaluate(NodeElement conditionNode);
 
-			if (!string.IsNullOrEmpty (addin)) {
-				// Make sure the add-in that implements the condition is loaded
-				using var tr = addinEngine.BeginEngineTransaction();
-				addinEngine.LoadAddin (tr, null, addin, true);
-				addin = null; // Don't try again
-			}
-			
-			ConditionType type = ctx.GetCondition (typeId);
+    /// <summary>
+    ///     Notifies that the condition has changed, and that it has to be re-evaluated.
+    /// </summary>
+    /// This method must be called when there is a change in the state that determines
+    /// the result of the evaluation. When this method is called, all node conditions
+    /// depending on it are reevaluated and the corresponding events for adding or
+    /// removing extension nodes are fired.
+    /// <remarks>
+    /// </remarks>
+    public void NotifyChanged()
+    {
+        if (Changed != null)
+            Changed(this, EventArgs.Empty);
+    }
+}
 
-			if (type == null) {
-				var parts = string.Join(", ", Array.ConvertAll(node.Attributes, attr => attr.Name + "=" + attr.Value));
-				addinEngine.ReportError ("Condition '" + typeId + "' not found in current extension context. [" + parts + "]", node.ParentAddinDescription.AddinId, null, false);
-				return false;
-			}
-			
-			try {
-				return type.Evaluate (node);
-			}
-			catch (Exception ex) {
-				addinEngine.ReportError ("Error while evaluating condition '" + typeId + "'", node.ParentAddinDescription.AddinId, ex, false);
-				return false;
-			}
-		}
-		
-		internal override void GetConditionTypes (List<string> listToFill)
-		{
-			listToFill.Add (typeId);
-		}
-	}
+internal class BaseCondition
+{
+    private readonly BaseCondition parent;
+
+    internal BaseCondition(BaseCondition parent)
+    {
+        this.parent = parent;
+    }
+
+    public virtual bool Evaluate(ExtensionContext ctx)
+    {
+        return parent == null || parent.Evaluate(ctx);
+    }
+
+    internal virtual void GetConditionTypes(List<string> listToFill)
+    {
+    }
+}
+
+internal class NullCondition : BaseCondition
+{
+    public NullCondition() : base(null)
+    {
+    }
+
+    public override bool Evaluate(ExtensionContext ctx)
+    {
+        return false;
+    }
+}
+
+internal class OrCondition : BaseCondition
+{
+    private readonly BaseCondition[] conditions;
+
+    public OrCondition(BaseCondition[] conditions, BaseCondition parent) : base(parent)
+    {
+        this.conditions = conditions;
+    }
+
+    public override bool Evaluate(ExtensionContext ctx)
+    {
+        if (!base.Evaluate(ctx))
+            return false;
+        foreach (var cond in conditions)
+            if (cond.Evaluate(ctx))
+                return true;
+        return false;
+    }
+
+    internal override void GetConditionTypes(List<string> listToFill)
+    {
+        foreach (var cond in conditions)
+            cond.GetConditionTypes(listToFill);
+    }
+}
+
+internal class AndCondition : BaseCondition
+{
+    private readonly BaseCondition[] conditions;
+
+    public AndCondition(BaseCondition[] conditions, BaseCondition parent) : base(parent)
+    {
+        this.conditions = conditions;
+    }
+
+    public override bool Evaluate(ExtensionContext ctx)
+    {
+        if (!base.Evaluate(ctx))
+            return false;
+        foreach (var cond in conditions)
+            if (!cond.Evaluate(ctx))
+                return false;
+        return true;
+    }
+
+    internal override void GetConditionTypes(List<string> listToFill)
+    {
+        foreach (var cond in conditions)
+            cond.GetConditionTypes(listToFill);
+    }
+}
+
+internal class NotCondition : BaseCondition
+{
+    private readonly BaseCondition baseCond;
+
+    public NotCondition(BaseCondition baseCond, BaseCondition parent) : base(parent)
+    {
+        this.baseCond = baseCond;
+    }
+
+    public override bool Evaluate(ExtensionContext ctx)
+    {
+        return !baseCond.Evaluate(ctx);
+    }
+
+    internal override void GetConditionTypes(List<string> listToFill)
+    {
+        baseCond.GetConditionTypes(listToFill);
+    }
+}
+
+internal sealed class Condition : BaseCondition
+{
+    internal const string SourceAddinAttribute = "__sourceAddin";
+    private string addin;
+    private readonly AddinEngine addinEngine;
+    private readonly ExtensionNodeDescription node;
+    private readonly string typeId;
+
+    internal Condition(AddinEngine addinEngine, ExtensionNodeDescription element, BaseCondition parent) : base(parent)
+    {
+        this.addinEngine = addinEngine;
+        typeId = element.GetAttribute("id");
+        addin = element.GetAttribute(SourceAddinAttribute);
+        node = element;
+    }
+
+    public override bool Evaluate(ExtensionContext ctx)
+    {
+        if (!base.Evaluate(ctx))
+            return false;
+
+        if (!string.IsNullOrEmpty(addin))
+        {
+            // Make sure the add-in that implements the condition is loaded
+            using var tr = addinEngine.BeginEngineTransaction();
+            addinEngine.LoadAddin(tr, null, addin, true);
+            addin = null; // Don't try again
+        }
+
+        var type = ctx.GetCondition(typeId);
+
+        if (type == null)
+        {
+            var parts = string.Join(", ", Array.ConvertAll(node.Attributes, attr => attr.Name + "=" + attr.Value));
+            addinEngine.ReportError(
+                "Condition '" + typeId + "' not found in current extension context. [" + parts + "]",
+                node.ParentAddinDescription.AddinId, null, false);
+            return false;
+        }
+
+        try
+        {
+            return type.Evaluate(node);
+        }
+        catch (Exception ex)
+        {
+            addinEngine.ReportError("Error while evaluating condition '" + typeId + "'",
+                node.ParentAddinDescription.AddinId, ex, false);
+            return false;
+        }
+    }
+
+    internal override void GetConditionTypes(List<string> listToFill)
+    {
+        listToFill.Add(typeId);
+    }
 }

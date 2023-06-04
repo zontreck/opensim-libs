@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Configuration;
 
-namespace DotNetOpenId.Configuration {
-	internal class StoreConfigurationElement<T> : ConfigurationElement {
-		public StoreConfigurationElement() { }
+namespace DotNetOpenId.Configuration;
 
-		const string customStoreTypeConfigName = "type";
-		[ConfigurationProperty(customStoreTypeConfigName)]
-		//[SubclassTypeValidator(typeof(T))]
-		public string TypeName {
-			get { return (string)this[customStoreTypeConfigName]; }
-			set { this[customStoreTypeConfigName] = value; }
-		}
+internal class StoreConfigurationElement<T> : ConfigurationElement
+{
+    private const string customStoreTypeConfigName = "type";
 
-		public Type CustomStoreType {
-			get { return string.IsNullOrEmpty(TypeName) ? null : Type.GetType(TypeName); }
-		}
+    [ConfigurationProperty(customStoreTypeConfigName)]
+    //[SubclassTypeValidator(typeof(T))]
+    public string TypeName
+    {
+        get => (string)this[customStoreTypeConfigName];
+        set => this[customStoreTypeConfigName] = value;
+    }
 
-		public T CreateInstanceOfStore(T defaultValue) {
-			return CustomStoreType != null ? (T)Activator.CreateInstance(CustomStoreType) : defaultValue;
-		}
-	}
+    public Type CustomStoreType => string.IsNullOrEmpty(TypeName) ? null : Type.GetType(TypeName);
+
+    public T CreateInstanceOfStore(T defaultValue)
+    {
+        return CustomStoreType != null ? (T)Activator.CreateInstance(CustomStoreType) : defaultValue;
+    }
 }

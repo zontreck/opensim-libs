@@ -29,97 +29,111 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Declares an extension point bound to a type
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
+public class TypeExtensionPointAttribute : Attribute
 {
-	/// <summary>
-	/// Declares an extension point bound to a type
-	/// </summary>
-	[AttributeUsage (AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple=true)]
-	public class TypeExtensionPointAttribute: Attribute
-	{
-		string path;
-		string nodeName;
-		Type nodeType;
-		string nodeTypeName;
-		string desc;
-		string name;
-		Type customAttributeType;
-		string customAttributeTypeName;
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		public TypeExtensionPointAttribute ()
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="path">
-		/// Path that identifies the extension point
-		/// </param>
-		public TypeExtensionPointAttribute (string path)
-		{
-			this.path = path;
-		}
-		
-		/// <summary>
-		/// Path that identifies the extension point
-		/// </summary>
-		public string Path {
-			get { return path != null ? path : string.Empty; }
-			set { path = value; }
-		}
-		
-		/// <summary>
-		/// Description of the extension point.
-		/// </summary>
-		public string Description {
-			get { return desc != null ? desc : string.Empty; }
-			set { desc = value; }
-		}
-		
-		/// <summary>
-		/// Element name to be used when defining an extension in an XML manifest. The default name is "Type".
-		/// </summary>
-		public string NodeName {
-			get { return nodeName != null && nodeName.Length > 0 ? nodeName : "Type"; }
-			set { nodeName = value; }
-		}
-		
-		/// <summary>
-		/// Display name of the extension point.
-		/// </summary>
-		public string Name {
-			get { return name != null ? name : string.Empty; }
-			set { name = value; }
-		}
+    private Type customAttributeType;
+    private string desc;
+    private string name;
+    private string nodeName;
+    private Type nodeType;
+    private string nodeTypeName;
+    private string path;
 
-		/// <summary>
-		/// Type of the extension node to be created for extensions
-		/// </summary>
-		public Type NodeType {
-			get { return nodeType != null ? nodeType : typeof(TypeExtensionNode); }
-			set { nodeType = value; nodeTypeName = value.AssemblyQualifiedName; }
-		}
+    /// <summary>
+    ///     Initializes a new instance
+    /// </summary>
+    public TypeExtensionPointAttribute()
+    {
+    }
 
-		internal string NodeTypeName {
-			get { return nodeTypeName != null ? nodeTypeName : typeof(TypeExtensionNode).AssemblyQualifiedName; }
-			set { nodeTypeName = value; nodeType = null; }
-		}
-		
-		/// <summary>
-		/// Type of the custom attribute to be used to specify metadata for the extension point
-		/// </summary>
-		public Type ExtensionAttributeType {
-			get { return this.customAttributeType; }
-			set { this.customAttributeType = value; customAttributeTypeName = value.AssemblyQualifiedName; }
-		}
+    /// <summary>
+    ///     Initializes a new instance
+    /// </summary>
+    /// <param name="path">
+    ///     Path that identifies the extension point
+    /// </param>
+    public TypeExtensionPointAttribute(string path)
+    {
+        this.path = path;
+    }
 
-		internal string ExtensionAttributeTypeName {
-			get { return this.customAttributeTypeName; }
-			set { this.customAttributeTypeName = value; }
-		}
-	}
+    /// <summary>
+    ///     Path that identifies the extension point
+    /// </summary>
+    public string Path
+    {
+        get => path != null ? path : string.Empty;
+        set => path = value;
+    }
+
+    /// <summary>
+    ///     Description of the extension point.
+    /// </summary>
+    public string Description
+    {
+        get => desc != null ? desc : string.Empty;
+        set => desc = value;
+    }
+
+    /// <summary>
+    ///     Element name to be used when defining an extension in an XML manifest. The default name is "Type".
+    /// </summary>
+    public string NodeName
+    {
+        get => nodeName != null && nodeName.Length > 0 ? nodeName : "Type";
+        set => nodeName = value;
+    }
+
+    /// <summary>
+    ///     Display name of the extension point.
+    /// </summary>
+    public string Name
+    {
+        get => name != null ? name : string.Empty;
+        set => name = value;
+    }
+
+    /// <summary>
+    ///     Type of the extension node to be created for extensions
+    /// </summary>
+    public Type NodeType
+    {
+        get => nodeType != null ? nodeType : typeof(TypeExtensionNode);
+        set
+        {
+            nodeType = value;
+            nodeTypeName = value.AssemblyQualifiedName;
+        }
+    }
+
+    internal string NodeTypeName
+    {
+        get => nodeTypeName != null ? nodeTypeName : typeof(TypeExtensionNode).AssemblyQualifiedName;
+        set
+        {
+            nodeTypeName = value;
+            nodeType = null;
+        }
+    }
+
+    /// <summary>
+    ///     Type of the custom attribute to be used to specify metadata for the extension point
+    /// </summary>
+    public Type ExtensionAttributeType
+    {
+        get => customAttributeType;
+        set
+        {
+            customAttributeType = value;
+            ExtensionAttributeTypeName = value.AssemblyQualifiedName;
+        }
+    }
+
+    internal string ExtensionAttributeTypeName { get; set; }
 }

@@ -29,51 +29,43 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Delegate to be used in add-in error subscriptions
+/// </summary>
+public delegate void AddinErrorEventHandler(object sender, AddinErrorEventArgs args);
+
+/// <summary>
+///     Provides information about an add-in loading error.
+/// </summary>
+public class AddinErrorEventArgs : AddinEventArgs
 {
 	/// <summary>
-	/// Delegate to be used in add-in error subscriptions
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinErrorEventArgs" /> class.
 	/// </summary>
-	public delegate void AddinErrorEventHandler (object sender, AddinErrorEventArgs args);
-	
-	/// <summary>
-	/// Provides information about an add-in loading error.
-	/// </summary>
-	public class AddinErrorEventArgs: AddinEventArgs
-	{
-		Exception exception;
-		string message;
+	/// <param name='message'>
+	///     Error message
+	/// </param>
+	/// <param name='addinId'>
+	///     Add-in identifier.
+	/// </param>
+	/// <param name='exception'>
+	///     Exception that caused the error.
+	/// </param>
+	public AddinErrorEventArgs(string message, string addinId, Exception exception) : base(addinId)
+    {
+        Message = message;
+        Exception = exception;
+    }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinErrorEventArgs"/> class.
-		/// </summary>
-		/// <param name='message'>
-		/// Error message
-		/// </param>
-		/// <param name='addinId'>
-		/// Add-in identifier.
-		/// </param>
-		/// <param name='exception'>
-		/// Exception that caused the error.
-		/// </param>
-		public AddinErrorEventArgs (string message, string addinId, Exception exception): base (addinId)
-		{
-			this.message = message;
-			this.exception = exception;
-		}
-		
-		/// <summary>
-		/// Exception that caused the error.
-		/// </summary>
-		public Exception Exception {
-			get { return exception; }
-		}
-		
-		/// <summary>
-		/// Error message
-		/// </summary>
-		public string Message {
-			get { return message; }
-		}
-	}
+	/// <summary>
+	///     Exception that caused the error.
+	/// </summary>
+	public Exception Exception { get; }
+
+	/// <summary>
+	///     Error message
+	/// </summary>
+	public string Message { get; }
 }

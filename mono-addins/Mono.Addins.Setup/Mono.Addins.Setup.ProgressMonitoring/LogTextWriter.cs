@@ -28,63 +28,60 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace Mono.Addins.Setup.ProgressMonitoring
+namespace Mono.Addins.Setup.ProgressMonitoring;
+
+internal delegate void LogTextEventHandler(string writtenText);
+
+internal class LogTextWriter : TextWriter
 {
-	internal delegate void LogTextEventHandler (string writtenText);
-	
-	internal class LogTextWriter: TextWriter
-	{
-		List<TextWriter> chainedWriters;
-		
-		public void ChainWriter (TextWriter writer)
-		{
-			if (chainedWriters == null) chainedWriters = new List<TextWriter> ();
-			chainedWriters.Add (writer);
-		}
-		
-		public void UnchainWriter (TextWriter writer)
-		{
-			if (chainedWriters != null) {
-				chainedWriters.Remove (writer);
-				if (chainedWriters.Count == 0)
-					chainedWriters = null;
-			}
-		}
-		
-		public override Encoding Encoding {
-			get { return Encoding.Default; }
-		}
-		
-		public override void Close ()
-		{
-			if (Closed != null)
-				Closed (this, null);
-		}
-		
-		public override void Write (char value)
-		{
-			if (TextWritten != null)
-				TextWritten (value.ToString ());
-			if (chainedWriters != null)
-				foreach (TextWriter cw in chainedWriters)
-					cw.Write (value);
-		}
-		
-		public override void Write (string value)
-		{
-			if (TextWritten != null)
-				TextWritten (value);
-			if (chainedWriters != null)
-				foreach (TextWriter cw in chainedWriters)
-					cw.Write (value);
-		}
-		
-		public event LogTextEventHandler TextWritten;
-		public event EventHandler Closed;
-	}
+    private List<TextWriter> chainedWriters;
+
+    public override Encoding Encoding => Encoding.Default;
+
+    public void ChainWriter(TextWriter writer)
+    {
+        if (chainedWriters == null) chainedWriters = new List<TextWriter>();
+        chainedWriters.Add(writer);
+    }
+
+    public void UnchainWriter(TextWriter writer)
+    {
+        if (chainedWriters != null)
+        {
+            chainedWriters.Remove(writer);
+            if (chainedWriters.Count == 0)
+                chainedWriters = null;
+        }
+    }
+
+    public override void Close()
+    {
+        if (Closed != null)
+            Closed(this, null);
+    }
+
+    public override void Write(char value)
+    {
+        if (TextWritten != null)
+            TextWritten(value.ToString());
+        if (chainedWriters != null)
+            foreach (var cw in chainedWriters)
+                cw.Write(value);
+    }
+
+    public override void Write(string value)
+    {
+        if (TextWritten != null)
+            TextWritten(value);
+        if (chainedWriters != null)
+            foreach (var cw in chainedWriters)
+                cw.Write(value);
+    }
+
+    public event LogTextEventHandler TextWritten;
+    public event EventHandler Closed;
 }

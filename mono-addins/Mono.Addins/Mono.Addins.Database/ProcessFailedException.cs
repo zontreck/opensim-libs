@@ -28,42 +28,22 @@
 
 
 using System;
-using System.Threading;
-using System.Collections;
 using System.Collections.Specialized;
-using System.IO;
-using System.Xml;
-using System.Reflection;
-using Mono.Addins.Description;
-using System.Collections.Generic;
-using System.Linq;
-using Mono.Addins.Serialization;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class ProcessFailedException : Exception
 {
-	class ProcessFailedException : Exception
-	{
-		StringCollection progessLog;
+    public ProcessFailedException(StringCollection progessLog) : this(progessLog, null)
+    {
+    }
 
-		public ProcessFailedException(StringCollection progessLog) : this(progessLog, null)
-		{
-		}
+    public ProcessFailedException(StringCollection progessLog, Exception ex) : base("Setup process failed.", ex)
+    {
+        ProgessLog = progessLog;
+    }
 
-		public ProcessFailedException(StringCollection progessLog, Exception ex) : base("Setup process failed.", ex)
-		{
-			this.progessLog = progessLog;
-		}
+    public StringCollection ProgessLog { get; }
 
-		public StringCollection ProgessLog
-		{
-			get { return progessLog; }
-		}
-
-		public string LastLog
-		{
-			get { return progessLog.Count > 0 ? progessLog[progessLog.Count - 1] : ""; }
-		}
-	}
+    public string LastLog => ProgessLog.Count > 0 ? ProgessLog[ProgessLog.Count - 1] : "";
 }
-
-

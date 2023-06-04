@@ -8,31 +8,30 @@
 // Licensed under the MIT/X11 license.
 //
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public interface IMarshalInfoProvider : IMetadataTokenProvider {
+public interface IMarshalInfoProvider : IMetadataTokenProvider
+{
+    bool HasMarshalInfo { get; }
+    MarshalInfo MarshalInfo { get; set; }
+}
 
-		bool HasMarshalInfo { get; }
-		MarshalInfo MarshalInfo { get; set; }
-	}
+internal static partial class Mixin
+{
+    public static bool GetHasMarshalInfo(
+        this IMarshalInfoProvider self,
+        ModuleDefinition module)
+    {
+        return module.HasImage() && module.Read(self, (provider, reader) => reader.HasMarshalInfo(provider));
+    }
 
-	static partial class Mixin {
-
-		public static bool GetHasMarshalInfo (
-			this IMarshalInfoProvider self,
-			ModuleDefinition module)
-		{
-			return module.HasImage () && module.Read (self, (provider, reader) => reader.HasMarshalInfo (provider));
-		}
-
-		public static MarshalInfo GetMarshalInfo (
-			this IMarshalInfoProvider self,
-			ref MarshalInfo variable,
-			ModuleDefinition module)
-		{
-			return module.HasImage ()
-				? module.Read (ref variable, self, (provider, reader) => reader.ReadMarshalInfo (provider))
-				: null;
-		}
-	}
+    public static MarshalInfo GetMarshalInfo(
+        this IMarshalInfoProvider self,
+        ref MarshalInfo variable,
+        ModuleDefinition module)
+    {
+        return module.HasImage()
+            ? module.Read(ref variable, self, (provider, reader) => reader.ReadMarshalInfo(provider))
+            : null;
+    }
 }

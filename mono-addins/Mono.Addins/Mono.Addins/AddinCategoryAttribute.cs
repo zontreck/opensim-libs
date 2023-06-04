@@ -23,31 +23,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Addin category attribute.
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinCategoryAttribute : Attribute
 {
 	/// <summary>
-	/// Addin category attribute.
+	///     Initializes the attribute
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple=false)]
-	public class AddinCategoryAttribute: Attribute
-	{
-		/// <summary>
-		/// Initializes the attribute
-		/// </summary>
-		/// <param name="category">
-		/// The category to which the add-in belongs
-		/// </param>
-		public AddinCategoryAttribute (string category)
-		{
-			this.Category = category;
-		}
+	/// <param name="category">
+	///     The category to which the add-in belongs
+	/// </param>
+	public AddinCategoryAttribute(string category)
+    {
+        Category = category;
+    }
 
-		/// <summary>
-		/// The category to which the add-in belongs
-		/// </summary>
-		public string Category { get; set; }
-	}
+	/// <summary>
+	///     The category to which the add-in belongs
+	/// </summary>
+	public string Category { get; set; }
 }
-

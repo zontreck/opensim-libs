@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.XPath;
+﻿using System.Xml.XPath;
 
-namespace DotNetOpenId.Yadis {
-	class TypeElement : XrdsNode {
-		public TypeElement(XPathNavigator typeElement, ServiceElement parent) :
-			base(typeElement, parent) {
-		}
+namespace DotNetOpenId.Yadis;
 
-		public string Uri {
-			get { return Node.Value; }
-		}
-	}
+internal class TypeElement : XrdsNode
+{
+    public TypeElement(XPathNavigator typeElement, ServiceElement parent) :
+        base(typeElement, parent)
+    {
+    }
+
+    public string Uri => Node.Value;
 }

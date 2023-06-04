@@ -26,48 +26,45 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using Mono.Addins.Description;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+internal class NativePackage : Package
 {
-	internal class NativePackage: Package
-	{
-		public override string Name {
-			get { return "Native package"; }
-		}
-		
-		internal override void PrepareInstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override void CommitInstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override void RollbackInstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override void Resolve (IProgressMonitor monitor, AddinStore service, PackageCollection toInstall, PackageCollection toUninstall, PackageCollection required, DependencyCollection unresolved)
-		{
-		}
-		
-		internal override void PrepareUninstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override void CommitUninstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override void RollbackUninstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal override bool IsUpgradeOf (Package p)
-		{
-			return false;
-		}
-	}
+    public override string Name => "Native package";
+
+    internal override void PrepareInstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override void CommitInstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override void RollbackInstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override void Resolve(IProgressMonitor monitor, AddinStore service, PackageCollection toInstall,
+        PackageCollection toUninstall, PackageCollection required, DependencyCollection unresolved)
+    {
+    }
+
+    internal override void PrepareUninstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override void CommitUninstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override void RollbackUninstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal override bool IsUpgradeOf(Package p)
+    {
+        return false;
+    }
 }

@@ -23,31 +23,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Collections.Specialized;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class SetupLocal : ISetupHandler
 {
-	class SetupLocal: ISetupHandler
-	{
-		public void Scan (IProgressStatus monitor, AddinRegistry registry, string scanFolder, ScanOptions context)
-		{
-			AddinRegistry reg = new AddinRegistry (registry.RegistryPath, registry.StartupDirectory, registry.DefaultAddinsFolder, registry.AddinCachePath);
-			reg.CopyExtensionsFrom (registry);
-			reg.ScanFolders (monitor, scanFolder, context);
-		}
-		
-		public void GenerateScanDataFiles (IProgressStatus monitor, AddinRegistry registry, string scanFolder, bool recursive)
-		{
-			AddinRegistry reg = new AddinRegistry (registry.RegistryPath, registry.StartupDirectory, registry.DefaultAddinsFolder, registry.AddinCachePath);
-			reg.CopyExtensionsFrom (registry);
-			reg.GenerateScanDataFilesInProcess (monitor, scanFolder, recursive);
-		}
-		
-		public void GetAddinDescription (IProgressStatus monitor, AddinRegistry registry, string file, string outFile)
-		{
-			registry.ParseAddin (monitor, file, outFile);
-		}
-	}
-}
+    public void Scan(IProgressStatus monitor, AddinRegistry registry, string scanFolder, ScanOptions context)
+    {
+        var reg = new AddinRegistry(registry.RegistryPath, registry.StartupDirectory, registry.DefaultAddinsFolder,
+            registry.AddinCachePath);
+        reg.CopyExtensionsFrom(registry);
+        reg.ScanFolders(monitor, scanFolder, context);
+    }
 
+    public void GenerateScanDataFiles(IProgressStatus monitor, AddinRegistry registry, string scanFolder,
+        bool recursive)
+    {
+        var reg = new AddinRegistry(registry.RegistryPath, registry.StartupDirectory, registry.DefaultAddinsFolder,
+            registry.AddinCachePath);
+        reg.CopyExtensionsFrom(registry);
+        reg.GenerateScanDataFilesInProcess(monitor, scanFolder, recursive);
+    }
+
+    public void GetAddinDescription(IProgressStatus monitor, AddinRegistry registry, string file, string outFile)
+    {
+        registry.ParseAddin(monitor, file, outFile);
+    }
+}

@@ -1,20 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Globalization;
 
-namespace DotNetOpenId.Provider {
+namespace DotNetOpenId.Provider;
 
-	abstract class AssociatedRequest : Request {
-		protected AssociatedRequest(OpenIdProvider provider) : base(provider) { }
+internal abstract class AssociatedRequest : Request
+{
+    protected AssociatedRequest(OpenIdProvider provider) : base(provider)
+    {
+    }
 
-		internal string AssociationHandle { get; set; }
+    internal string AssociationHandle { get; set; }
 
-		public override string ToString() {
-			string returnString = "AssociatedRequest.AssocHandle = {0}";
-			return base.ToString() + Environment.NewLine + string.Format(CultureInfo.CurrentCulture,
-				returnString, AssociationHandle);
-		}
-
-	}
+    public override string ToString()
+    {
+        var returnString = "AssociatedRequest.AssocHandle = {0}";
+        return base.ToString() + Environment.NewLine + string.Format(CultureInfo.CurrentCulture,
+            returnString, AssociationHandle);
+    }
 }

@@ -26,42 +26,38 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+public class RepositoryEntryCollection : CollectionBase
 {
-	public class RepositoryEntryCollection: CollectionBase
-	{
-		Repository owner;
-		
-		internal RepositoryEntryCollection (Repository owner)
-		{
-			this.owner = owner;
-		}
-		
-		public RepositoryEntry this [int n] {
-			get { return (RepositoryEntry) List [n]; }
-		}
-		
-		public void Add (RepositoryEntry entry)
-		{
-			List.Add (entry);
-		}
-		
-		public void Remove (RepositoryEntry entry)
-		{
-			List.Remove (entry);
-		}
-		
-		protected override void OnInsert(int index, object value)
-		{
-			((RepositoryEntry)value).owner = owner;
-		}
-		
-		protected override void OnSet(int index, object oldValue, object newValue)
-		{
-			((RepositoryEntry)newValue).owner = owner;
-		}
-	}
+    private readonly Repository owner;
+
+    internal RepositoryEntryCollection(Repository owner)
+    {
+        this.owner = owner;
+    }
+
+    public RepositoryEntry this[int n] => (RepositoryEntry)List[n];
+
+    public void Add(RepositoryEntry entry)
+    {
+        List.Add(entry);
+    }
+
+    public void Remove(RepositoryEntry entry)
+    {
+        List.Remove(entry);
+    }
+
+    protected override void OnInsert(int index, object value)
+    {
+        ((RepositoryEntry)value).owner = owner;
+    }
+
+    protected override void OnSet(int index, object oldValue, object newValue)
+    {
+        ((RepositoryEntry)newValue).owner = owner;
+    }
 }

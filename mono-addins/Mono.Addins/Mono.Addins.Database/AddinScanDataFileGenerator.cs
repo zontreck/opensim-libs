@@ -23,124 +23,128 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using Mono.Addins.Description;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AddinScanDataFileGenerator : AddinFolderVisitor, IDisposable
 {
-	class AddinScanDataFileGenerator: AddinFolderVisitor, IDisposable
-	{
-		string rootFolder;
-		AddinScanner scanner;
-		AddinDatabase database;
-		AddinScanDataIndex scanDataIndex;
-		AssemblyLocator locator;
-		AssemblyIndex assemblyIndex;
+    private readonly AssemblyIndex assemblyIndex;
+    private readonly AddinDatabase database;
+    private readonly List<string> foundAssemblies = new();
 
-		List<string> foundFiles = new List<string> ();
-		List<string> foundAssemblies = new List<string> ();
+    private readonly List<string> foundFiles = new();
+    private readonly AssemblyLocator locator;
+    private readonly string rootFolder;
+    private AddinScanDataIndex scanDataIndex;
+    private readonly AddinScanner scanner;
 
-		public AddinScanDataFileGenerator (AddinDatabase database, AddinRegistry registry, string rootFolder): base (database)
-		{
-			this.database = database;
-			this.rootFolder = Path.GetFullPath (rootFolder);
+    public AddinScanDataFileGenerator(AddinDatabase database, AddinRegistry registry, string rootFolder) :
+        base(database)
+    {
+        this.database = database;
+        this.rootFolder = Path.GetFullPath(rootFolder);
 
-			assemblyIndex = new AssemblyIndex ();
-			locator = new AssemblyLocator (database, registry, assemblyIndex);
-			scanner = new AddinScanner (database, locator);
-		}
+        assemblyIndex = new AssemblyIndex();
+        locator = new AssemblyLocator(database, registry, assemblyIndex);
+        scanner = new AddinScanner(database, locator);
+    }
 
-		protected override void OnVisitFolder (IProgressStatus monitor, string path, string domain, bool recursive)
-		{
-			if (path == rootFolder) {
+    public void Dispose()
+    {
+        scanner.Dispose();
+    }
 
-				// Create an index
-				scanDataIndex = new AddinScanDataIndex ();
+    protected override void OnVisitFolder(IProgressStatus monitor, string path, string domain, bool recursive)
+    {
+        if (path == rootFolder)
+        {
+            // Create an index
+            scanDataIndex = new AddinScanDataIndex();
 
-				base.OnVisitFolder (monitor, path, domain, recursive);
+            base.OnVisitFolder(monitor, path, domain, recursive);
 
-				// Scan the files after visiting the folder tree. At this point the assembly index will be complete
-				// and will be able to resolve assemblies during the add-in scan
+            // Scan the files after visiting the folder tree. At this point the assembly index will be complete
+            // and will be able to resolve assemblies during the add-in scan
 
-				foreach (var file in foundFiles) {
-					if (scanner.ScanConfigAssemblies (monitor, file, ScanContext, out var config) && config != null)
-						StoreScanDataFile (monitor, file, config);
-				}
-				foreach (var file in foundAssemblies) {
-					if (scanner.ScanAssembly (monitor, file, ScanContext, out var config) && config != null)
-						StoreScanDataFile (monitor, file, config);
+            foreach (var file in foundFiles)
+                if (scanner.ScanConfigAssemblies(monitor, file, ScanContext, out var config) && config != null)
+                    StoreScanDataFile(monitor, file, config);
+            foreach (var file in foundAssemblies)
+            {
+                if (scanner.ScanAssembly(monitor, file, ScanContext, out var config) && config != null)
+                    StoreScanDataFile(monitor, file, config);
 
-					// The index contains a list of all assemblies, no matter if they are add-ins or not
-					scanDataIndex.Assemblies.Add (file);
-				}
+                // The index contains a list of all assemblies, no matter if they are add-ins or not
+                scanDataIndex.Assemblies.Add(file);
+            }
 
-				foundFiles.Clear ();
-				foundAssemblies.Clear ();
+            foundFiles.Clear();
+            foundAssemblies.Clear();
 
-				scanDataIndex.SaveToFolder (path);
-				scanDataIndex = null;
-			} else
-				base.OnVisitFolder (monitor, path, domain, recursive);
-		}
+            scanDataIndex.SaveToFolder(path);
+            scanDataIndex = null;
+        }
+        else
+        {
+            base.OnVisitFolder(monitor, path, domain, recursive);
+        }
+    }
 
-		protected override void OnVisitAddinManifestFile (IProgressStatus monitor, string file)
-		{
-			if (scanDataIndex != null)
-				foundFiles.Add (file);
-		}
+    protected override void OnVisitAddinManifestFile(IProgressStatus monitor, string file)
+    {
+        if (scanDataIndex != null)
+            foundFiles.Add(file);
+    }
 
-		protected override void OnVisitAssemblyFile (IProgressStatus monitor, string file)
-		{
-			if (!Util.IsManagedAssembly (file))
-				return;
-			
-			assemblyIndex.AddAssemblyLocation (file);
+    protected override void OnVisitAssemblyFile(IProgressStatus monitor, string file)
+    {
+        if (!Util.IsManagedAssembly(file))
+            return;
 
-			if (scanDataIndex != null)
-				foundAssemblies.Add (file);
-		}
+        assemblyIndex.AddAssemblyLocation(file);
 
-		void StoreScanDataFile (IProgressStatus monitor, string file, AddinDescription config)
-		{
-			// Save a binary data file next to the scanned file
-			var scanDataFile = file + ".addindata";
-			database.SaveDescription (monitor, config, scanDataFile);
-			var md5 = Util.GetMD5 (scanDataFile);
-			scanDataIndex.Files.Add (new AddinScanData (file, md5));
-		}
+        if (scanDataIndex != null)
+            foundAssemblies.Add(file);
+    }
 
-		public void Dispose ()
-		{
-			scanner.Dispose ();
-		}
+    private void StoreScanDataFile(IProgressStatus monitor, string file, AddinDescription config)
+    {
+        // Save a binary data file next to the scanned file
+        var scanDataFile = file + ".addindata";
+        database.SaveDescription(monitor, config, scanDataFile);
+        var md5 = Util.GetMD5(scanDataFile);
+        scanDataIndex.Files.Add(new AddinScanData(file, md5));
+    }
 
-		class AssemblyLocator : IAssemblyLocator
-		{
-			// This is a custom assembly locator that will look first at the
-			// assembly index being generated during the add-in lookup, and
-			// will use a global assembly locator as fallback.
+    private class AssemblyLocator : IAssemblyLocator
+    {
+        // This is a custom assembly locator that will look first at the
+        // assembly index being generated during the add-in lookup, and
+        // will use a global assembly locator as fallback.
 
-			AssemblyLocatorVisitor globalLocator;
-			AssemblyIndex index;
+        private readonly AssemblyLocatorVisitor globalLocator;
+        private readonly AssemblyIndex index;
 
-			public AssemblyLocator (AddinDatabase database, AddinRegistry registry, AssemblyIndex index)
-			{
-				this.index = index;
-				globalLocator = new AssemblyLocatorVisitor (database, registry, false);
-			}
+        public AssemblyLocator(AddinDatabase database, AddinRegistry registry, AssemblyIndex index)
+        {
+            this.index = index;
+            globalLocator = new AssemblyLocatorVisitor(database, registry, false);
+        }
 
-			public string GetAssemblyLocation (string fullName)
-			{
-				var res = index.GetAssemblyLocation (fullName);
-				if (res != null)
-					return res;
+        public string GetAssemblyLocation(string fullName)
+        {
+            var res = index.GetAssemblyLocation(fullName);
+            if (res != null)
+                return res;
 
-				// Fallback to a global visitor
+            // Fallback to a global visitor
 
-				return globalLocator.GetAssemblyLocation (fullName);
-			}
-		}
-	}
+            return globalLocator.GetAssemblyLocation(fullName);
+        }
+    }
 }

@@ -28,38 +28,36 @@ using System;
 using System.Net;
 using System.Net.Http;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+/// <summary>
+///     Creates a HttpClient with support for authenticated proxies.
+/// </summary>
+public static class HttpClientProvider
 {
-	/// <summary>
-	/// Creates a HttpClient with support for authenticated proxies.
-	/// </summary>
-	public static class HttpClientProvider
-	{
-		static Func<string, HttpClient> httpClientFactory;
+    private static Func<string, HttpClient> httpClientFactory;
 
-		public static void SetHttpClientFactory (Func<string, HttpClient> factory)
-		{
-			httpClientFactory = factory;
-		}
+    internal static bool HasCustomCreation => httpClientFactory != null;
 
-		static internal bool HasCustomCreation {
-			get { return httpClientFactory != null; }
-		}
+    public static void SetHttpClientFactory(Func<string, HttpClient> factory)
+    {
+        httpClientFactory = factory;
+    }
 
-		/// <summary>
-		/// Creates a new HttpClient.
-		/// </summary>
-		/// <returns>The HttpClient.</returns>
-		/// <param name="uri">The request url.</param>
-		public static HttpClient CreateHttpClient (string uri)
-		{
-			if (httpClientFactory != null)
-				return httpClientFactory.Invoke (uri);
+    /// <summary>
+    ///     Creates a new HttpClient.
+    /// </summary>
+    /// <returns>The HttpClient.</returns>
+    /// <param name="uri">The request url.</param>
+    public static HttpClient CreateHttpClient(string uri)
+    {
+        if (httpClientFactory != null)
+            return httpClientFactory.Invoke(uri);
 
-			var handler = new HttpClientHandler {
-				AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
-			};
-			return new HttpClient (handler);
-		}
-	}
+        var handler = new HttpClientHandler
+        {
+            AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+        };
+        return new HttpClient(handler);
+    }
 }

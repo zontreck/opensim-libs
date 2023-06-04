@@ -26,28 +26,25 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
+namespace Mono.Addins.Localization;
 
-namespace Mono.Addins.Localization
+/// <summary>
+///     An add-in localizer.
+/// </summary>
+/// <remarks>
+///     Add-in localizers which want to provide support for localization of plural forms
+///     can additionally implement <see cref="Mono.Addins.Localization.IPluralAddinLocalizer" />.
+/// </remarks>
+public interface IAddinLocalizer
 {
 	/// <summary>
-	/// An add-in localizer.
+	///     Gets a localized message.
 	/// </summary>
-	/// <remarks>
-	/// Add-in localizers which want to provide support for localization of plural forms
-	/// can additionally implement <see cref="Mono.Addins.Localization.IPluralAddinLocalizer"/>.
-	/// </remarks>
-	public interface IAddinLocalizer
-	{
-		/// <summary>
-		/// Gets a localized message.
-		/// </summary>
-		/// <returns>
-		/// The localized message.
-		/// </returns>
-		/// <param name='msgid'>
-		/// The message identifier. 
-		/// </param>
-		string GetString (string msgid);
-	}
+	/// <returns>
+	///     The localized message.
+	/// </returns>
+	/// <param name='msgid'>
+	///     The message identifier.
+	/// </param>
+	string GetString(string msgid);
 }

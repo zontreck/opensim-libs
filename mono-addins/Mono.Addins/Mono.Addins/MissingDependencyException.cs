@@ -30,20 +30,19 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Exception thrown when the add-in engine can't find a required add-in dependency
+/// </summary>
+[Serializable]
+internal class MissingDependencyException : Exception
 {
-	/// <summary>
-	/// Exception thrown when the add-in engine can't find a required add-in dependency
-	/// </summary>
-	[Serializable]
-	internal class MissingDependencyException: Exception
-	{
-		public MissingDependencyException (SerializationInfo inf, StreamingContext ctx) : base (inf, ctx)
-		{
-		}
-		
-		public MissingDependencyException (string message): base (message)
-		{
-		}
-	}
+    public MissingDependencyException(SerializationInfo inf, StreamingContext ctx) : base(inf, ctx)
+    {
+    }
+
+    public MissingDependencyException(string message) : base(message)
+    {
+    }
 }

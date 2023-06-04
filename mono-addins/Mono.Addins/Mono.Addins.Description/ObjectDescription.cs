@@ -27,133 +27,133 @@
 //
 
 
-using System;
 using System.Collections.Specialized;
 using System.Xml;
 using Mono.Addins.Serialization;
 
-namespace Mono.Addins.Description
-{
-	/// <summary>
-	/// Base class for add-in description definitions.
-	/// </summary>
-	public class ObjectDescription: IBinaryXmlElement
-	{
-		internal XmlElement Element;
-		object parent;
-		
-		internal ObjectDescription (XmlElement elem)
-		{
-			Element = elem;
-		}
-		
-		internal ObjectDescription ()
-		{
-		}
-		
-		/// <summary>
-		/// Gets the parent object.
-		/// </summary>
-		/// <value>
-		/// The parent object.
-		/// </value>
-		public object Parent {
-			get { return parent; }
-		}
-		
-		/// <summary>
-		/// Gets the parent add-in description.
-		/// </summary>
-		/// <value>
-		/// The parent add-in description.
-		/// </value>
-		public AddinDescription ParentAddinDescription {
-			get {
-				if (parent is AddinDescription)
-					return (AddinDescription) parent;
-				else if (parent is ObjectDescription)
-					return ((ObjectDescription)parent).ParentAddinDescription;
-				else
-					return null;
-			}
-		}
+namespace Mono.Addins.Description;
 
-		internal string ParseString (string s)
-		{
-			var desc = ParentAddinDescription;
-			if (desc != null)
-				return desc.ParseString (s);
-			else
-				return s;
-		}
-		
-		internal void SetParent (object ob)
-		{
-			parent = ob;
-		}
-		
-		void IBinaryXmlElement.Write (BinaryXmlWriter writer)
-		{
-			Write (writer);
-		}
-		
-		void IBinaryXmlElement.Read (BinaryXmlReader reader)
-		{
-			Read (reader);
-		}
-		
-		internal virtual void Write (BinaryXmlWriter writer)
-		{
-		}
-		
-		internal virtual void Read (BinaryXmlReader reader)
-		{
-		}
-		
-		internal virtual void SaveXml (XmlElement parent)
-		{
-		}
-		
-		internal void CreateElement (XmlElement parent, string nodeName)
-		{
-			if (Element == null) {
-				Element = parent.OwnerDocument.CreateElement (nodeName); 
-				parent.AppendChild (Element);
-			}
-		}
-		
-		internal string ReadXmlDescription ()
-		{
-			XmlElement de = Element ["Description"];
-			if (de != null)
-				return de.InnerText;
-			else
-				return null;
-		}
-		
-		internal void SaveXmlDescription (string desc)
-		{
-			XmlElement de = Element ["Description"];
-			if (desc != null && desc.Length > 0) {
-				if (de == null) {
-					de = Element.OwnerDocument.CreateElement ("Description");
-					Element.AppendChild (de);
-				}
-				de.InnerText = desc;
-			} else {
-				if (de != null)
-					Element.RemoveChild (de);
-			}
-		}
-		
-		internal virtual void Verify (string location, StringCollection errors)
-		{
-		}
-		
-		internal void VerifyNotEmpty (string location, StringCollection errors, string attr, string val)
-		{
-			if (val == null || val.Length == 0)
-				errors.Add (location + ": attribute '" + attr + "' can't be empty.");
-		}
-	}
+/// <summary>
+///     Base class for add-in description definitions.
+/// </summary>
+public class ObjectDescription : IBinaryXmlElement
+{
+    internal XmlElement Element;
+
+    internal ObjectDescription(XmlElement elem)
+    {
+        Element = elem;
+    }
+
+    internal ObjectDescription()
+    {
+    }
+
+    /// <summary>
+    ///     Gets the parent object.
+    /// </summary>
+    /// <value>
+    ///     The parent object.
+    /// </value>
+    public object Parent { get; private set; }
+
+    /// <summary>
+    ///     Gets the parent add-in description.
+    /// </summary>
+    /// <value>
+    ///     The parent add-in description.
+    /// </value>
+    public AddinDescription ParentAddinDescription
+    {
+        get
+        {
+            if (Parent is AddinDescription)
+                return (AddinDescription)Parent;
+            if (Parent is ObjectDescription)
+                return ((ObjectDescription)Parent).ParentAddinDescription;
+            return null;
+        }
+    }
+
+    void IBinaryXmlElement.Write(BinaryXmlWriter writer)
+    {
+        Write(writer);
+    }
+
+    void IBinaryXmlElement.Read(BinaryXmlReader reader)
+    {
+        Read(reader);
+    }
+
+    internal string ParseString(string s)
+    {
+        var desc = ParentAddinDescription;
+        if (desc != null)
+            return desc.ParseString(s);
+        return s;
+    }
+
+    internal void SetParent(object ob)
+    {
+        Parent = ob;
+    }
+
+    internal virtual void Write(BinaryXmlWriter writer)
+    {
+    }
+
+    internal virtual void Read(BinaryXmlReader reader)
+    {
+    }
+
+    internal virtual void SaveXml(XmlElement parent)
+    {
+    }
+
+    internal void CreateElement(XmlElement parent, string nodeName)
+    {
+        if (Element == null)
+        {
+            Element = parent.OwnerDocument.CreateElement(nodeName);
+            parent.AppendChild(Element);
+        }
+    }
+
+    internal string ReadXmlDescription()
+    {
+        var de = Element["Description"];
+        if (de != null)
+            return de.InnerText;
+        return null;
+    }
+
+    internal void SaveXmlDescription(string desc)
+    {
+        var de = Element["Description"];
+        if (desc != null && desc.Length > 0)
+        {
+            if (de == null)
+            {
+                de = Element.OwnerDocument.CreateElement("Description");
+                Element.AppendChild(de);
+            }
+
+            de.InnerText = desc;
+        }
+        else
+        {
+            if (de != null)
+                Element.RemoveChild(de);
+        }
+    }
+
+    internal virtual void Verify(string location, StringCollection errors)
+    {
+    }
+
+    internal void VerifyNotEmpty(string location, StringCollection errors, string attr, string val)
+    {
+        if (val == null || val.Length == 0)
+            errors.Add(location + ": attribute '" + attr + "' can't be empty.");
+    }
 }

@@ -27,54 +27,49 @@
 //
 
 
-using System;
-using System.Collections;
+namespace Mono.Addins.Description;
 
-namespace Mono.Addins.Description
+/// <summary>
+///     A collection of extension nodes
+/// </summary>
+public class ExtensionNodeDescriptionCollection : ObjectDescriptionCollection<ExtensionNodeDescription>,
+    NodeElementCollection
 {
 	/// <summary>
-	/// A collection of extension nodes
+	///     Initializes a new instance of the <see cref="Mono.Addins.Description.ExtensionNodeDescriptionCollection" /> class.
 	/// </summary>
-	public class ExtensionNodeDescriptionCollection: ObjectDescriptionCollection<ExtensionNodeDescription>, NodeElementCollection
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.Description.ExtensionNodeDescriptionCollection"/> class.
-		/// </summary>
-		public ExtensionNodeDescriptionCollection ()
-		{
-		}
-		
-		internal ExtensionNodeDescriptionCollection (object owner): base (owner)
-		{
-		}
-		
-		/// <summary>
-		/// Gets the <see cref="Mono.Addins.Description.ExtensionNodeDescription"/> at the specified index.
-		/// </summary>
-		/// <param name='n'>
-		/// The index.
-		/// </param>
-		public ExtensionNodeDescription this [int n] {
-			get { return (ExtensionNodeDescription) List [n]; }
-		}
-		
-		/// <summary>
-		/// Gets the <see cref="Mono.Addins.Description.ExtensionNodeDescription"/> with the specified identifier.
-		/// </summary>
-		/// <param name='id'>
-		/// Identifier.
-		/// </param>
-		public ExtensionNodeDescription this [string id] {
-			get {
-				foreach (ExtensionNodeDescription node in List)
-					if (node.Id == id)
-						return node;
-				return null;
-			}
-		}
-		
-		NodeElement NodeElementCollection.this [int n] {
-			get { return (NodeElement) List [n]; }
-		}
-	}
+	public ExtensionNodeDescriptionCollection()
+    {
+    }
+
+    internal ExtensionNodeDescriptionCollection(object owner) : base(owner)
+    {
+    }
+
+    /// <summary>
+    ///     Gets the <see cref="Mono.Addins.Description.ExtensionNodeDescription" /> at the specified index.
+    /// </summary>
+    /// <param name='n'>
+    ///     The index.
+    /// </param>
+    public ExtensionNodeDescription this[int n] => (ExtensionNodeDescription)List[n];
+
+    /// <summary>
+    ///     Gets the <see cref="Mono.Addins.Description.ExtensionNodeDescription" /> with the specified identifier.
+    /// </summary>
+    /// <param name='id'>
+    ///     Identifier.
+    /// </param>
+    public ExtensionNodeDescription this[string id]
+    {
+        get
+        {
+            foreach (ExtensionNodeDescription node in List)
+                if (node.Id == id)
+                    return node;
+            return null;
+        }
+    }
+
+    NodeElement NodeElementCollection.this[int n] => (NodeElement)List[n];
 }

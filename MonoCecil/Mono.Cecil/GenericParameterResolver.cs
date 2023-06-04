@@ -1,175 +1,193 @@
-﻿using Mono.Cecil.Cil;
-using System;
+﻿using System;
+using Mono.Cecil.Cil;
 
-namespace Mono.Cecil {
-	internal sealed class GenericParameterResolver {
-		internal static TypeReference ResolveReturnTypeIfNeeded (MethodReference methodReference)
-		{
-			if (methodReference.DeclaringType.IsArray && methodReference.Name == "Get")
-				return methodReference.ReturnType;
+namespace Mono.Cecil;
 
-			var genericInstanceMethod = methodReference as GenericInstanceMethod;
-			var declaringGenericInstanceType = methodReference.DeclaringType as GenericInstanceType;
+internal sealed class GenericParameterResolver
+{
+    internal static TypeReference ResolveReturnTypeIfNeeded(MethodReference methodReference)
+    {
+        if (methodReference.DeclaringType.IsArray && methodReference.Name == "Get")
+            return methodReference.ReturnType;
 
-			if (genericInstanceMethod == null && declaringGenericInstanceType == null)
-				return methodReference.ReturnType;
+        var genericInstanceMethod = methodReference as GenericInstanceMethod;
+        var declaringGenericInstanceType = methodReference.DeclaringType as GenericInstanceType;
 
-			return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, methodReference.ReturnType);
-		}
+        if (genericInstanceMethod == null && declaringGenericInstanceType == null)
+            return methodReference.ReturnType;
 
-		internal static TypeReference ResolveFieldTypeIfNeeded (FieldReference fieldReference)
-		{
-			return ResolveIfNeeded (null, fieldReference.DeclaringType as GenericInstanceType, fieldReference.FieldType);
-		}
+        return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, methodReference.ReturnType);
+    }
 
-		internal static TypeReference ResolveParameterTypeIfNeeded (MethodReference method, ParameterReference parameter)
-		{
-			var genericInstanceMethod = method as GenericInstanceMethod;
-			var declaringGenericInstanceType = method.DeclaringType as GenericInstanceType;
+    internal static TypeReference ResolveFieldTypeIfNeeded(FieldReference fieldReference)
+    {
+        return ResolveIfNeeded(null, fieldReference.DeclaringType as GenericInstanceType, fieldReference.FieldType);
+    }
 
-			if (genericInstanceMethod == null && declaringGenericInstanceType == null)
-				return parameter.ParameterType;
+    internal static TypeReference ResolveParameterTypeIfNeeded(MethodReference method, ParameterReference parameter)
+    {
+        var genericInstanceMethod = method as GenericInstanceMethod;
+        var declaringGenericInstanceType = method.DeclaringType as GenericInstanceType;
 
-			return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, parameter.ParameterType);
-		}
+        if (genericInstanceMethod == null && declaringGenericInstanceType == null)
+            return parameter.ParameterType;
 
-		internal static TypeReference ResolveVariableTypeIfNeeded (MethodReference method, VariableReference variable)
-		{
-			var genericInstanceMethod = method as GenericInstanceMethod;
-			var declaringGenericInstanceType = method.DeclaringType as GenericInstanceType;
+        return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, parameter.ParameterType);
+    }
 
-			if (genericInstanceMethod == null && declaringGenericInstanceType == null)
-				return variable.VariableType;
+    internal static TypeReference ResolveVariableTypeIfNeeded(MethodReference method, VariableReference variable)
+    {
+        var genericInstanceMethod = method as GenericInstanceMethod;
+        var declaringGenericInstanceType = method.DeclaringType as GenericInstanceType;
 
-			return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, variable.VariableType);
-		}
+        if (genericInstanceMethod == null && declaringGenericInstanceType == null)
+            return variable.VariableType;
 
-		private static TypeReference ResolveIfNeeded (IGenericInstance genericInstanceMethod, IGenericInstance declaringGenericInstanceType, TypeReference parameterType)
-		{
-			var byRefType = parameterType as ByReferenceType;
-			if (byRefType != null)
-				return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, byRefType);
+        return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, variable.VariableType);
+    }
 
-			var arrayType = parameterType as ArrayType;
-			if (arrayType != null)
-				return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, arrayType);
+    private static TypeReference ResolveIfNeeded(IGenericInstance genericInstanceMethod,
+        IGenericInstance declaringGenericInstanceType, TypeReference parameterType)
+    {
+        var byRefType = parameterType as ByReferenceType;
+        if (byRefType != null)
+            return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, byRefType);
 
-			var genericInstanceType = parameterType as GenericInstanceType;
-			if (genericInstanceType != null)
-				return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, genericInstanceType);
+        var arrayType = parameterType as ArrayType;
+        if (arrayType != null)
+            return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, arrayType);
 
-			var genericParameter = parameterType as GenericParameter;
-			if (genericParameter != null)
-				return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, genericParameter);
+        var genericInstanceType = parameterType as GenericInstanceType;
+        if (genericInstanceType != null)
+            return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, genericInstanceType);
 
-			var requiredModifierType = parameterType as RequiredModifierType;
-			if (requiredModifierType != null && ContainsGenericParameters (requiredModifierType))
-				return ResolveIfNeeded (genericInstanceMethod, declaringGenericInstanceType, requiredModifierType.ElementType);
+        var genericParameter = parameterType as GenericParameter;
+        if (genericParameter != null)
+            return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType, genericParameter);
 
-			if (ContainsGenericParameters (parameterType))
-				throw new Exception ("Unexpected generic parameter.");
+        var requiredModifierType = parameterType as RequiredModifierType;
+        if (requiredModifierType != null && ContainsGenericParameters(requiredModifierType))
+            return ResolveIfNeeded(genericInstanceMethod, declaringGenericInstanceType,
+                requiredModifierType.ElementType);
 
-			return parameterType;
-		}
+        if (ContainsGenericParameters(parameterType))
+            throw new Exception("Unexpected generic parameter.");
 
-		private static TypeReference ResolveIfNeeded (IGenericInstance genericInstanceMethod, IGenericInstance genericInstanceType, GenericParameter genericParameterElement)
-		{
-			return (genericParameterElement.MetadataType == MetadataType.MVar)
-				? (genericInstanceMethod != null ? genericInstanceMethod.GenericArguments[genericParameterElement.Position] : genericParameterElement)
-				: genericInstanceType.GenericArguments[genericParameterElement.Position];
-		}
+        return parameterType;
+    }
 
-		private static ArrayType ResolveIfNeeded (IGenericInstance genericInstanceMethod, IGenericInstance genericInstanceType, ArrayType arrayType)
-		{
-			return new ArrayType (ResolveIfNeeded (genericInstanceMethod, genericInstanceType, arrayType.ElementType), arrayType.Rank);
-		}
+    private static TypeReference ResolveIfNeeded(IGenericInstance genericInstanceMethod,
+        IGenericInstance genericInstanceType, GenericParameter genericParameterElement)
+    {
+        return genericParameterElement.MetadataType == MetadataType.MVar
+            ? genericInstanceMethod != null
+                ? genericInstanceMethod.GenericArguments[genericParameterElement.Position]
+                : genericParameterElement
+            : genericInstanceType.GenericArguments[genericParameterElement.Position];
+    }
 
-		private static ByReferenceType ResolveIfNeeded (IGenericInstance genericInstanceMethod, IGenericInstance genericInstanceType, ByReferenceType byReferenceType)
-		{
-			return new ByReferenceType (ResolveIfNeeded (genericInstanceMethod, genericInstanceType, byReferenceType.ElementType));
-		}
+    private static ArrayType ResolveIfNeeded(IGenericInstance genericInstanceMethod,
+        IGenericInstance genericInstanceType, ArrayType arrayType)
+    {
+        return new ArrayType(ResolveIfNeeded(genericInstanceMethod, genericInstanceType, arrayType.ElementType),
+            arrayType.Rank);
+    }
 
-		private static GenericInstanceType ResolveIfNeeded (IGenericInstance genericInstanceMethod, IGenericInstance genericInstanceType, GenericInstanceType genericInstanceType1)
-		{
-			if (!ContainsGenericParameters (genericInstanceType1))
-				return genericInstanceType1;
+    private static ByReferenceType ResolveIfNeeded(IGenericInstance genericInstanceMethod,
+        IGenericInstance genericInstanceType, ByReferenceType byReferenceType)
+    {
+        return new ByReferenceType(ResolveIfNeeded(genericInstanceMethod, genericInstanceType,
+            byReferenceType.ElementType));
+    }
 
-			var newGenericInstance = new GenericInstanceType (genericInstanceType1.ElementType);
+    private static GenericInstanceType ResolveIfNeeded(IGenericInstance genericInstanceMethod,
+        IGenericInstance genericInstanceType, GenericInstanceType genericInstanceType1)
+    {
+        if (!ContainsGenericParameters(genericInstanceType1))
+            return genericInstanceType1;
 
-			foreach (var genericArgument in genericInstanceType1.GenericArguments) {
-				if (!genericArgument.IsGenericParameter) {
-					newGenericInstance.GenericArguments.Add (ResolveIfNeeded (genericInstanceMethod, genericInstanceType, genericArgument));
-					continue;
-				}
+        var newGenericInstance = new GenericInstanceType(genericInstanceType1.ElementType);
 
-				var genParam = (GenericParameter)genericArgument;
+        foreach (var genericArgument in genericInstanceType1.GenericArguments)
+        {
+            if (!genericArgument.IsGenericParameter)
+            {
+                newGenericInstance.GenericArguments.Add(ResolveIfNeeded(genericInstanceMethod, genericInstanceType,
+                    genericArgument));
+                continue;
+            }
 
-				switch (genParam.Type) {
-					case GenericParameterType.Type: {
-							if (genericInstanceType == null)
-								throw new NotSupportedException ();
+            var genParam = (GenericParameter)genericArgument;
 
-							newGenericInstance.GenericArguments.Add (genericInstanceType.GenericArguments[genParam.Position]);
-						}
-						break;
+            switch (genParam.Type)
+            {
+                case GenericParameterType.Type:
+                {
+                    if (genericInstanceType == null)
+                        throw new NotSupportedException();
 
-					case GenericParameterType.Method: {
-							if (genericInstanceMethod == null)
-								newGenericInstance.GenericArguments.Add (genParam);
-							else
-								newGenericInstance.GenericArguments.Add (genericInstanceMethod.GenericArguments[genParam.Position]);
-						}
-						break;
-				}
-			}
+                    newGenericInstance.GenericArguments.Add(genericInstanceType.GenericArguments[genParam.Position]);
+                }
+                    break;
 
-			return newGenericInstance;
-		}
+                case GenericParameterType.Method:
+                {
+                    if (genericInstanceMethod == null)
+                        newGenericInstance.GenericArguments.Add(genParam);
+                    else
+                        newGenericInstance.GenericArguments.Add(
+                            genericInstanceMethod.GenericArguments[genParam.Position]);
+                }
+                    break;
+            }
+        }
 
-		private static bool ContainsGenericParameters (TypeReference typeReference)
-		{
-			var genericParameter = typeReference as GenericParameter;
-			if (genericParameter != null)
-				return true;
+        return newGenericInstance;
+    }
 
-			var arrayType = typeReference as ArrayType;
-			if (arrayType != null)
-				return ContainsGenericParameters (arrayType.ElementType);
+    private static bool ContainsGenericParameters(TypeReference typeReference)
+    {
+        var genericParameter = typeReference as GenericParameter;
+        if (genericParameter != null)
+            return true;
 
-			var pointerType = typeReference as PointerType;
-			if (pointerType != null)
-				return ContainsGenericParameters (pointerType.ElementType);
+        var arrayType = typeReference as ArrayType;
+        if (arrayType != null)
+            return ContainsGenericParameters(arrayType.ElementType);
 
-			var byRefType = typeReference as ByReferenceType;
-			if (byRefType != null)
-				return ContainsGenericParameters (byRefType.ElementType);
+        var pointerType = typeReference as PointerType;
+        if (pointerType != null)
+            return ContainsGenericParameters(pointerType.ElementType);
 
-			var sentinelType = typeReference as SentinelType;
-			if (sentinelType != null)
-				return ContainsGenericParameters (sentinelType.ElementType);
+        var byRefType = typeReference as ByReferenceType;
+        if (byRefType != null)
+            return ContainsGenericParameters(byRefType.ElementType);
 
-			var pinnedType = typeReference as PinnedType;
-			if (pinnedType != null)
-				return ContainsGenericParameters (pinnedType.ElementType);
+        var sentinelType = typeReference as SentinelType;
+        if (sentinelType != null)
+            return ContainsGenericParameters(sentinelType.ElementType);
 
-			var requiredModifierType = typeReference as RequiredModifierType;
-			if (requiredModifierType != null)
-				return ContainsGenericParameters (requiredModifierType.ElementType);
+        var pinnedType = typeReference as PinnedType;
+        if (pinnedType != null)
+            return ContainsGenericParameters(pinnedType.ElementType);
 
-			var genericInstance = typeReference as GenericInstanceType;
-			if (genericInstance != null) {
-				foreach (var genericArgument in genericInstance.GenericArguments) {
-					if (ContainsGenericParameters (genericArgument))
-						return true;
-				}
+        var requiredModifierType = typeReference as RequiredModifierType;
+        if (requiredModifierType != null)
+            return ContainsGenericParameters(requiredModifierType.ElementType);
 
-				return false;
-			}
+        var genericInstance = typeReference as GenericInstanceType;
+        if (genericInstance != null)
+        {
+            foreach (var genericArgument in genericInstance.GenericArguments)
+                if (ContainsGenericParameters(genericArgument))
+                    return true;
 
-			if (typeReference is TypeSpecification)
-				throw new NotSupportedException ();
+            return false;
+        }
 
-			return false;
-		}
-	}
+        if (typeReference is TypeSpecification)
+            throw new NotSupportedException();
+
+        return false;
+    }
 }

@@ -1,78 +1,96 @@
 ﻿using System;
 using System.Configuration;
 
-namespace DotNetOpenId.Configuration {
-	internal class UntrustedWebRequestSection : ConfigurationSection {
-		internal static UntrustedWebRequestSection Configuration {
-			get { return (UntrustedWebRequestSection)ConfigurationManager.GetSection("dotNetOpenId/untrustedWebRequest") ?? new UntrustedWebRequestSection(); }
-		}
+namespace DotNetOpenId.Configuration;
 
-		public UntrustedWebRequestSection() {
-			SectionInformation.AllowLocation = false;
-		}
+internal class UntrustedWebRequestSection : ConfigurationSection
+{
+    private const string readWriteTimeoutConfigName = "readWriteTimeout";
 
-		const string readWriteTimeoutConfigName = "readWriteTimeout";
-		[ConfigurationProperty(readWriteTimeoutConfigName, DefaultValue = "00:00:00.800")]
-		[PositiveTimeSpanValidator]
-		public TimeSpan ReadWriteTimeout {
-			get { return (TimeSpan)this[readWriteTimeoutConfigName]; }
-			set { this[readWriteTimeoutConfigName] = value; }
-		}
+    private const string timeoutConfigName = "timeout";
 
-		const string timeoutConfigName = "timeout";
-		[ConfigurationProperty(timeoutConfigName, DefaultValue = "00:00:10")]
-		[PositiveTimeSpanValidator]
-		public TimeSpan Timeout {
-			get { return (TimeSpan)this[timeoutConfigName]; }
-			set { this[timeoutConfigName] = value; }
-		}
+    private const string maximumBytesToReadConfigName = "maximumBytesToRead";
 
-		const string maximumBytesToReadConfigName = "maximumBytesToRead";
-		[ConfigurationProperty(maximumBytesToReadConfigName, DefaultValue = 1024 * 1024)]
-		[IntegerValidator(MinValue = 2048)]
-		public int MaximumBytesToRead {
-			get { return (int)this[maximumBytesToReadConfigName]; }
-			set { this[maximumBytesToReadConfigName] = value; }
-		}
+    private const string maximumRedirectionsConfigName = "maximumRedirections";
 
-		const string maximumRedirectionsConfigName = "maximumRedirections";
-		[ConfigurationProperty(maximumRedirectionsConfigName, DefaultValue = 10)]
-		[IntegerValidator(MinValue = 0)]
-		public int MaximumRedirections {
-			get { return (int)this[maximumRedirectionsConfigName]; }
-			set { this[maximumRedirectionsConfigName] = value; }
-		}
+    private const string whitelistHostsConfigName = "whitelistHosts";
 
-		const string whitelistHostsConfigName = "whitelistHosts";
-		[ConfigurationProperty(whitelistHostsConfigName, IsDefaultCollection = false)]
-		[ConfigurationCollection(typeof(WhiteBlackListCollection))]
-		public WhiteBlackListCollection WhitelistHosts {
-			get { return (WhiteBlackListCollection)this[whitelistHostsConfigName] ?? new WhiteBlackListCollection(); }
-			set { this[whitelistHostsConfigName] = value; }
-		}
+    private const string blacklistHostsConfigName = "blacklistHosts";
 
-		const string blacklistHostsConfigName = "blacklistHosts";
-		[ConfigurationProperty(blacklistHostsConfigName, IsDefaultCollection = false)]
-		[ConfigurationCollection(typeof(WhiteBlackListCollection))]
-		public WhiteBlackListCollection BlacklistHosts {
-			get { return (WhiteBlackListCollection)this[blacklistHostsConfigName] ?? new WhiteBlackListCollection(); }
-			set { this[blacklistHostsConfigName] = value; }
-		}
+    private const string whitelistHostsRegexConfigName = "whitelistHostsRegex";
 
-		const string whitelistHostsRegexConfigName = "whitelistHostsRegex";
-		[ConfigurationProperty(whitelistHostsRegexConfigName, IsDefaultCollection = false)]
-		[ConfigurationCollection(typeof(WhiteBlackListCollection))]
-		public WhiteBlackListCollection WhitelistHostsRegex {
-			get { return (WhiteBlackListCollection)this[whitelistHostsRegexConfigName] ?? new WhiteBlackListCollection(); }
-			set { this[whitelistHostsRegexConfigName] = value; }
-		}
+    private const string blacklistHostsRegexConfigName = "blacklistHostsRegex";
 
-		const string blacklistHostsRegexConfigName = "blacklistHostsRegex";
-		[ConfigurationProperty(blacklistHostsRegexConfigName, IsDefaultCollection = false)]
-		[ConfigurationCollection(typeof(WhiteBlackListCollection))]
-		public WhiteBlackListCollection BlacklistHostsRegex {
-			get { return (WhiteBlackListCollection)this[blacklistHostsRegexConfigName] ?? new WhiteBlackListCollection(); }
-			set { this[blacklistHostsRegexConfigName] = value; }
-		}
-	}
+    public UntrustedWebRequestSection()
+    {
+        SectionInformation.AllowLocation = false;
+    }
+
+    internal static UntrustedWebRequestSection Configuration =>
+        (UntrustedWebRequestSection)ConfigurationManager.GetSection("dotNetOpenId/untrustedWebRequest") ??
+        new UntrustedWebRequestSection();
+
+    [ConfigurationProperty(readWriteTimeoutConfigName, DefaultValue = "00:00:00.800")]
+    [PositiveTimeSpanValidator]
+    public TimeSpan ReadWriteTimeout
+    {
+        get => (TimeSpan)this[readWriteTimeoutConfigName];
+        set => this[readWriteTimeoutConfigName] = value;
+    }
+
+    [ConfigurationProperty(timeoutConfigName, DefaultValue = "00:00:10")]
+    [PositiveTimeSpanValidator]
+    public TimeSpan Timeout
+    {
+        get => (TimeSpan)this[timeoutConfigName];
+        set => this[timeoutConfigName] = value;
+    }
+
+    [ConfigurationProperty(maximumBytesToReadConfigName, DefaultValue = 1024 * 1024)]
+    [IntegerValidator(MinValue = 2048)]
+    public int MaximumBytesToRead
+    {
+        get => (int)this[maximumBytesToReadConfigName];
+        set => this[maximumBytesToReadConfigName] = value;
+    }
+
+    [ConfigurationProperty(maximumRedirectionsConfigName, DefaultValue = 10)]
+    [IntegerValidator(MinValue = 0)]
+    public int MaximumRedirections
+    {
+        get => (int)this[maximumRedirectionsConfigName];
+        set => this[maximumRedirectionsConfigName] = value;
+    }
+
+    [ConfigurationProperty(whitelistHostsConfigName, IsDefaultCollection = false)]
+    [ConfigurationCollection(typeof(WhiteBlackListCollection))]
+    public WhiteBlackListCollection WhitelistHosts
+    {
+        get => (WhiteBlackListCollection)this[whitelistHostsConfigName] ?? new WhiteBlackListCollection();
+        set => this[whitelistHostsConfigName] = value;
+    }
+
+    [ConfigurationProperty(blacklistHostsConfigName, IsDefaultCollection = false)]
+    [ConfigurationCollection(typeof(WhiteBlackListCollection))]
+    public WhiteBlackListCollection BlacklistHosts
+    {
+        get => (WhiteBlackListCollection)this[blacklistHostsConfigName] ?? new WhiteBlackListCollection();
+        set => this[blacklistHostsConfigName] = value;
+    }
+
+    [ConfigurationProperty(whitelistHostsRegexConfigName, IsDefaultCollection = false)]
+    [ConfigurationCollection(typeof(WhiteBlackListCollection))]
+    public WhiteBlackListCollection WhitelistHostsRegex
+    {
+        get => (WhiteBlackListCollection)this[whitelistHostsRegexConfigName] ?? new WhiteBlackListCollection();
+        set => this[whitelistHostsRegexConfigName] = value;
+    }
+
+    [ConfigurationProperty(blacklistHostsRegexConfigName, IsDefaultCollection = false)]
+    [ConfigurationCollection(typeof(WhiteBlackListCollection))]
+    public WhiteBlackListCollection BlacklistHostsRegex
+    {
+        get => (WhiteBlackListCollection)this[blacklistHostsRegexConfigName] ?? new WhiteBlackListCollection();
+        set => this[blacklistHostsRegexConfigName] = value;
+    }
 }

@@ -26,84 +26,67 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Declares a Gettext-based localizer for an add-in
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinLocalizerGettextAttribute : Attribute
 {
 	/// <summary>
-	/// Declares a Gettext-based localizer for an add-in
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute" /> class.
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly)]
-	public class AddinLocalizerGettextAttribute: Attribute
-	{
-		string catalog;
-		string location;
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute"/> class.
-		/// </summary>
-		public AddinLocalizerGettextAttribute ()
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute"/> class.
-		/// </summary>
-		/// <param name='catalog'>
-		/// Name of the catalog which contains the strings.
-		/// </param>
-		public AddinLocalizerGettextAttribute (string catalog)
-		{
-			this.catalog = catalog;
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute"/> class.
-		/// </summary>
-		/// <param name='catalog'>
-		/// Name of the catalog which contains the strings.
-		/// </param>
-		/// <param name='location'>
-		/// Relative path to the location of the catalog. This path must be relative to the add-in location.
-		/// </param>
-		/// <remarks>
-		/// The location path must contain a directory structure like this:
-		/// 
-		/// {language-id}/LC_MESSAGES/{Catalog}.mo
-		/// 
-		/// For example, the catalog for spanish strings would be located at:
-		/// 
-		/// locale/es/LC_MESSAGES/some-addin.mo
-		/// </remarks>
-		public AddinLocalizerGettextAttribute (string catalog, string location)
-		{
-			this.catalog = catalog;
-			this.location = location;
-		}
-		
-		/// <summary>
-		/// Name of the catalog which contains the strings.
-		/// </summary>
-		public string Catalog {
-			get { return this.catalog; }
-			set { this.catalog = value; }
-		}
+	public AddinLocalizerGettextAttribute()
+    {
+    }
 
-		/// <summary>
-		/// Relative path to the location of the catalog. This path must be relative to the add-in location.
-		/// </summary>
-		/// <remarks>
-		/// When not specified, the default value of this property is 'locale'.
-		/// The location path must contain a directory structure like this:
-		/// 
-		/// {language-id}/LC_MESSAGES/{Catalog}.mo
-		/// 
-		/// For example, the catalog for spanish strings would be located at:
-		/// 
-		/// locale/es/LC_MESSAGES/some-addin.mo
-		/// </remarks>
-		public string Location {
-			get { return this.location; }
-			set { this.location = value; }
-		}
-	}
+	/// <summary>
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute" /> class.
+	/// </summary>
+	/// <param name='catalog'>
+	///     Name of the catalog which contains the strings.
+	/// </param>
+	public AddinLocalizerGettextAttribute(string catalog)
+    {
+        this.Catalog = catalog;
+    }
+
+	/// <summary>
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerGettextAttribute" /> class.
+	/// </summary>
+	/// <param name='catalog'>
+	///     Name of the catalog which contains the strings.
+	/// </param>
+	/// <param name='location'>
+	///     Relative path to the location of the catalog. This path must be relative to the add-in location.
+	/// </param>
+	/// <remarks>
+	///     The location path must contain a directory structure like this:
+	///     {language-id}/LC_MESSAGES/{Catalog}.mo
+	///     For example, the catalog for spanish strings would be located at:
+	///     locale/es/LC_MESSAGES/some-addin.mo
+	/// </remarks>
+	public AddinLocalizerGettextAttribute(string catalog, string location)
+    {
+        this.Catalog = catalog;
+        this.Location = location;
+    }
+
+	/// <summary>
+	///     Name of the catalog which contains the strings.
+	/// </summary>
+	public string Catalog { get; set; }
+
+	/// <summary>
+	///     Relative path to the location of the catalog. This path must be relative to the add-in location.
+	/// </summary>
+	/// <remarks>
+	///     When not specified, the default value of this property is 'locale'.
+	///     The location path must contain a directory structure like this:
+	///     {language-id}/LC_MESSAGES/{Catalog}.mo
+	///     For example, the catalog for spanish strings would be located at:
+	///     locale/es/LC_MESSAGES/some-addin.mo
+	/// </remarks>
+	public string Location { get; set; }
 }
-

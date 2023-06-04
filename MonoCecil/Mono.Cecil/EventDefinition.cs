@@ -11,146 +11,159 @@
 using System.Threading;
 using Mono.Collections.Generic;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public sealed class EventDefinition : EventReference, IMemberDefinition {
+public sealed class EventDefinition : EventReference, IMemberDefinition
+{
+    internal MethodDefinition add_method;
 
-		ushort attributes;
+    private ushort attributes;
 
-		Collection<CustomAttribute> custom_attributes;
+    private Collection<CustomAttribute> custom_attributes;
+    internal MethodDefinition invoke_method;
+    internal Collection<MethodDefinition> other_methods;
+    internal MethodDefinition remove_method;
 
-		internal MethodDefinition add_method;
-		internal MethodDefinition invoke_method;
-		internal MethodDefinition remove_method;
-		internal Collection<MethodDefinition> other_methods;
+    public EventDefinition(string name, EventAttributes attributes, TypeReference eventType)
+        : base(name, eventType)
+    {
+        this.attributes = (ushort)attributes;
+        token = new MetadataToken(TokenType.Event);
+    }
 
-		public EventAttributes Attributes {
-			get { return (EventAttributes) attributes; }
-			set { attributes = (ushort) value; }
-		}
+    public EventAttributes Attributes
+    {
+        get => (EventAttributes)attributes;
+        set => attributes = (ushort)value;
+    }
 
-		public MethodDefinition AddMethod {
-			get {
-				if (add_method != null)
-					return add_method;
+    public MethodDefinition AddMethod
+    {
+        get
+        {
+            if (add_method != null)
+                return add_method;
 
-				InitializeMethods ();
-				return add_method;
-			}
-			set { add_method = value; }
-		}
+            InitializeMethods();
+            return add_method;
+        }
+        set => add_method = value;
+    }
 
-		public MethodDefinition InvokeMethod {
-			get {
-				if (invoke_method != null)
-					return invoke_method;
+    public MethodDefinition InvokeMethod
+    {
+        get
+        {
+            if (invoke_method != null)
+                return invoke_method;
 
-				InitializeMethods ();
-				return invoke_method;
-			}
-			set { invoke_method = value; }
-		}
+            InitializeMethods();
+            return invoke_method;
+        }
+        set => invoke_method = value;
+    }
 
-		public MethodDefinition RemoveMethod {
-			get {
-				if (remove_method != null)
-					return remove_method;
+    public MethodDefinition RemoveMethod
+    {
+        get
+        {
+            if (remove_method != null)
+                return remove_method;
 
-				InitializeMethods ();
-				return remove_method;
-			}
-			set { remove_method = value; }
-		}
+            InitializeMethods();
+            return remove_method;
+        }
+        set => remove_method = value;
+    }
 
-		public bool HasOtherMethods {
-			get {
-				if (other_methods != null)
-					return other_methods.Count > 0;
+    public bool HasOtherMethods
+    {
+        get
+        {
+            if (other_methods != null)
+                return other_methods.Count > 0;
 
-				InitializeMethods ();
-				return !other_methods.IsNullOrEmpty ();
-			}
-		}
+            InitializeMethods();
+            return !other_methods.IsNullOrEmpty();
+        }
+    }
 
-		public Collection<MethodDefinition> OtherMethods {
-			get {
-				if (other_methods != null)
-					return other_methods;
+    public Collection<MethodDefinition> OtherMethods
+    {
+        get
+        {
+            if (other_methods != null)
+                return other_methods;
 
-				InitializeMethods ();
+            InitializeMethods();
 
-				if (other_methods == null)
-					Interlocked.CompareExchange (ref other_methods, new Collection<MethodDefinition> (), null);
+            if (other_methods == null)
+                Interlocked.CompareExchange(ref other_methods, new Collection<MethodDefinition>(), null);
 
-				return other_methods;
-			}
-		}
+            return other_methods;
+        }
+    }
 
-		public bool HasCustomAttributes {
-			get {
-				if (custom_attributes != null)
-					return custom_attributes.Count > 0;
+    public override bool IsDefinition => true;
 
-				return this.GetHasCustomAttributes (Module);
-			}
-		}
+    public bool HasCustomAttributes
+    {
+        get
+        {
+            if (custom_attributes != null)
+                return custom_attributes.Count > 0;
 
-		public Collection<CustomAttribute> CustomAttributes {
-			get { return custom_attributes ?? (this.GetCustomAttributes (ref custom_attributes, Module)); }
-		}
+            return this.GetHasCustomAttributes(Module);
+        }
+    }
 
-		#region EventAttributes
+    public Collection<CustomAttribute> CustomAttributes =>
+        custom_attributes ?? this.GetCustomAttributes(ref custom_attributes, Module);
 
-		public bool IsSpecialName {
-			get { return attributes.GetAttributes ((ushort) EventAttributes.SpecialName); }
-			set { attributes = attributes.SetAttributes ((ushort) EventAttributes.SpecialName, value); }
-		}
+    public new TypeDefinition DeclaringType
+    {
+        get => (TypeDefinition)base.DeclaringType;
+        set => base.DeclaringType = value;
+    }
 
-		public bool IsRuntimeSpecialName {
-			get { return attributes.GetAttributes ((ushort) EventAttributes.RTSpecialName); }
-			set { attributes = attributes.SetAttributes ((ushort) EventAttributes.RTSpecialName, value); }
-		}
+    private void InitializeMethods()
+    {
+        var module = Module;
+        if (module == null)
+            return;
 
-		#endregion
+        lock (module.SyncRoot)
+        {
+            if (add_method != null
+                || invoke_method != null
+                || remove_method != null)
+                return;
 
-		public new TypeDefinition DeclaringType {
-			get { return (TypeDefinition) base.DeclaringType; }
-			set { base.DeclaringType = value; }
-		}
+            if (!module.HasImage())
+                return;
 
-		public override bool IsDefinition {
-			get { return true; }
-		}
+            module.Read(this, (@event, reader) => reader.ReadMethods(@event));
+        }
+    }
 
-		public EventDefinition (string name, EventAttributes attributes, TypeReference eventType)
-			: base (name, eventType)
-		{
-			this.attributes = (ushort) attributes;
-			this.token = new MetadataToken (TokenType.Event);
-		}
+    public override EventDefinition Resolve()
+    {
+        return this;
+    }
 
-		void InitializeMethods ()
-		{
-			var module = this.Module;
-			if (module == null)
-				return;
+    #region EventAttributes
 
-			lock (module.SyncRoot) {
-				if (add_method != null
-					|| invoke_method != null
-					|| remove_method != null)
-					return;
+    public bool IsSpecialName
+    {
+        get => attributes.GetAttributes((ushort)EventAttributes.SpecialName);
+        set => attributes = attributes.SetAttributes((ushort)EventAttributes.SpecialName, value);
+    }
 
-				if (!module.HasImage ())
-					return;
+    public bool IsRuntimeSpecialName
+    {
+        get => attributes.GetAttributes((ushort)EventAttributes.RTSpecialName);
+        set => attributes = attributes.SetAttributes((ushort)EventAttributes.RTSpecialName, value);
+    }
 
-				module.Read (this, (@event, reader) => reader.ReadMethods (@event));
-			}
-		}
-
-		public override EventDefinition Resolve ()
-		{
-			return this;
-		}
-	}
+    #endregion
 }

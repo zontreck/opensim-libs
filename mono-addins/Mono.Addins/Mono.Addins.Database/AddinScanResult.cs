@@ -31,127 +31,125 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Linq;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AddinScanResult : MarshalByRefObject
 {
-	internal class AddinScanResult: MarshalByRefObject
-	{
-		internal List<string> AddinsToScan = new List<string> ();
-		internal List<string> AddinsToUpdateRelations = new List<string> ();
-		internal List<string> AddinsToUpdate = new List<string> ();
-		internal List<FileToScan> FilesToScan = new List<FileToScan> ();
-		internal List<AddinScanFolderInfo> ModifiedFolderInfos = new List<AddinScanFolderInfo> ();
-		internal AddinHostIndex HostIndex;
-		internal List<string> RemovedAddins = new List<string> ();
+    internal List<string> AddinsToScan = new();
+    internal List<string> AddinsToUpdate = new();
+    internal List<string> AddinsToUpdateRelations = new();
+    public bool CheckOnly;
+    public string Domain;
+    internal List<FileToScan> FilesToScan = new();
+    internal AddinHostIndex HostIndex;
+    public bool LocateAssembliesOnly;
+    internal List<AddinScanFolderInfo> ModifiedFolderInfos = new();
 
-		bool regenerateRelationData;
-		bool changesFound;
-		
-		public bool RegenerateAllData;
-		public bool CheckOnly;
-		public bool LocateAssembliesOnly;
-		public string Domain;
+    public bool RegenerateAllData;
 
-		public ScanContext ScanContext { get; } = new ScanContext ();
+    private bool regenerateRelationData;
+    internal List<string> RemovedAddins = new();
 
-		public AssemblyIndex AssemblyIndex { get; } = new AssemblyIndex ();
+    public ScanContext ScanContext { get; } = new();
 
-		public bool CleanGeneratedAddinScanDataFiles { get; set; }
+    public AssemblyIndex AssemblyIndex { get; } = new();
 
-		public bool ChangesFound {
-			get { return changesFound; }
-			set { changesFound = value; }
-		}
+    public bool CleanGeneratedAddinScanDataFiles { get; set; }
 
-		public bool RegenerateRelationData {
-			get { return regenerateRelationData; }
-			set {
-				regenerateRelationData = value;
-				if (value)
-					ChangesFound = true;
-			}
-		}
-		
-		public void AddAddinToScan (string addinId)
-		{
-			if (!AddinsToScan.Contains (addinId))
-				AddinsToScan.Add (addinId);
-		}
-		
-		public void AddRemovedAddin (string addinId)
-		{
-			if (!RemovedAddins.Contains (addinId))
-				RemovedAddins.Add (addinId);
-		}
-		
-		public void AddFileToScan (string file, AddinScanFolderInfo folderInfo, AddinFileInfo oldFileInfo, AddinScanData scanData)
-		{
-			FileToScan di = new FileToScan ();
-			di.File = file;
-			di.AddinScanFolderInfo = folderInfo;
-			di.OldFileInfo = oldFileInfo;
-			di.ScanDataMD5 = scanData?.MD5;
-			FilesToScan.Add (di);
-			RegisterModifiedFolderInfo (folderInfo);
-		}
-		
-		public void RegisterModifiedFolderInfo (AddinScanFolderInfo folderInfo)
-		{
-			if (!ModifiedFolderInfos.Contains (folderInfo))
-				ModifiedFolderInfos.Add (folderInfo);
-		}
-		
-		public void AddAddinToUpdateRelations (string addinId)
-		{
-			if (!AddinsToUpdateRelations.Contains (addinId))
-				AddinsToUpdateRelations.Add (addinId);
-		}
-		
-		public void AddAddinToUpdate (string addinId)
-		{
-			if (!AddinsToUpdate.Contains (addinId))
-				AddinsToUpdate.Add (addinId);
-		}
-	}
-		
-	class FileToScan
-	{
-		public string File;
-		public AddinScanFolderInfo AddinScanFolderInfo;
-		public AddinFileInfo OldFileInfo;
-		public string ScanDataMD5;
-	}
+    public bool ChangesFound { get; set; }
 
-	class ScanContext
-	{
-		HashSet<string> filesToIgnore;
+    public bool RegenerateRelationData
+    {
+        get => regenerateRelationData;
+        set
+        {
+            regenerateRelationData = value;
+            if (value)
+                ChangesFound = true;
+        }
+    }
 
-		public void AddPathToIgnore (string path)
-		{
-			if (filesToIgnore == null)
-				filesToIgnore = new HashSet<string> ();
-			filesToIgnore.Add (path);
-		}
+    public void AddAddinToScan(string addinId)
+    {
+        if (!AddinsToScan.Contains(addinId))
+            AddinsToScan.Add(addinId);
+    }
 
-		public bool IgnorePath (string file)
-		{
-			if (filesToIgnore == null)
-				return false;
-			string root = Path.GetPathRoot (file);
-			while (root != file) {
-				if (filesToIgnore.Contains (file))
-					return true;
-				file = Path.GetDirectoryName (file);
-			}
-			return false;
-		}
+    public void AddRemovedAddin(string addinId)
+    {
+        if (!RemovedAddins.Contains(addinId))
+            RemovedAddins.Add(addinId);
+    }
 
-		public void AddPathsToIgnore (IEnumerable paths)
-		{
-			foreach (string p in paths)
-				AddPathToIgnore (p);
-		}
-	}
+    public void AddFileToScan(string file, AddinScanFolderInfo folderInfo, AddinFileInfo oldFileInfo,
+        AddinScanData scanData)
+    {
+        var di = new FileToScan();
+        di.File = file;
+        di.AddinScanFolderInfo = folderInfo;
+        di.OldFileInfo = oldFileInfo;
+        di.ScanDataMD5 = scanData?.MD5;
+        FilesToScan.Add(di);
+        RegisterModifiedFolderInfo(folderInfo);
+    }
+
+    public void RegisterModifiedFolderInfo(AddinScanFolderInfo folderInfo)
+    {
+        if (!ModifiedFolderInfos.Contains(folderInfo))
+            ModifiedFolderInfos.Add(folderInfo);
+    }
+
+    public void AddAddinToUpdateRelations(string addinId)
+    {
+        if (!AddinsToUpdateRelations.Contains(addinId))
+            AddinsToUpdateRelations.Add(addinId);
+    }
+
+    public void AddAddinToUpdate(string addinId)
+    {
+        if (!AddinsToUpdate.Contains(addinId))
+            AddinsToUpdate.Add(addinId);
+    }
+}
+
+internal class FileToScan
+{
+    public AddinScanFolderInfo AddinScanFolderInfo;
+    public string File;
+    public AddinFileInfo OldFileInfo;
+    public string ScanDataMD5;
+}
+
+internal class ScanContext
+{
+    private HashSet<string> filesToIgnore;
+
+    public void AddPathToIgnore(string path)
+    {
+        if (filesToIgnore == null)
+            filesToIgnore = new HashSet<string>();
+        filesToIgnore.Add(path);
+    }
+
+    public bool IgnorePath(string file)
+    {
+        if (filesToIgnore == null)
+            return false;
+        var root = Path.GetPathRoot(file);
+        while (root != file)
+        {
+            if (filesToIgnore.Contains(file))
+                return true;
+            file = Path.GetDirectoryName(file);
+        }
+
+        return false;
+    }
+
+    public void AddPathsToIgnore(IEnumerable paths)
+    {
+        foreach (string p in paths)
+            AddPathToIgnore(p);
+    }
 }

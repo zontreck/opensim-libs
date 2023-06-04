@@ -26,22 +26,18 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
+namespace Mono.Addins;
+// TODO: Add real translation support, which can work in Windows
 
-namespace Mono.Addins
+internal class GettextCatalog
 {
-	// TODO: Add real translation support, which can work in Windows
-	
-	internal class GettextCatalog
-	{
-		public static string GetString (string str)
-		{
-			return str;
-		}
-	
-		public static string GetString (string str, params object[] arguments)
-		{
-			return string.Format (GetString (str), arguments);
-		}
-	}
+    public static string GetString(string str)
+    {
+        return str;
+    }
+
+    public static string GetString(string str, params object[] arguments)
+    {
+        return string.Format(GetString(str), arguments);
+    }
 }

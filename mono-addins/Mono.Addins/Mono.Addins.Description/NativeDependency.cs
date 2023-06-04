@@ -27,26 +27,19 @@
 //
 
 using System;
-using System.Collections;
-using System.Xml;
 using System.Xml.Serialization;
-using Mono.Addins.Description;
 
-namespace Mono.Addins.Description
-{
+namespace Mono.Addins.Description;
 #pragma warning disable 1591
-	[Obsolete]
-	[XmlType ("NativeReference")]
-	public class NativeDependency: Dependency
-	{
-		public override string Name {
-			get { return "Native dependency"; }
-		}
-		
-		internal override bool CheckInstalled (AddinRegistry registry)
-		{
-			return false;
-		}
-	}
-#pragma warning restore 1591
+[Obsolete]
+[XmlType("NativeReference")]
+public class NativeDependency : Dependency
+{
+    public override string Name => "Native dependency";
+
+    internal override bool CheckInstalled(AddinRegistry registry)
+    {
+        return false;
+    }
 }
+#pragma warning restore 1591

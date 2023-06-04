@@ -9,27 +9,24 @@
 //
 
 using System;
-
 using MD = Mono.Cecil.Metadata;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public sealed class PinnedType : TypeSpecification {
+public sealed class PinnedType : TypeSpecification
+{
+    public PinnedType(TypeReference type)
+        : base(type)
+    {
+        Mixin.CheckType(type);
+        etype = MD.ElementType.Pinned;
+    }
 
-		public override bool IsValueType {
-			get { return false; }
-			set { throw new InvalidOperationException (); }
-		}
+    public override bool IsValueType
+    {
+        get => false;
+        set => throw new InvalidOperationException();
+    }
 
-		public override bool IsPinned {
-			get { return true; }
-		}
-
-		public PinnedType (TypeReference type)
-			: base (type)
-		{
-			Mixin.CheckType (type);
-			this.etype = MD.ElementType.Pinned;
-		}
-	}
+    public override bool IsPinned => true;
 }

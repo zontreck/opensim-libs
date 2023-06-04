@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace DotNetOpenId.Provider;
 
-namespace DotNetOpenId.Provider {
-	class FaultyRequest : Request {
-		public new IEncodable Response { get; private set; }
-		internal FaultyRequest(OpenIdProvider provider, IEncodable response)
-			: base(provider) {
-			Response = response;
-		}
+internal class FaultyRequest : Request
+{
+    internal FaultyRequest(OpenIdProvider provider, IEncodable response)
+        : base(provider)
+    {
+        Response = response;
+    }
 
-		internal override string Mode {
-			get { return null; }
-		}
+    public new IEncodable Response { get; }
 
-		public override bool IsResponseReady {
-			get { return true; }
-		}
+    internal override string Mode => null;
 
-		protected override IEncodable CreateResponse() {
-			return Response;
-		}
-	}
+    public override bool IsResponseReady => true;
+
+    protected override IEncodable CreateResponse()
+    {
+        return Response;
+    }
 }

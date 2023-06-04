@@ -29,107 +29,119 @@
 using System;
 using System.Collections;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+/// <summary>
+///     An IAddinInstaller implementation which interacts with the user through the console
+/// </summary>
+public class ConsoleAddinInstaller : IAddinInstaller
 {
-	/// <summary>
-	/// An IAddinInstaller implementation which interacts with the user through the console
-	/// </summary>
-	public class ConsoleAddinInstaller: IAddinInstaller
-	{
-		bool prompt;
-		bool repoUpdated;
-		int logLevel = 1;
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.Setup.ConsoleAddinInstaller"/> class.
-		/// </summary>
-		public ConsoleAddinInstaller ()
-		{
-		}
-		
-		/// <summary>
-		/// Gets or sets whether the installer can ask questions to the user
-		/// </summary>
-		public bool UserPrompt {
-			get { return prompt; }
-			set {
-				prompt = value;
-				if (prompt && logLevel == 0)
-					logLevel = 1;
-			}
-		}
-		
-		/// <summary>
-		/// Log level (0:normal, 1+:verbose);
-		/// </summary>
-		public int LogLevel {
-			get { return logLevel; }
-			set { logLevel = value; }
-		}
-		
-		void IAddinInstaller.InstallAddins (AddinRegistry reg, string message, string[] addinIds)
-		{
-			if (logLevel > 0) {
-				if (message != null && message.Length > 0) {
-					Console.WriteLine (message);
-				} else {
-					Console.WriteLine ("Additional extensions are required to perform this operation.");
-				}
-			}
-			ArrayList entries = new ArrayList ();
-			SetupService setup = new SetupService (reg);
-			string idNotFound;
-			do {
-				idNotFound = null;
-				foreach (string id in addinIds) {
-					string name = Addin.GetIdName (id);
-					string version = Addin.GetIdVersion (id);
-					AddinRepositoryEntry[] ares = setup.Repositories.GetAvailableAddin (name, version);
-					if (ares.Length == 0) {
-						idNotFound = id;
-						entries.Clear ();
-						break;
-					} else
-						entries.Add (ares[0]);
-				}
-				if (idNotFound != null) {
-					if (repoUpdated)
-						throw new InstallException ("Add-in '" + idNotFound + "' not found in the registered add-in repositories");
-					if (prompt) {
-						Console.WriteLine ("The add-in '" + idNotFound + "' could not be found in the registered repositories.");
-						Console.WriteLine ("The repository indices may be outdated.");
-						if (!Confirm ("Do you wan't to update them now?"))
-							throw new InstallException ("Add-in '" + idNotFound + "' not found in the registered add-in repositories");
-					}
-					setup.Repositories.UpdateAllRepositories (new ConsoleProgressStatus (logLevel));
-					repoUpdated = true;
-				}
-			}
-			while (idNotFound != null);
-			
-			if (logLevel > 0) {
-				Console.WriteLine ("The following add-ins will be installed:");
-				foreach (AddinRepositoryEntry addin in entries)
-					Console.WriteLine (" - " + addin.Addin.Name + " v" + addin.Addin.Version);
-				
-				if (prompt) {
-					if (!Confirm ("Do you want to continue with the installation?"))
-						throw new InstallException ("Installation cancelled");
-				}
-			}
-			setup.Install (new ConsoleProgressStatus (logLevel), (AddinRepositoryEntry[]) entries.ToArray (typeof(AddinRepositoryEntry)));
-		}
-		
-		bool Confirm (string msg)
-		{
-			string res;
-			do {
-				Console.Write (msg + " (Y/n): ");
-				res = Console.ReadLine ();
-				if (res.Length > 0 && res.ToLower()[0] == 'n')
-					return false;
-			} while (res.Length > 0 && res.ToLower()[0] != 'y');
-			return true;
-		}
-	}
+    private bool prompt;
+    private bool repoUpdated;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.Setup.ConsoleAddinInstaller" /> class.
+    /// </summary>
+    public ConsoleAddinInstaller()
+    {
+    }
+
+    /// <summary>
+    ///     Gets or sets whether the installer can ask questions to the user
+    /// </summary>
+    public bool UserPrompt
+    {
+        get => prompt;
+        set
+        {
+            prompt = value;
+            if (prompt && LogLevel == 0)
+                LogLevel = 1;
+        }
+    }
+
+    /// <summary>
+    ///     Log level (0:normal, 1+:verbose);
+    /// </summary>
+    public int LogLevel { get; set; } = 1;
+
+    void IAddinInstaller.InstallAddins(AddinRegistry reg, string message, string[] addinIds)
+    {
+        if (LogLevel > 0)
+        {
+            if (message != null && message.Length > 0)
+                Console.WriteLine(message);
+            else
+                Console.WriteLine("Additional extensions are required to perform this operation.");
+        }
+
+        var entries = new ArrayList();
+        var setup = new SetupService(reg);
+        string idNotFound;
+        do
+        {
+            idNotFound = null;
+            foreach (var id in addinIds)
+            {
+                var name = Addin.GetIdName(id);
+                var version = Addin.GetIdVersion(id);
+                var ares = setup.Repositories.GetAvailableAddin(name, version);
+                if (ares.Length == 0)
+                {
+                    idNotFound = id;
+                    entries.Clear();
+                    break;
+                }
+
+                entries.Add(ares[0]);
+            }
+
+            if (idNotFound != null)
+            {
+                if (repoUpdated)
+                    throw new InstallException("Add-in '" + idNotFound +
+                                               "' not found in the registered add-in repositories");
+                if (prompt)
+                {
+                    Console.WriteLine("The add-in '" + idNotFound +
+                                      "' could not be found in the registered repositories.");
+                    Console.WriteLine("The repository indices may be outdated.");
+                    if (!Confirm("Do you wan't to update them now?"))
+                        throw new InstallException("Add-in '" + idNotFound +
+                                                   "' not found in the registered add-in repositories");
+                }
+
+                setup.Repositories.UpdateAllRepositories(new ConsoleProgressStatus(LogLevel));
+                repoUpdated = true;
+            }
+        } while (idNotFound != null);
+
+        if (LogLevel > 0)
+        {
+            Console.WriteLine("The following add-ins will be installed:");
+            foreach (AddinRepositoryEntry addin in entries)
+                Console.WriteLine(" - " + addin.Addin.Name + " v" + addin.Addin.Version);
+
+            if (prompt)
+                if (!Confirm("Do you want to continue with the installation?"))
+                    throw new InstallException("Installation cancelled");
+        }
+
+        setup.Install(new ConsoleProgressStatus(LogLevel),
+            (AddinRepositoryEntry[])entries.ToArray(typeof(AddinRepositoryEntry)));
+    }
+
+    private bool Confirm(string msg)
+    {
+        string res;
+        do
+        {
+            Console.Write(msg + " (Y/n): ");
+            res = Console.ReadLine();
+            if (res.Length > 0 && res.ToLower()[0] == 'n')
+                return false;
+        } while (res.Length > 0 && res.ToLower()[0] != 'y');
+
+        return true;
+    }
 }

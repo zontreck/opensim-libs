@@ -23,31 +23,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Addin URL attribute.
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinUrlAttribute : Attribute
 {
 	/// <summary>
-	/// Addin URL attribute.
+	///     Initializes the attribute
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple=false)]
-	public class AddinUrlAttribute: Attribute
-	{
-		/// <summary>
-		/// Initializes the attribute
-		/// </summary>
-		/// <param name="url">
-		/// Url of the add-in
-		/// </param>
-		public AddinUrlAttribute (string url)
-		{
-			this.Url = url;
-		}
+	/// <param name="url">
+	///     Url of the add-in
+	/// </param>
+	public AddinUrlAttribute(string url)
+    {
+        Url = url;
+    }
 
-		/// <summary>
-		/// Url of the add-in
-		/// </summary>
-		public string Url { get; set; }
-	}
+	/// <summary>
+	///     Url of the add-in
+	/// </summary>
+	public string Url { get; set; }
 }
-

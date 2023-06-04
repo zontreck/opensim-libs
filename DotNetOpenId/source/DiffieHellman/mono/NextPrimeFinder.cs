@@ -9,20 +9,19 @@
 
 using System;
 
-namespace Mono.Math.Prime.Generator {
+namespace Mono.Math.Prime.Generator;
 
-	/// <summary>
-	/// Finds the next prime after a given number.
-	/// </summary>
-	//[CLSCompliant(false)]
-	internal class NextPrimeFinder : SequentialSearchPrimeGeneratorBase {
-		
-		protected override BigInteger GenerateSearchBase (int bits, object Context) 
-		{
-			if (Context == null) throw new ArgumentNullException ("Context");
-			BigInteger ret = new BigInteger ((BigInteger)Context);
-			ret.setBit (0);
-			return ret;
-		}
-	}
+/// <summary>
+///     Finds the next prime after a given number.
+/// </summary>
+//[CLSCompliant(false)]
+internal class NextPrimeFinder : SequentialSearchPrimeGeneratorBase
+{
+    protected override BigInteger GenerateSearchBase(int bits, object Context)
+    {
+        if (Context == null) throw new ArgumentNullException("Context");
+        var ret = new BigInteger((BigInteger)Context);
+        ret.setBit(0);
+        return ret;
+    }
 }

@@ -29,134 +29,134 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Addins.Serialization;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AddinScanDataIndex : IBinaryXmlElement
 {
-	class AddinScanDataIndex: IBinaryXmlElement
-	{
-		static BinaryXmlTypeMap typeMap = new BinaryXmlTypeMap (typeof (AddinScanDataIndex), typeof(AddinScanData));
+    private static readonly BinaryXmlTypeMap typeMap = new(typeof(AddinScanDataIndex), typeof(AddinScanData));
 
-		List<AddinScanData> files = new List<AddinScanData> ();
-		List<string> assemblies = new List<string> ();
+    private string file;
 
-		string file;
+    public List<AddinScanData> Files { get; } = new();
 
-		public static AddinScanDataIndex LoadFromFolder (IProgressStatus monitor, string path)
-		{
-			var file = Path.Combine (path, "dir.addindata");
-			if (File.Exists (file)) {
-				try {
-					using (Stream s = File.OpenRead (file)) {
-						BinaryXmlReader reader = new BinaryXmlReader (s, typeMap);
-						reader.ContextData = file;
-						return (AddinScanDataIndex)reader.ReadValue ("data");
-					}
-				} catch (Exception ex) {
-					if (monitor != null)
-						monitor.ReportError ("Could not load dir.addindata file", ex);
-					// The addindata file is corrupted or changed format.
-					// It is not useful anymore, so remove it
-					try {
-						File.Delete (file);
-					} catch {
-						// Ignore error deleting. Maybe there is a permission issue.
-					}
-				}
-			}
-			return null;
-		}
+    public List<string> Assemblies { get; private set; } = new();
 
-		public void SaveToFolder (string path)
-		{
-			file = Path.Combine (path, "dir.addindata");
-			using (Stream s = File.OpenWrite (file)) {
-				var writter = new BinaryXmlWriter (s, typeMap);
-				writter.WriteValue ("data", this);
-			}
-		}
+    void IBinaryXmlElement.Read(BinaryXmlReader reader)
+    {
+        file = (string)reader.ContextData;
 
-		public void Delete ()
-		{
-			if (File.Exists (file))
-				File.Delete (file);
-		}
+        reader.ReadValue("files", Files);
 
-		void IBinaryXmlElement.Read (BinaryXmlReader reader)
-		{
-			file = (string) reader.ContextData;
+        // Generate absolute paths
 
-			reader.ReadValue ("files", files);
+        var basePath = Path.GetDirectoryName(file);
+        foreach (var f in Files)
+            f.FileName = Path.GetFullPath(Path.Combine(basePath, f.RelativeFileName));
 
-			// Generate absolute paths
+        var asms = (string[])reader.ReadValue("assemblies");
 
-			var basePath = Path.GetDirectoryName (file);
-			foreach (var f in files)
-				f.FileName = Path.GetFullPath (Path.Combine (basePath, f.RelativeFileName));
+        // Generate absolute paths
 
-			var asms = (string[])reader.ReadValue ("assemblies");
+        for (var n = 0; n < asms.Length; n++)
+            asms[n] = Path.GetFullPath(Path.Combine(basePath, asms[n]));
 
-			// Generate absolute paths
+        Assemblies = new List<string>(asms);
+    }
 
-			for (int n = 0; n < asms.Length; n++)
-				asms [n] = Path.GetFullPath (Path.Combine (basePath, asms [n]));
-			
-			assemblies = new List<string> (asms);
-		}
+    void IBinaryXmlElement.Write(BinaryXmlWriter writer)
+    {
+        var basePath = Path.GetDirectoryName(file);
 
-		void IBinaryXmlElement.Write (BinaryXmlWriter writer)
-		{
-			var basePath = Path.GetDirectoryName (file);
+        // Store files as relative paths
 
-			// Store files as relative paths
+        foreach (var f in Files)
+            f.RelativeFileName = Util.AbsoluteToRelativePath(basePath, f.FileName);
 
-			foreach (var f in files)
-				f.RelativeFileName = Util.AbsoluteToRelativePath (basePath, f.FileName);
-			
-			writer.WriteValue ("files", files);
+        writer.WriteValue("files", Files);
 
-			// Store assemblies as relative paths
+        // Store assemblies as relative paths
 
-			var array = new string [assemblies.Count];
-			for (int n = 0; n < assemblies.Count; n++)
-				array [n] = Util.AbsoluteToRelativePath (basePath, assemblies [n]);
-			
-			writer.WriteValue ("assemblies", array);
-		}
+        var array = new string [Assemblies.Count];
+        for (var n = 0; n < Assemblies.Count; n++)
+            array[n] = Util.AbsoluteToRelativePath(basePath, Assemblies[n]);
 
-		public List<AddinScanData> Files {
-			get { return files; }
-		}
+        writer.WriteValue("assemblies", array);
+    }
 
-		public List<string> Assemblies {
-			get { return assemblies; }
-		}
-	}
+    public static AddinScanDataIndex LoadFromFolder(IProgressStatus monitor, string path)
+    {
+        var file = Path.Combine(path, "dir.addindata");
+        if (File.Exists(file))
+            try
+            {
+                using (Stream s = File.OpenRead(file))
+                {
+                    var reader = new BinaryXmlReader(s, typeMap);
+                    reader.ContextData = file;
+                    return (AddinScanDataIndex)reader.ReadValue("data");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (monitor != null)
+                    monitor.ReportError("Could not load dir.addindata file", ex);
+                // The addindata file is corrupted or changed format.
+                // It is not useful anymore, so remove it
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // Ignore error deleting. Maybe there is a permission issue.
+                }
+            }
 
-	class AddinScanData: IBinaryXmlElement
-	{
-		public string RelativeFileName { get; set; }
-		public string FileName { get; set; }
-		public string MD5 { get; set; }
+        return null;
+    }
 
-		public AddinScanData ()
-		{
-		}
+    public void SaveToFolder(string path)
+    {
+        file = Path.Combine(path, "dir.addindata");
+        using (Stream s = File.OpenWrite(file))
+        {
+            var writter = new BinaryXmlWriter(s, typeMap);
+            writter.WriteValue("data", this);
+        }
+    }
 
-		public AddinScanData (string file, string md5)
-		{
-			FileName = file;
-			MD5 = md5;
-		}
+    public void Delete()
+    {
+        if (File.Exists(file))
+            File.Delete(file);
+    }
+}
 
-		void IBinaryXmlElement.Read (BinaryXmlReader reader)
-		{
-			RelativeFileName = reader.ReadStringValue ("FileName");
-			MD5 = reader.ReadStringValue ("MD5");
-		}
+internal class AddinScanData : IBinaryXmlElement
+{
+    public AddinScanData()
+    {
+    }
 
-		void IBinaryXmlElement.Write (BinaryXmlWriter writer)
-		{
-			writer.WriteValue ("FileName", RelativeFileName);
-			writer.WriteValue ("MD5", MD5);
-		}
-	}
+    public AddinScanData(string file, string md5)
+    {
+        FileName = file;
+        MD5 = md5;
+    }
+
+    public string RelativeFileName { get; set; }
+    public string FileName { get; set; }
+    public string MD5 { get; set; }
+
+    void IBinaryXmlElement.Read(BinaryXmlReader reader)
+    {
+        RelativeFileName = reader.ReadStringValue("FileName");
+        MD5 = reader.ReadStringValue("MD5");
+    }
+
+    void IBinaryXmlElement.Write(BinaryXmlWriter writer)
+    {
+        writer.WriteValue("FileName", RelativeFileName);
+        writer.WriteValue("MD5", MD5);
+    }
 }

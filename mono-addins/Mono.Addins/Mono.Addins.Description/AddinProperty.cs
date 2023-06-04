@@ -23,48 +23,46 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Xml.Serialization;
 using Mono.Addins.Serialization;
 
-namespace Mono.Addins.Description
+namespace Mono.Addins.Description;
+
+/// <summary>
+///     An add-in property.
+/// </summary>
+public class AddinProperty : IBinaryXmlElement
 {
 	/// <summary>
-	/// An add-in property.
+	///     Name of the property
 	/// </summary>
-	public class AddinProperty: IBinaryXmlElement
-	{
-		/// <summary>
-		/// Name of the property
-		/// </summary>
-		[XmlAttribute ("name")]
-		public string Name { get; set; }
+	[XmlAttribute("name")]
+    public string Name { get; set; }
 
-		/// <summary>
-		/// Locale of the property. It is null if the property is not localized.
-		/// </summary>
-		[XmlAttribute ("locale")]
-		public string Locale { get; set; }
+	/// <summary>
+	///     Locale of the property. It is null if the property is not localized.
+	/// </summary>
+	[XmlAttribute("locale")]
+    public string Locale { get; set; }
 
-		/// <summary>
-		/// Value of the property.
-		/// </summary>
-		[XmlText]
-		public string Value { get; set; }
-		
-		void IBinaryXmlElement.Read (BinaryXmlReader reader)
-		{
-			Name = reader.ReadStringValue ("name");
-			Locale = reader.ReadStringValue ("locale");
-			Value = reader.ReadStringValue ("value");
-		}
-		
-		void IBinaryXmlElement.Write (BinaryXmlWriter writer)
-		{
-			writer.WriteValue ("name", Name);
-			writer.WriteValue ("locale", Locale);
-			writer.WriteValue ("value", Value);
-		}
-	}
+	/// <summary>
+	///     Value of the property.
+	/// </summary>
+	[XmlText]
+    public string Value { get; set; }
+
+    void IBinaryXmlElement.Read(BinaryXmlReader reader)
+    {
+        Name = reader.ReadStringValue("name");
+        Locale = reader.ReadStringValue("locale");
+        Value = reader.ReadStringValue("value");
+    }
+
+    void IBinaryXmlElement.Write(BinaryXmlWriter writer)
+    {
+        writer.WriteValue("name", Name);
+        writer.WriteValue("locale", Locale);
+        writer.WriteValue("value", Value);
+    }
 }
-

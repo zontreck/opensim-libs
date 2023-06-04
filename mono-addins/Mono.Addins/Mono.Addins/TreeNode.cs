@@ -28,501 +28,485 @@
 
 
 using System;
-using System.Text;
-using System.Collections;
-using Mono.Addins.Description;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using Mono.Addins.Description;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+internal class TreeNode
 {
-	class TreeNode
-	{
-		ImmutableArray<TreeNode> children;
+    protected AddinEngine addinEngine;
+    private ExtensionContextTransaction buildTransaction;
+    private ImmutableArray<TreeNode> children;
 
-		ImmutableArray<TreeNode>.Builder childrenBuilder;
-		ExtensionContextTransaction buildTransaction;
+    private ImmutableArray<TreeNode>.Builder childrenBuilder;
 
-		ExtensionNode extensionNode;
-		bool childrenFromExtensionsLoaded;
-		string id;
-		TreeNode parent;
-		ExtensionNodeSet nodeTypes;
-		ExtensionPoint extensionPoint;
-		BaseCondition condition;
-		protected AddinEngine addinEngine;
+    private ExtensionNode extensionNode;
 
-		public TreeNode (AddinEngine addinEngine, string id)
-		{
-			this.id = id;
-			this.addinEngine = addinEngine;
+    public TreeNode(AddinEngine addinEngine, string id)
+    {
+        Id = id;
+        this.addinEngine = addinEngine;
 
-			children = ImmutableArray<TreeNode>.Empty;
+        children = ImmutableArray<TreeNode>.Empty;
 
-			// Root node
-			if (id.Length == 0)
-				childrenFromExtensionsLoaded = true;
-		}
-		
-		public AddinEngine AddinEngine {
-			get { return addinEngine; }
-		}
-		
-		internal void AttachExtensionNode (ExtensionNode enode)
-		{
-			if (Interlocked.CompareExchange (ref extensionNode, enode, null) != null) {
-				// Another thread already assigned the node
-				return;
-			}
+        // Root node
+        if (id.Length == 0)
+            ChildrenFromExtensionsLoaded = true;
+    }
 
-			if (extensionNode != null)
-				extensionNode.SetTreeNode (this);
-		}
-		
-		public string Id {
-			get { return id; }
-		}
-		
-		public ExtensionNode ExtensionNode {
-			get {
-				if (extensionNode == null && extensionPoint != null) {
-					var newNode = new ExtensionNode ();
-					newNode.SetData (addinEngine, extensionPoint.RootAddin, null, null);
-					AttachExtensionNode (newNode);
-				}
-				return extensionNode;
-			}
-		}
+    public AddinEngine AddinEngine => addinEngine;
 
-		public void NotifyAddinUnloaded ()
-		{
-			extensionNode?.NotifyAddinUnloaded ();
-		}
+    public string Id { get; }
 
-		public void NotifyAddinLoaded ()
-		{
-			extensionNode?.NotifyAddinLoaded ();
-		}
+    public ExtensionNode ExtensionNode
+    {
+        get
+        {
+            if (extensionNode == null && ExtensionPoint != null)
+            {
+                var newNode = new ExtensionNode();
+                newNode.SetData(addinEngine, ExtensionPoint.RootAddin, null, null);
+                AttachExtensionNode(newNode);
+            }
 
-		public bool HasExtensionNode {
-			get {
-				return extensionNode != null || extensionPoint != null;
-			}
-		}
+            return extensionNode;
+        }
+    }
 
-		public string AddinId {
-			get {
-				return extensionNode != null ? extensionNode.AddinId : extensionPoint?.RootAddin;
-			}
-		}
+    public bool HasExtensionNode => extensionNode != null || ExtensionPoint != null;
 
-		public ExtensionPoint ExtensionPoint {
-			get { return extensionPoint; }
-			set { extensionPoint = value; }
-		}
-		
-		public ExtensionNodeSet ExtensionNodeSet {
-			get { return nodeTypes; }
-			set { nodeTypes = value; }
-		}
-		
-		public TreeNode Parent {
-			get { return parent; }
-		}
-		
-		public BaseCondition Condition {
-			get { return condition; }
-			set {
-				condition = value;
-			}
-		}
-		
-		public virtual ExtensionContext Context {
-			get {
-				if (parent != null)
-					return parent.Context;
-				else
-					return null;
-			}
-		}
-		
-		public bool IsEnabled {
-			get {
-				if (condition == null)
-					return true;
-				ExtensionContext ctx = Context;
-				if (ctx == null)
-					return true;
-				else
-					return condition.Evaluate (ctx);
-			}
-		}
-		
-		public bool ChildrenFromExtensionsLoaded {
-			get { return childrenFromExtensionsLoaded; }
-		}
-		
-		public void AddChildNode (ExtensionContextTransaction transaction, TreeNode node)
-		{
-			node.SetParent(transaction, this);
+    public string AddinId => extensionNode != null ? extensionNode.AddinId : ExtensionPoint?.RootAddin;
 
-			if (childrenBuilder != null)
-				childrenBuilder.Add (node);
-			else
-				children = children.Add (node);
+    public ExtensionPoint ExtensionPoint { get; set; }
 
-			transaction.ReportChildrenChanged (this);
-		}
+    public ExtensionNodeSet ExtensionNodeSet { get; set; }
 
-		public void InsertChild (ExtensionContextTransaction transaction, int n, TreeNode node)
-		{
-			node.SetParent (transaction, this);
+    public TreeNode Parent { get; private set; }
 
-			if (childrenBuilder != null)
-				childrenBuilder.Insert (n, node);
-			else
-				children = children.Insert (n, node);
+    public BaseCondition Condition { get; set; }
 
-			transaction.ReportChildrenChanged (this);
-		}
+    public virtual ExtensionContext Context
+    {
+        get
+        {
+            if (Parent != null)
+                return Parent.Context;
+            return null;
+        }
+    }
 
-		public void RemoveChild (ExtensionContextTransaction transaction, TreeNode node)
-		{
-			node.SetParent (transaction, null);
+    public bool IsEnabled
+    {
+        get
+        {
+            if (Condition == null)
+                return true;
+            var ctx = Context;
+            if (ctx == null)
+                return true;
+            return Condition.Evaluate(ctx);
+        }
+    }
 
-			if (childrenBuilder != null)
-				childrenBuilder.Remove (node);
-			else
-				children = children.Remove (node);
+    public bool ChildrenFromExtensionsLoaded { get; private set; }
 
-			transaction.ReportChildrenChanged (this);
-		}
+    public IReadOnlyList<TreeNode> Children
+    {
+        get
+        {
+            if (IsInChildrenUpdateTransaction) return childrenBuilder;
+            EnsureChildrenLoaded(null);
+            return (IReadOnlyList<TreeNode>)childrenBuilder ?? children;
+        }
+    }
 
-		void SetParent (ExtensionContextTransaction transaction, TreeNode newParent)
-		{
-			if (parent == newParent)
-				return;
+    /// <summary>
+    ///     Returns true if the tree node has a child update transaction in progress,
+    ///     and the current thread is the one that created the transaction.
+    /// </summary>
+    private bool IsInChildrenUpdateTransaction => childrenBuilder != null && Context.IsCurrentThreadInTransaction;
 
-			if (this.parent != null && newParent != null)
-				throw new InvalidOperationException ("Node already has a parent");
+    internal void AttachExtensionNode(ExtensionNode enode)
+    {
+        if (Interlocked.CompareExchange(ref extensionNode, enode, null) != null)
+            // Another thread already assigned the node
+            return;
 
-			var currentCtx = Context;
-			if (currentCtx != null && currentCtx != transaction.Context)
-				throw new InvalidOperationException ("Invalid context");
+        if (extensionNode != null)
+            extensionNode.SetTreeNode(this);
+    }
 
-			this.parent = newParent;
+    public void NotifyAddinUnloaded()
+    {
+        extensionNode?.NotifyAddinUnloaded();
+    }
 
-			if (newParent != null) {
-				if (newParent.Context != null)
-					OnAttachedToContext (transaction);
-			} else {
-				if (currentCtx != null)
-					OnDetachedFromContext (transaction);
-			}
-		}
+    public void NotifyAddinLoaded()
+    {
+        extensionNode?.NotifyAddinLoaded();
+    }
 
-		void OnAttachedToContext (ExtensionContextTransaction transaction)
-		{
-			// Once the node is part of a context, let's register the condition
-			if (Condition != null)
-				transaction.RegisterNodeCondition (this, Condition);
+    public void AddChildNode(ExtensionContextTransaction transaction, TreeNode node)
+    {
+        node.SetParent(transaction, this);
 
-			// Propagate event to children
-			foreach (var child in GetLoadedChildren ())
-				child.OnAttachedToContext (transaction);
-		}
+        if (childrenBuilder != null)
+            childrenBuilder.Add(node);
+        else
+            children = children.Add(node);
 
-		void OnDetachedFromContext (ExtensionContextTransaction transaction)
-		{
-			// Node being removed, unregister from context
-			if (Condition != null)
-				transaction.UnregisterNodeCondition (this, Condition);
+        transaction.ReportChildrenChanged(this);
+    }
 
-			// Propagate event to children
-			foreach (var child in GetLoadedChildren ())
-				child.OnDetachedFromContext (transaction);
-		}
+    public void InsertChild(ExtensionContextTransaction transaction, int n, TreeNode node)
+    {
+        node.SetParent(transaction, this);
 
-		public ExtensionNode GetExtensionNode (string path, string childId)
-		{
-			TreeNode node = GetNode (path, childId);
-			return node != null ? node.ExtensionNode : null;
-		}
-		
-		public ExtensionNode GetExtensionNode (string path)
-		{
-			TreeNode node = GetNode (path);
-			return node != null ? node.ExtensionNode : null;
-		}
-		
-		public TreeNode GetNode (string path, string childId)
-		{
-			if (childId == null || childId.Length == 0)
-				return GetNode (path);
-			else
-				return GetNode (path + "/" + childId);
-		}
-		
-		public TreeNode GetNode (string path)
-		{
-			return GetNode (path, false);
-		}
+        if (childrenBuilder != null)
+            childrenBuilder.Insert(n, node);
+        else
+            children = children.Insert(n, node);
 
-		public TreeNode GetNode(string path, bool buildPath)
-		{
-			return GetNode(path, buildPath, null);
-		}
+        transaction.ReportChildrenChanged(this);
+    }
 
-		public TreeNode GetNode (string path, bool buildPath, ExtensionContextTransaction transaction)
-		{
-			if (path.StartsWith ("/"))
-				path = path.Substring (1);
+    public void RemoveChild(ExtensionContextTransaction transaction, TreeNode node)
+    {
+        node.SetParent(transaction, null);
 
-			string[] parts = path.Split ('/');
-			TreeNode curNode = this;
+        if (childrenBuilder != null)
+            childrenBuilder.Remove(node);
+        else
+            children = children.Remove(node);
 
-			foreach (string part in parts) {
-				curNode.EnsureChildrenLoaded(transaction);
-				var node = curNode.GetChildNode (part);
-				if (node != null) {
-					curNode = node;
-					continue;
-				}
-				
-				if (buildPath) {
-					transaction = BeginContextTransaction (transaction, out var dispose);
-					try {
-						// Check again inside the lock, just in case
-						curNode.EnsureChildrenLoaded(transaction);
-						node = curNode.GetChildNode (part);
-						if (node != null) {
-							curNode = node;
-							continue;
-						}
+        transaction.ReportChildrenChanged(this);
+    }
 
-						TreeNode newNode = new TreeNode (addinEngine, part);
-						curNode.AddChildNode (transaction, newNode);
-						curNode = newNode;
-					} finally {
-						if (dispose)
-							transaction.Dispose ();
-					}
-				} else
-					return null;
-			}
-			return curNode;
-		}
+    private void SetParent(ExtensionContextTransaction transaction, TreeNode newParent)
+    {
+        if (Parent == newParent)
+            return;
 
-		public TreeNode GetChildNode (string id)
-		{
-			var childrenList = Children;
-			foreach (var node in childrenList) {
-				if (node.Id == id)
-					return node;
-			}
-			return null;
-		}
+        if (Parent != null && newParent != null)
+            throw new InvalidOperationException("Node already has a parent");
 
-		public int IndexOfChild (string id)
-		{
-			var childrenList = Children;
-			for (int n = 0; n < childrenList.Count; n++) {
-				if (childrenList [n].Id == id)
-					return n;
-			}
-			return -1;
-		}
+        var currentCtx = Context;
+        if (currentCtx != null && currentCtx != transaction.Context)
+            throw new InvalidOperationException("Invalid context");
 
-		public IReadOnlyList<TreeNode> Children {
-			get {
-				if (IsInChildrenUpdateTransaction) {
-					return childrenBuilder;
-				}
-				EnsureChildrenLoaded(null);
-				return (IReadOnlyList<TreeNode>)childrenBuilder ?? (IReadOnlyList<TreeNode>)children;
-			}
-		}
+        Parent = newParent;
 
-		void EnsureChildrenLoaded(ExtensionContextTransaction transaction)
-		{
-			if (IsInChildrenUpdateTransaction)
-				return;
+        if (newParent != null)
+        {
+            if (newParent.Context != null)
+                OnAttachedToContext(transaction);
+        }
+        else
+        {
+            if (currentCtx != null)
+                OnDetachedFromContext(transaction);
+        }
+    }
 
-			if (!childrenFromExtensionsLoaded)
-			{
-				transaction = BeginContextTransaction(transaction, out var disposeTransaction);
-				try
-				{
-					if (!childrenFromExtensionsLoaded)
-					{
-						if (extensionPoint != null)
-						{
-							BeginChildrenUpdateTransaction(transaction);
-							Context.LoadExtensions(transaction, GetPath(), this);
-							// We have to keep the reference to the extension point, since add-ins may be loaded/unloaded
-						}
-					}
-				}
-				finally
-				{
-					childrenFromExtensionsLoaded = true;
-					if (disposeTransaction)
-						transaction.Dispose();
-				}
-			}
-		}
+    private void OnAttachedToContext(ExtensionContextTransaction transaction)
+    {
+        // Once the node is part of a context, let's register the condition
+        if (Condition != null)
+            transaction.RegisterNodeCondition(this, Condition);
 
-		IReadOnlyList<TreeNode> GetLoadedChildren ()
-		{
-			if (IsInChildrenUpdateTransaction)
-				return childrenBuilder;
-			else
-				return children;
-		}
+        // Propagate event to children
+        foreach (var child in GetLoadedChildren())
+            child.OnAttachedToContext(transaction);
+    }
 
-		/// <summary>
-		/// Returns true if the tree node has a child update transaction in progress,
-		/// and the current thread is the one that created the transaction.
-		/// </summary>
-		bool IsInChildrenUpdateTransaction => childrenBuilder != null && Context.IsCurrentThreadInTransaction;
+    private void OnDetachedFromContext(ExtensionContextTransaction transaction)
+    {
+        // Node being removed, unregister from context
+        if (Condition != null)
+            transaction.UnregisterNodeCondition(this, Condition);
 
-		ExtensionContextTransaction BeginContextTransaction (ExtensionContextTransaction currentTransaction, out bool dispose)
-		{
-			if (currentTransaction != null)
-			{
-				dispose = false;
-				return currentTransaction;
-			}
-			else if (IsInChildrenUpdateTransaction) {
-				dispose = false;
-				return buildTransaction;
-			} else {
-				dispose = true;
-				return Context.BeginTransaction ();
-			}
-		}
+        // Propagate event to children
+        foreach (var child in GetLoadedChildren())
+            child.OnDetachedFromContext(transaction);
+    }
 
-		public void BeginChildrenUpdateTransaction (ExtensionContextTransaction transaction)
-		{
-			// If a transaction already started, just reuse it
-			if (buildTransaction != null)
-				return;
+    public ExtensionNode GetExtensionNode(string path, string childId)
+    {
+        var node = GetNode(path, childId);
+        return node != null ? node.ExtensionNode : null;
+    }
 
-			childrenBuilder = children.ToBuilder ();
-			this.buildTransaction = transaction;
+    public ExtensionNode GetExtensionNode(string path)
+    {
+        var node = GetNode(path);
+        return node != null ? node.ExtensionNode : null;
+    }
 
-			transaction.RegisterChildrenUpdateTransaction (this);
-		}
+    public TreeNode GetNode(string path, string childId)
+    {
+        if (childId == null || childId.Length == 0)
+            return GetNode(path);
+        return GetNode(path + "/" + childId);
+    }
 
-		internal void CommitChildrenUpdateTransaction ()
-		{
-			if (buildTransaction == null)
-				throw new InvalidOperationException ("No transaction started");
+    public TreeNode GetNode(string path)
+    {
+        return GetNode(path, false);
+    }
 
-			children = childrenBuilder.ToImmutable ();
+    public TreeNode GetNode(string path, bool buildPath)
+    {
+        return GetNode(path, buildPath, null);
+    }
 
-			var transaction = buildTransaction;
-			
-			childrenBuilder = null;
-			buildTransaction = null;
+    public TreeNode GetNode(string path, bool buildPath, ExtensionContextTransaction transaction)
+    {
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
 
-			transaction.ReportChildrenChanged (this);
-		}
+        var parts = path.Split('/');
+        var curNode = this;
 
-		public string GetPath ()
-		{
-			int num=0;
-			TreeNode node = this;
-			while (node != null) {
-				num++;
-				node = node.parent;
-			}
-			
-			string[] ids = new string [num];
-			
-			node = this;
-			while (node != null) {
-				ids [--num] = node.id;
-				node = node.parent;
-			}
-			return string.Join ("/", ids);
-		}
-		
-		public void NotifyAddinLoaded (RuntimeAddin ad, bool recursive)
-		{
-			if (extensionNode != null && extensionNode.AddinId == ad.Addin.Id)
-				extensionNode.NotifyAddinLoaded ();
-			if (recursive && childrenFromExtensionsLoaded) {
-				foreach (TreeNode node in Children)
-					node.NotifyAddinLoaded (ad, true);
-			}
-		}
-		
-		public ExtensionPoint FindLoadedExtensionPoint (string path)
-		{
-			if (path.StartsWith ("/"))
-				path = path.Substring (1);
+        foreach (var part in parts)
+        {
+            curNode.EnsureChildrenLoaded(transaction);
+            var node = curNode.GetChildNode(part);
+            if (node != null)
+            {
+                curNode = node;
+                continue;
+            }
 
-			string[] parts = path.Split ('/');
-			TreeNode curNode = this;
+            if (buildPath)
+            {
+                transaction = BeginContextTransaction(transaction, out var dispose);
+                try
+                {
+                    // Check again inside the lock, just in case
+                    curNode.EnsureChildrenLoaded(transaction);
+                    node = curNode.GetChildNode(part);
+                    if (node != null)
+                    {
+                        curNode = node;
+                        continue;
+                    }
 
-			foreach (string part in parts) {
-				var node = curNode.GetChildNode (part);
-				if (node != null) {
-					curNode = node;
-					if (!curNode.ChildrenFromExtensionsLoaded)
-						return null;
-					if (curNode.ExtensionPoint != null)
-						return curNode.ExtensionPoint;
-					continue;
-				}
-				return null;
-			}
-			return null;
-		}
-		
-		public void FindAddinNodes (string id, List<TreeNode> nodes)
-		{
-			if (id != null && extensionPoint != null && extensionPoint.RootAddin == id) {
-				// It is an extension point created by the add-in. All nodes below this
-				// extension point will be added to the list, even if they come from other add-ins.
-				id = null;
-			}
+                    var newNode = new TreeNode(addinEngine, part);
+                    curNode.AddChildNode(transaction, newNode);
+                    curNode = newNode;
+                }
+                finally
+                {
+                    if (dispose)
+                        transaction.Dispose();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
 
-			if (childrenFromExtensionsLoaded) {
-				// Deep-first search, to make sure children are removed before the parent.
-				foreach (TreeNode node in Children)
-					node.FindAddinNodes (id, nodes);
-			}
-			
-			if (id == null || AddinId == id)
-				nodes.Add (this);
-		}
-		
-		public bool NotifyChildrenChanged ()
-		{
-			if (extensionNode != null)
-				return extensionNode.NotifyChildChanged ();
-			else
-				return false;
-		}
+        return curNode;
+    }
 
-		public void ResetCachedData (ExtensionContextTransaction transaction)
-		{
-			if (extensionPoint != null) {
-				string aid = Addin.GetIdName (extensionPoint.ParentAddinDescription.AddinId);
-				RuntimeAddin ad = addinEngine.GetAddin (transaction.GetAddinEngineTransaction(), aid);
-				if (ad != null)
-					extensionPoint = ad.Addin.Description.ExtensionPoints [GetPath ()];
-			}
-			if (childrenBuilder != null) {
-				foreach (TreeNode cn in childrenBuilder)
-					cn.ResetCachedData (transaction);
-			}
+    public TreeNode GetChildNode(string id)
+    {
+        var childrenList = Children;
+        foreach (var node in childrenList)
+            if (node.Id == id)
+                return node;
+        return null;
+    }
 
-			foreach (TreeNode cn in children)
-				cn.ResetCachedData (transaction);
-		}
-	}
+    public int IndexOfChild(string id)
+    {
+        var childrenList = Children;
+        for (var n = 0; n < childrenList.Count; n++)
+            if (childrenList[n].Id == id)
+                return n;
+        return -1;
+    }
+
+    private void EnsureChildrenLoaded(ExtensionContextTransaction transaction)
+    {
+        if (IsInChildrenUpdateTransaction)
+            return;
+
+        if (!ChildrenFromExtensionsLoaded)
+        {
+            transaction = BeginContextTransaction(transaction, out var disposeTransaction);
+            try
+            {
+                if (!ChildrenFromExtensionsLoaded)
+                    if (ExtensionPoint != null)
+                    {
+                        BeginChildrenUpdateTransaction(transaction);
+                        Context.LoadExtensions(transaction, GetPath(), this);
+                        // We have to keep the reference to the extension point, since add-ins may be loaded/unloaded
+                    }
+            }
+            finally
+            {
+                ChildrenFromExtensionsLoaded = true;
+                if (disposeTransaction)
+                    transaction.Dispose();
+            }
+        }
+    }
+
+    private IReadOnlyList<TreeNode> GetLoadedChildren()
+    {
+        if (IsInChildrenUpdateTransaction)
+            return childrenBuilder;
+        return children;
+    }
+
+    private ExtensionContextTransaction BeginContextTransaction(ExtensionContextTransaction currentTransaction,
+        out bool dispose)
+    {
+        if (currentTransaction != null)
+        {
+            dispose = false;
+            return currentTransaction;
+        }
+
+        if (IsInChildrenUpdateTransaction)
+        {
+            dispose = false;
+            return buildTransaction;
+        }
+
+        dispose = true;
+        return Context.BeginTransaction();
+    }
+
+    public void BeginChildrenUpdateTransaction(ExtensionContextTransaction transaction)
+    {
+        // If a transaction already started, just reuse it
+        if (buildTransaction != null)
+            return;
+
+        childrenBuilder = children.ToBuilder();
+        buildTransaction = transaction;
+
+        transaction.RegisterChildrenUpdateTransaction(this);
+    }
+
+    internal void CommitChildrenUpdateTransaction()
+    {
+        if (buildTransaction == null)
+            throw new InvalidOperationException("No transaction started");
+
+        children = childrenBuilder.ToImmutable();
+
+        var transaction = buildTransaction;
+
+        childrenBuilder = null;
+        buildTransaction = null;
+
+        transaction.ReportChildrenChanged(this);
+    }
+
+    public string GetPath()
+    {
+        var num = 0;
+        var node = this;
+        while (node != null)
+        {
+            num++;
+            node = node.Parent;
+        }
+
+        var ids = new string [num];
+
+        node = this;
+        while (node != null)
+        {
+            ids[--num] = node.Id;
+            node = node.Parent;
+        }
+
+        return string.Join("/", ids);
+    }
+
+    public void NotifyAddinLoaded(RuntimeAddin ad, bool recursive)
+    {
+        if (extensionNode != null && extensionNode.AddinId == ad.Addin.Id)
+            extensionNode.NotifyAddinLoaded();
+        if (recursive && ChildrenFromExtensionsLoaded)
+            foreach (var node in Children)
+                node.NotifyAddinLoaded(ad, true);
+    }
+
+    public ExtensionPoint FindLoadedExtensionPoint(string path)
+    {
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+
+        var parts = path.Split('/');
+        var curNode = this;
+
+        foreach (var part in parts)
+        {
+            var node = curNode.GetChildNode(part);
+            if (node != null)
+            {
+                curNode = node;
+                if (!curNode.ChildrenFromExtensionsLoaded)
+                    return null;
+                if (curNode.ExtensionPoint != null)
+                    return curNode.ExtensionPoint;
+                continue;
+            }
+
+            return null;
+        }
+
+        return null;
+    }
+
+    public void FindAddinNodes(string id, List<TreeNode> nodes)
+    {
+        if (id != null && ExtensionPoint != null && ExtensionPoint.RootAddin == id)
+            // It is an extension point created by the add-in. All nodes below this
+            // extension point will be added to the list, even if they come from other add-ins.
+            id = null;
+
+        if (ChildrenFromExtensionsLoaded)
+            // Deep-first search, to make sure children are removed before the parent.
+            foreach (var node in Children)
+                node.FindAddinNodes(id, nodes);
+
+        if (id == null || AddinId == id)
+            nodes.Add(this);
+    }
+
+    public bool NotifyChildrenChanged()
+    {
+        if (extensionNode != null)
+            return extensionNode.NotifyChildChanged();
+        return false;
+    }
+
+    public void ResetCachedData(ExtensionContextTransaction transaction)
+    {
+        if (ExtensionPoint != null)
+        {
+            var aid = Addin.GetIdName(ExtensionPoint.ParentAddinDescription.AddinId);
+            var ad = addinEngine.GetAddin(transaction.GetAddinEngineTransaction(), aid);
+            if (ad != null)
+                ExtensionPoint = ad.Addin.Description.ExtensionPoints[GetPath()];
+        }
+
+        if (childrenBuilder != null)
+            foreach (var cn in childrenBuilder)
+                cn.ResetCachedData(transaction);
+
+        foreach (var cn in children)
+            cn.ResetCachedData(transaction);
+    }
 }

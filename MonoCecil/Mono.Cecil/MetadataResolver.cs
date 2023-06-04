@@ -9,418 +9,421 @@
 //
 
 using System;
-
+using System.Runtime.Serialization;
 using Mono.Collections.Generic;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public interface IAssemblyResolver : IDisposable {
-		AssemblyDefinition Resolve (AssemblyNameReference name);
-		AssemblyDefinition Resolve (AssemblyNameReference name, ReaderParameters parameters);
-	}
+public interface IAssemblyResolver : IDisposable
+{
+    AssemblyDefinition Resolve(AssemblyNameReference name);
+    AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters);
+}
 
-	public interface IMetadataResolver {
-		TypeDefinition Resolve (TypeReference type);
-		FieldDefinition Resolve (FieldReference field);
-		MethodDefinition Resolve (MethodReference method);
-	}
-
-#if !NET_CORE
-	[Serializable]
-#endif
-	public sealed class ResolutionException : Exception {
-
-		readonly MemberReference member;
-
-		public MemberReference Member {
-			get { return member; }
-		}
-
-		public IMetadataScope Scope {
-			get {
-				var type = member as TypeReference;
-				if (type != null)
-					return type.Scope;
-
-				var declaring_type = member.DeclaringType;
-				if (declaring_type != null)
-					return declaring_type.Scope;
-
-				throw new NotSupportedException ();
-			}
-		}
-
-		public ResolutionException (MemberReference member)
-			: base ("Failed to resolve " + member.FullName)
-		{
-			if (member == null)
-				throw new ArgumentNullException ("member");
-
-			this.member = member;
-		}
-
-		public ResolutionException (MemberReference member, Exception innerException)
-			: base ("Failed to resolve " + member.FullName, innerException)
-		{
-			if (member == null)
-				throw new ArgumentNullException ("member");
-
-			this.member = member;
-		}
+public interface IMetadataResolver
+{
+    TypeDefinition Resolve(TypeReference type);
+    FieldDefinition Resolve(FieldReference field);
+    MethodDefinition Resolve(MethodReference method);
+}
 
 #if !NET_CORE
-		ResolutionException (
-			System.Runtime.Serialization.SerializationInfo info,
-			System.Runtime.Serialization.StreamingContext context)
-			: base (info, context)
-		{
-		}
+[Serializable]
 #endif
-	}
+public sealed class ResolutionException : Exception
+{
+    public ResolutionException(MemberReference member)
+        : base("Failed to resolve " + member.FullName)
+    {
+        if (member == null)
+            throw new ArgumentNullException("member");
+
+        this.Member = member;
+    }
+
+    public ResolutionException(MemberReference member, Exception innerException)
+        : base("Failed to resolve " + member.FullName, innerException)
+    {
+        if (member == null)
+            throw new ArgumentNullException("member");
+
+        this.Member = member;
+    }
+
+#if !NET_CORE
+    private ResolutionException(
+        SerializationInfo info,
+        StreamingContext context)
+        : base(info, context)
+    {
+    }
+#endif
+
+    public MemberReference Member { get; }
+
+    public IMetadataScope Scope
+    {
+        get
+        {
+            var type = Member as TypeReference;
+            if (type != null)
+                return type.Scope;
+
+            var declaring_type = Member.DeclaringType;
+            if (declaring_type != null)
+                return declaring_type.Scope;
+
+            throw new NotSupportedException();
+        }
+    }
+}
+
+public class MetadataResolver : IMetadataResolver
+{
+    public MetadataResolver(IAssemblyResolver assemblyResolver)
+    {
+        if (assemblyResolver == null)
+            throw new ArgumentNullException("assemblyResolver");
+
+        AssemblyResolver = assemblyResolver;
+    }
+
+    public IAssemblyResolver AssemblyResolver { get; }
+
+    public virtual TypeDefinition Resolve(TypeReference type)
+    {
+        Mixin.CheckType(type);
+
+        type = type.GetElementType();
+
+        var scope = type.Scope;
+
+        if (scope == null)
+            return null;
+
+        switch (scope.MetadataScopeType)
+        {
+            case MetadataScopeType.AssemblyNameReference:
+                var assembly = AssemblyResolver.Resolve((AssemblyNameReference)scope);
+                if (assembly == null)
+                    return null;
+
+                return GetType(assembly.MainModule, type);
+            case MetadataScopeType.ModuleDefinition:
+                return GetType((ModuleDefinition)scope, type);
+            case MetadataScopeType.ModuleReference:
+                if (type.Module.Assembly == null)
+                    return null;
+
+                var modules = type.Module.Assembly.Modules;
+                var module_ref = (ModuleReference)scope;
+                for (var i = 0; i < modules.Count; i++)
+                {
+                    var netmodule = modules[i];
+                    if (netmodule.Name == module_ref.Name)
+                        return GetType(netmodule, type);
+                }
+
+                break;
+        }
+
+        throw new NotSupportedException();
+    }
+
+    public virtual FieldDefinition Resolve(FieldReference field)
+    {
+        Mixin.CheckField(field);
 
-	public class MetadataResolver : IMetadataResolver {
+        var type = Resolve(field.DeclaringType);
+        if (type == null)
+            return null;
 
-		readonly IAssemblyResolver assembly_resolver;
+        if (!type.HasFields)
+            return null;
 
-		public IAssemblyResolver AssemblyResolver {
-			get { return assembly_resolver; }
-		}
+        return GetField(type, field);
+    }
 
-		public MetadataResolver (IAssemblyResolver assemblyResolver)
-		{
-			if (assemblyResolver == null)
-				throw new ArgumentNullException ("assemblyResolver");
+    public virtual MethodDefinition Resolve(MethodReference method)
+    {
+        Mixin.CheckMethod(method);
 
-			assembly_resolver = assemblyResolver;
-		}
+        var type = Resolve(method.DeclaringType);
+        if (type == null)
+            return null;
 
-		public virtual TypeDefinition Resolve (TypeReference type)
-		{
-			Mixin.CheckType (type);
+        method = method.GetElementMethod();
 
-			type = type.GetElementType ();
+        if (!type.HasMethods)
+            return null;
 
-			var scope = type.Scope;
+        return GetMethod(type, method);
+    }
 
-			if (scope == null)
-				return null;
+    private static TypeDefinition GetType(ModuleDefinition module, TypeReference reference)
+    {
+        var type = GetTypeDefinition(module, reference);
+        if (type != null)
+            return type;
 
-			switch (scope.MetadataScopeType) {
-			case MetadataScopeType.AssemblyNameReference:
-				var assembly = assembly_resolver.Resolve ((AssemblyNameReference) scope);
-				if (assembly == null)
-					return null;
+        if (!module.HasExportedTypes)
+            return null;
 
-				return GetType (assembly.MainModule, type);
-			case MetadataScopeType.ModuleDefinition:
-				return GetType ((ModuleDefinition) scope, type);
-			case MetadataScopeType.ModuleReference:
-				if (type.Module.Assembly == null)
-					return null;
+        var exported_types = module.ExportedTypes;
 
-				var modules = type.Module.Assembly.Modules;
-				var module_ref = (ModuleReference) scope;
-				for (int i = 0; i < modules.Count; i++) {
-					var netmodule = modules [i];
-					if (netmodule.Name == module_ref.Name)
-						return GetType (netmodule, type);
-				}
-				break;
-			}
+        for (var i = 0; i < exported_types.Count; i++)
+        {
+            var exported_type = exported_types[i];
+            if (exported_type.Name != reference.Name)
+                continue;
 
-			throw new NotSupportedException ();
-		}
+            if (exported_type.Namespace != reference.Namespace)
+                continue;
 
-		static TypeDefinition GetType (ModuleDefinition module, TypeReference reference)
-		{
-			var type = GetTypeDefinition (module, reference);
-			if (type != null)
-				return type;
+            return exported_type.Resolve();
+        }
 
-			if (!module.HasExportedTypes)
-				return null;
+        return null;
+    }
 
-			var exported_types = module.ExportedTypes;
+    private static TypeDefinition GetTypeDefinition(ModuleDefinition module, TypeReference type)
+    {
+        if (!type.IsNested)
+            return module.GetType(type.Namespace, type.Name);
 
-			for (int i = 0; i < exported_types.Count; i++) {
-				var exported_type = exported_types [i];
-				if (exported_type.Name != reference.Name)
-					continue;
+        var declaring_type = type.DeclaringType.Resolve();
+        if (declaring_type == null)
+            return null;
 
-				if (exported_type.Namespace != reference.Namespace)
-					continue;
+        return declaring_type.GetNestedType(type.TypeFullName());
+    }
 
-				return exported_type.Resolve ();
-			}
+    private FieldDefinition GetField(TypeDefinition type, FieldReference reference)
+    {
+        while (type != null)
+        {
+            var field = GetField(type.Fields, reference);
+            if (field != null)
+                return field;
 
-			return null;
-		}
+            if (type.BaseType == null)
+                return null;
 
-		static TypeDefinition GetTypeDefinition (ModuleDefinition module, TypeReference type)
-		{
-			if (!type.IsNested)
-				return module.GetType (type.Namespace, type.Name);
+            type = Resolve(type.BaseType);
+        }
 
-			var declaring_type = type.DeclaringType.Resolve ();
-			if (declaring_type == null)
-				return null;
+        return null;
+    }
 
-			return declaring_type.GetNestedType (type.TypeFullName ());
-		}
+    private static FieldDefinition GetField(Collection<FieldDefinition> fields, FieldReference reference)
+    {
+        for (var i = 0; i < fields.Count; i++)
+        {
+            var field = fields[i];
 
-		public virtual FieldDefinition Resolve (FieldReference field)
-		{
-			Mixin.CheckField (field);
+            if (field.Name != reference.Name)
+                continue;
 
-			var type = Resolve (field.DeclaringType);
-			if (type == null)
-				return null;
+            if (!AreSame(field.FieldType, reference.FieldType))
+                continue;
 
-			if (!type.HasFields)
-				return null;
+            return field;
+        }
 
-			return GetField (type, field);
-		}
+        return null;
+    }
 
-		FieldDefinition GetField (TypeDefinition type, FieldReference reference)
-		{
-			while (type != null) {
-				var field = GetField (type.Fields, reference);
-				if (field != null)
-					return field;
+    private MethodDefinition GetMethod(TypeDefinition type, MethodReference reference)
+    {
+        while (type != null)
+        {
+            var method = GetMethod(type.Methods, reference);
+            if (method != null)
+                return method;
 
-				if (type.BaseType == null)
-					return null;
+            if (type.BaseType == null)
+                return null;
 
-				type = Resolve (type.BaseType);
-			}
+            type = Resolve(type.BaseType);
+        }
 
-			return null;
-		}
+        return null;
+    }
 
-		static FieldDefinition GetField (Collection<FieldDefinition> fields, FieldReference reference)
-		{
-			for (int i = 0; i < fields.Count; i++) {
-				var field = fields [i];
+    public static MethodDefinition GetMethod(Collection<MethodDefinition> methods, MethodReference reference)
+    {
+        for (var i = 0; i < methods.Count; i++)
+        {
+            var method = methods[i];
 
-				if (field.Name != reference.Name)
-					continue;
+            if (method.Name != reference.Name)
+                continue;
 
-				if (!AreSame (field.FieldType, reference.FieldType))
-					continue;
+            if (method.HasGenericParameters != reference.HasGenericParameters)
+                continue;
 
-				return field;
-			}
+            if (method.HasGenericParameters && method.GenericParameters.Count != reference.GenericParameters.Count)
+                continue;
 
-			return null;
-		}
+            if (!AreSame(method.ReturnType, reference.ReturnType))
+                continue;
 
-		public virtual MethodDefinition Resolve (MethodReference method)
-		{
-			Mixin.CheckMethod (method);
+            if (method.HasThis != reference.HasThis)
+                continue;
 
-			var type = Resolve (method.DeclaringType);
-			if (type == null)
-				return null;
+            if (method.IsVarArg() != reference.IsVarArg())
+                continue;
 
-			method = method.GetElementMethod ();
+            if (method.IsVarArg() && IsVarArgCallTo(method, reference))
+                return method;
 
-			if (!type.HasMethods)
-				return null;
+            if (method.HasParameters != reference.HasParameters)
+                continue;
 
-			return GetMethod (type, method);
-		}
+            if (!method.HasParameters && !reference.HasParameters)
+                return method;
 
-		MethodDefinition GetMethod (TypeDefinition type, MethodReference reference)
-		{
-			while (type != null) {
-				var method = GetMethod (type.Methods, reference);
-				if (method != null)
-					return method;
+            if (!AreSame(method.Parameters, reference.Parameters))
+                continue;
 
-				if (type.BaseType == null)
-					return null;
+            return method;
+        }
 
-				type = Resolve (type.BaseType);
-			}
+        return null;
+    }
 
-			return null;
-		}
+    private static bool AreSame(Collection<ParameterDefinition> a, Collection<ParameterDefinition> b)
+    {
+        var count = a.Count;
 
-		public static MethodDefinition GetMethod (Collection<MethodDefinition> methods, MethodReference reference)
-		{
-			for (int i = 0; i < methods.Count; i++) {
-				var method = methods [i];
+        if (count != b.Count)
+            return false;
 
-				if (method.Name != reference.Name)
-					continue;
+        if (count == 0)
+            return true;
 
-				if (method.HasGenericParameters != reference.HasGenericParameters)
-					continue;
+        for (var i = 0; i < count; i++)
+            if (!AreSame(a[i].ParameterType, b[i].ParameterType))
+                return false;
 
-				if (method.HasGenericParameters && method.GenericParameters.Count != reference.GenericParameters.Count)
-					continue;
+        return true;
+    }
 
-				if (!AreSame (method.ReturnType, reference.ReturnType))
-					continue;
+    private static bool IsVarArgCallTo(MethodDefinition method, MethodReference reference)
+    {
+        if (method.Parameters.Count >= reference.Parameters.Count)
+            return false;
 
-				if (method.HasThis != reference.HasThis)
-					continue;
+        if (reference.GetSentinelPosition() != method.Parameters.Count)
+            return false;
 
-				if (method.IsVarArg () != reference.IsVarArg ())
-					continue;
+        for (var i = 0; i < method.Parameters.Count; i++)
+            if (!AreSame(method.Parameters[i].ParameterType, reference.Parameters[i].ParameterType))
+                return false;
 
-				if (method.IsVarArg () && IsVarArgCallTo (method, reference))
-					return method;
+        return true;
+    }
 
-				if (method.HasParameters != reference.HasParameters)
-					continue;
+    private static bool AreSame(TypeSpecification a, TypeSpecification b)
+    {
+        if (!AreSame(a.ElementType, b.ElementType))
+            return false;
 
-				if (!method.HasParameters && !reference.HasParameters)
-					return method;
+        if (a.IsGenericInstance)
+            return AreSame((GenericInstanceType)a, (GenericInstanceType)b);
 
-				if (!AreSame (method.Parameters, reference.Parameters))
-					continue;
+        if (a.IsRequiredModifier || a.IsOptionalModifier)
+            return AreSame((IModifierType)a, (IModifierType)b);
 
-				return method;
-			}
+        if (a.IsArray)
+            return AreSame((ArrayType)a, (ArrayType)b);
 
-			return null;
-		}
+        if (a.IsFunctionPointer)
+            return AreSame((FunctionPointerType)a, (FunctionPointerType)b);
 
-		static bool AreSame (Collection<ParameterDefinition> a, Collection<ParameterDefinition> b)
-		{
-			var count = a.Count;
+        return true;
+    }
 
-			if (count != b.Count)
-				return false;
+    private static bool AreSame(FunctionPointerType a, FunctionPointerType b)
+    {
+        if (a.HasThis != b.HasThis)
+            return false;
 
-			if (count == 0)
-				return true;
+        if (a.CallingConvention != b.CallingConvention)
+            return false;
 
-			for (int i = 0; i < count; i++)
-				if (!AreSame (a [i].ParameterType, b [i].ParameterType))
-					return false;
+        if (!AreSame(a.ReturnType, b.ReturnType))
+            return false;
 
-			return true;
-		}
+        if (a.ContainsGenericParameter != b.ContainsGenericParameter)
+            return false;
 
-		static bool IsVarArgCallTo (MethodDefinition method, MethodReference reference)
-		{
-			if (method.Parameters.Count >= reference.Parameters.Count)
-				return false;
+        if (a.HasParameters != b.HasParameters)
+            return false;
 
-			if (reference.GetSentinelPosition () != method.Parameters.Count)
-				return false;
+        if (!a.HasParameters)
+            return true;
 
-			for (int i = 0; i < method.Parameters.Count; i++)
-				if (!AreSame (method.Parameters [i].ParameterType, reference.Parameters [i].ParameterType))
-					return false;
+        if (!AreSame(a.Parameters, b.Parameters))
+            return false;
 
-			return true;
-		}
+        return true;
+    }
 
-		static bool AreSame (TypeSpecification a, TypeSpecification b)
-		{
-			if (!AreSame (a.ElementType, b.ElementType))
-				return false;
+    private static bool AreSame(ArrayType a, ArrayType b)
+    {
+        if (a.Rank != b.Rank)
+            return false;
 
-			if (a.IsGenericInstance)
-				return AreSame ((GenericInstanceType) a, (GenericInstanceType) b);
+        // TODO: dimensions
 
-			if (a.IsRequiredModifier || a.IsOptionalModifier)
-				return AreSame ((IModifierType) a, (IModifierType) b);
+        return true;
+    }
 
-			if (a.IsArray)
-				return AreSame ((ArrayType) a, (ArrayType) b);
+    private static bool AreSame(IModifierType a, IModifierType b)
+    {
+        return AreSame(a.ModifierType, b.ModifierType);
+    }
 
-			if (a.IsFunctionPointer)
-				return AreSame ((FunctionPointerType) a, (FunctionPointerType) b);
+    private static bool AreSame(GenericInstanceType a, GenericInstanceType b)
+    {
+        if (a.GenericArguments.Count != b.GenericArguments.Count)
+            return false;
 
-			return true;
-		}
+        for (var i = 0; i < a.GenericArguments.Count; i++)
+            if (!AreSame(a.GenericArguments[i], b.GenericArguments[i]))
+                return false;
 
-		static bool AreSame (FunctionPointerType a, FunctionPointerType b)
-		{
-			if (a.HasThis != b.HasThis)
-				return false;
-			
-			if (a.CallingConvention != b.CallingConvention)
-				return false;
+        return true;
+    }
 
-			if (!AreSame (a.ReturnType, b.ReturnType))
-				return false;
+    private static bool AreSame(GenericParameter a, GenericParameter b)
+    {
+        return a.Position == b.Position;
+    }
 
-			if (a.ContainsGenericParameter != b.ContainsGenericParameter)
-				return false;
+    private static bool AreSame(TypeReference a, TypeReference b)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
 
-			if (a.HasParameters != b.HasParameters)
-				return false;
+        if (a == null || b == null)
+            return false;
 
-			if (!a.HasParameters)
-				return true;
+        if (a.etype != b.etype)
+            return false;
 
-			if (!AreSame (a.Parameters, b.Parameters))
-				return false;
-			
-			return true;
-		}
+        if (a.IsGenericParameter)
+            return AreSame((GenericParameter)a, (GenericParameter)b);
 
-		static bool AreSame (ArrayType a, ArrayType b)
-		{
-			if (a.Rank != b.Rank)
-				return false;
+        if (a.IsTypeSpecification())
+            return AreSame((TypeSpecification)a, (TypeSpecification)b);
 
-			// TODO: dimensions
+        if (a.Name != b.Name || a.Namespace != b.Namespace)
+            return false;
 
-			return true;
-		}
+        //TODO: check scope
 
-		static bool AreSame (IModifierType a, IModifierType b)
-		{
-			return AreSame (a.ModifierType, b.ModifierType);
-		}
-
-		static bool AreSame (GenericInstanceType a, GenericInstanceType b)
-		{
-			if (a.GenericArguments.Count != b.GenericArguments.Count)
-				return false;
-
-			for (int i = 0; i < a.GenericArguments.Count; i++)
-				if (!AreSame (a.GenericArguments [i], b.GenericArguments [i]))
-					return false;
-
-			return true;
-		}
-
-		static bool AreSame (GenericParameter a, GenericParameter b)
-		{
-			return a.Position == b.Position;
-		}
-
-		static bool AreSame (TypeReference a, TypeReference b)
-		{
-			if (ReferenceEquals (a, b))
-				return true;
-
-			if (a == null || b == null)
-				return false;
-
-			if (a.etype != b.etype)
-				return false;
-
-			if (a.IsGenericParameter)
-				return AreSame ((GenericParameter) a, (GenericParameter) b);
-
-			if (a.IsTypeSpecification ())
-				return AreSame ((TypeSpecification) a, (TypeSpecification) b);
-
-			if (a.Name != b.Name || a.Namespace != b.Namespace)
-				return false;
-
-			//TODO: check scope
-
-			return AreSame (a.DeclaringType, b.DeclaringType);
-		}
-	}
+        return AreSame(a.DeclaringType, b.DeclaringType);
+    }
 }

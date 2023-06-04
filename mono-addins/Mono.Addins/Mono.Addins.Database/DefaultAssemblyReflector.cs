@@ -26,173 +26,183 @@
 //
 
 using System;
-using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class DefaultAssemblyReflector : IAssemblyReflector
 {
-	class DefaultAssemblyReflector : IAssemblyReflector
-	{
-		public void Initialize (IAssemblyLocator locator)
-		{
-		}
+    public void Initialize(IAssemblyLocator locator)
+    {
+    }
 
-		public object LoadAssembly (string file)
-		{
-			return Util.LoadAssemblyForReflection (file);
-		}
+    public object LoadAssembly(string file)
+    {
+        return Util.LoadAssemblyForReflection(file);
+    }
 
-		public void UnloadAssembly (object assembly)
-		{
-		}
+    public void UnloadAssembly(object assembly)
+    {
+    }
 
-		public string GetAssemblyName (object asm)
-		{
-			return ((Assembly)asm).GetName().Name;
-		}
+    public string GetAssemblyName(object asm)
+    {
+        return ((Assembly)asm).GetName().Name;
+    }
 
-		public string [] GetResourceNames (object asm)
-		{
-			return ((Assembly)asm).GetManifestResourceNames ();
-		}
-		
-		public System.IO.Stream GetResourceStream (object asm, string resourceName)
-		{
-			return ((Assembly)asm).GetManifestResourceStream (resourceName);
-		}
+    public string[] GetResourceNames(object asm)
+    {
+        return ((Assembly)asm).GetManifestResourceNames();
+    }
 
-		public object[] GetCustomAttributes (object obj, Type type, bool inherit)
-		{
-			ICustomAttributeProvider aprov = obj as ICustomAttributeProvider;
-			if (aprov != null)
-				return aprov.GetCustomAttributes (type, inherit);
-			else
-				return new object [0];
-		}
+    public Stream GetResourceStream(object asm, string resourceName)
+    {
+        return ((Assembly)asm).GetManifestResourceStream(resourceName);
+    }
 
-		public object GetCustomAttribute (object obj, Type type, bool inherit)
-		{
-			foreach (object att in GetCustomAttributes (obj, type, inherit))
-				if (type.IsInstanceOfType (att))
-					return att;
-			return null;
-		}
-		
-		public List<CustomAttribute> GetRawCustomAttributes (object obj, Type type, bool inherit)
-		{
-			ICustomAttributeProvider aprov = obj as ICustomAttributeProvider;
-			List<CustomAttribute> atts = new List<CustomAttribute> ();
-			if (aprov == null)
-				return atts;
-			
-			foreach (object at in aprov.GetCustomAttributes (type, inherit))
-				atts.Add (ConvertAttribute (at));
+    public object[] GetCustomAttributes(object obj, Type type, bool inherit)
+    {
+        var aprov = obj as ICustomAttributeProvider;
+        if (aprov != null)
+            return aprov.GetCustomAttributes(type, inherit);
+        return new object [0];
+    }
 
-			return atts;
-		}
+    public object GetCustomAttribute(object obj, Type type, bool inherit)
+    {
+        foreach (var att in GetCustomAttributes(obj, type, inherit))
+            if (type.IsInstanceOfType(att))
+                return att;
+        return null;
+    }
 
-		CustomAttribute ConvertAttribute (object ob)
-		{
-			CustomAttribute at = new CustomAttribute ();
-			Type type = ob.GetType ();
-			at.TypeName = type.AssemblyQualifiedName;
-			
-			foreach (PropertyInfo prop in type.GetProperties (BindingFlags.Public | BindingFlags.Instance)) {
-				object val = prop.GetValue (ob, null);
-				if (val != null) {
-					NodeAttributeAttribute bt = (NodeAttributeAttribute) Attribute.GetCustomAttribute (prop, typeof(NodeAttributeAttribute), true);
-					if (bt != null) {
-						string name = string.IsNullOrEmpty (bt.Name) ? prop.Name : bt.Name;
-						at [name] = Convert.ToString (val, System.Globalization.CultureInfo.InvariantCulture);
-					}
-				}
-			}
-			foreach (FieldInfo field in type.GetFields (BindingFlags.Public | BindingFlags.Instance)) {
-				object val = field.GetValue (ob);
-				if (val != null) {
-					NodeAttributeAttribute bt = (NodeAttributeAttribute) Attribute.GetCustomAttribute (field, typeof(NodeAttributeAttribute), true);
-					if (bt != null) {
-						string name = string.IsNullOrEmpty (bt.Name) ? field.Name : bt.Name;
-						at [name] = Convert.ToString (val, System.Globalization.CultureInfo.InvariantCulture);
-					}
-				}
-			}
-			return at;
-		}
-		
-		public string GetTypeName (object type)
-		{
-			return ((Type)type).Name;
-		}
+    public List<CustomAttribute> GetRawCustomAttributes(object obj, Type type, bool inherit)
+    {
+        var aprov = obj as ICustomAttributeProvider;
+        var atts = new List<CustomAttribute>();
+        if (aprov == null)
+            return atts;
 
-		public string GetTypeAssemblyName (object type)
-		{
-			return ((Type)type).Assembly.FullName;
-		}
+        foreach (var at in aprov.GetCustomAttributes(type, inherit))
+            atts.Add(ConvertAttribute(at));
 
-		public IEnumerable GetFields (object type)
-		{
-			return ((Type)type).GetFields (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-		}
+        return atts;
+    }
 
-		public string GetFieldName (object field)
-		{
-			return ((FieldInfo)field).Name;
-		}
+    public string GetTypeName(object type)
+    {
+        return ((Type)type).Name;
+    }
 
-		public string GetFieldTypeFullName (object field)
-		{
-			return ((FieldInfo)field).FieldType.AssemblyQualifiedName;
-		}
-		
-		public IEnumerable GetAssemblyTypes (object asm)
-		{
-			return ((Assembly)asm).GetTypes ();
-		}
+    public IEnumerable GetFields(object type)
+    {
+        return ((Type)type).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+    }
 
-		public IEnumerable GetBaseTypeFullNameList (object type)
-		{
-			var list = new List<string> ();
-			Type btype = ((Type)type).BaseType;
-			while (btype != typeof(object)) {
-				list.Add (btype.FullName);
-				btype = btype.BaseType;
-			}
-			foreach (Type iterf in ((Type)type).GetInterfaces ()) {
-				list.Add (iterf.FullName);
-			}
-			return list;
-		}
+    public string GetFieldName(object field)
+    {
+        return ((FieldInfo)field).Name;
+    }
 
-		public object LoadAssemblyFromReference (object asmReference)
-		{
-			return Assembly.Load ((AssemblyName)asmReference);
-		}
+    public string GetFieldTypeFullName(object field)
+    {
+        return ((FieldInfo)field).FieldType.AssemblyQualifiedName;
+    }
 
-		public IEnumerable GetAssemblyReferences (object asm)
-		{
-			return ((Assembly)asm).GetReferencedAssemblies ();
-		}
+    public IEnumerable GetAssemblyTypes(object asm)
+    {
+        return ((Assembly)asm).GetTypes();
+    }
 
-		public object GetType (object asm, string typeName)
-		{
-			return ((Assembly)asm).GetType (typeName);
-		}
+    public IEnumerable GetBaseTypeFullNameList(object type)
+    {
+        var list = new List<string>();
+        var btype = ((Type)type).BaseType;
+        while (btype != typeof(object))
+        {
+            list.Add(btype.FullName);
+            btype = btype.BaseType;
+        }
 
-		public string GetTypeFullName (object type)
-		{
-			return ((Type)type).FullName;
-		}
+        foreach (var iterf in ((Type)type).GetInterfaces()) list.Add(iterf.FullName);
+        return list;
+    }
 
-		public bool TypeIsAssignableFrom (object baseType, object type)
-		{
-			return ((Type)baseType).IsAssignableFrom ((Type)type);
-		}
+    public object LoadAssemblyFromReference(object asmReference)
+    {
+        return Assembly.Load((AssemblyName)asmReference);
+    }
 
-		public string GetTypeAssemblyQualifiedName (object type)
-		{
-			return ((Type)type).AssemblyQualifiedName;
-		}
-	}
+    public IEnumerable GetAssemblyReferences(object asm)
+    {
+        return ((Assembly)asm).GetReferencedAssemblies();
+    }
+
+    public object GetType(object asm, string typeName)
+    {
+        return ((Assembly)asm).GetType(typeName);
+    }
+
+    public string GetTypeFullName(object type)
+    {
+        return ((Type)type).FullName;
+    }
+
+    public bool TypeIsAssignableFrom(object baseType, object type)
+    {
+        return ((Type)baseType).IsAssignableFrom((Type)type);
+    }
+
+    public string GetTypeAssemblyQualifiedName(object type)
+    {
+        return ((Type)type).AssemblyQualifiedName;
+    }
+
+    private CustomAttribute ConvertAttribute(object ob)
+    {
+        var at = new CustomAttribute();
+        var type = ob.GetType();
+        at.TypeName = type.AssemblyQualifiedName;
+
+        foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var val = prop.GetValue(ob, null);
+            if (val != null)
+            {
+                var bt = (NodeAttributeAttribute)Attribute.GetCustomAttribute(prop, typeof(NodeAttributeAttribute),
+                    true);
+                if (bt != null)
+                {
+                    var name = string.IsNullOrEmpty(bt.Name) ? prop.Name : bt.Name;
+                    at[name] = Convert.ToString(val, CultureInfo.InvariantCulture);
+                }
+            }
+        }
+
+        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var val = field.GetValue(ob);
+            if (val != null)
+            {
+                var bt = (NodeAttributeAttribute)Attribute.GetCustomAttribute(field, typeof(NodeAttributeAttribute),
+                    true);
+                if (bt != null)
+                {
+                    var name = string.IsNullOrEmpty(bt.Name) ? field.Name : bt.Name;
+                    at[name] = Convert.ToString(val, CultureInfo.InvariantCulture);
+                }
+            }
+        }
+
+        return at;
+    }
+
+    public string GetTypeAssemblyName(object type)
+    {
+        return ((Type)type).Assembly.FullName;
+    }
 }

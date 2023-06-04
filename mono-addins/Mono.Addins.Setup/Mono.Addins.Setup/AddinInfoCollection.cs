@@ -26,20 +26,16 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+internal class AddinInfoCollection : CollectionBase
 {
-	internal class AddinInfoCollection: CollectionBase
-	{
-		public AddinInfo this [int n] {
-			get { return (AddinInfo) List [n]; }
-		}
-		
-		public void Add (AddinInfo p)
-		{
-			List.Add (p);
-		}
-	}
+    public AddinInfo this[int n] => (AddinInfo)List[n];
+
+    public void Add(AddinInfo p)
+    {
+        List.Add(p);
+    }
 }

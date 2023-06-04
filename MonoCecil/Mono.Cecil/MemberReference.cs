@@ -10,93 +10,89 @@
 
 using System;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public abstract class MemberReference : IMetadataTokenProvider {
+public abstract class MemberReference : IMetadataTokenProvider
+{
+    private TypeReference declaring_type;
 
-		string name;
-		TypeReference declaring_type;
+    private string name;
+    internal object projection;
 
-		internal MetadataToken token;
-		internal object projection;
+    internal MetadataToken token;
 
-		public virtual string Name {
-			get { return name; }
-			set {
-				if (IsWindowsRuntimeProjection && value != name)
-					throw new InvalidOperationException ();
+    internal MemberReference()
+    {
+    }
 
-				name = value;
-			}
-		}
+    internal MemberReference(string name)
+    {
+        this.name = name ?? string.Empty;
+    }
 
-		public abstract string FullName {
-			get;
-		}
+    public virtual string Name
+    {
+        get => name;
+        set
+        {
+            if (IsWindowsRuntimeProjection && value != name)
+                throw new InvalidOperationException();
 
-		public virtual TypeReference DeclaringType {
-			get { return declaring_type; }
-			set { declaring_type = value; }
-		}
+            name = value;
+        }
+    }
 
-		public MetadataToken MetadataToken {
-			get { return token; }
-			set { token = value; }
-		}
+    public abstract string FullName { get; }
 
-		public bool IsWindowsRuntimeProjection {
-			get { return projection != null; }
-		}
+    public virtual TypeReference DeclaringType
+    {
+        get => declaring_type;
+        set => declaring_type = value;
+    }
 
-		internal bool HasImage {
-			get {
-				var module = Module;
-				if (module == null)
-					return false;
+    public bool IsWindowsRuntimeProjection => projection != null;
 
-				return module.HasImage;
-			}
-		}
+    internal bool HasImage
+    {
+        get
+        {
+            var module = Module;
+            if (module == null)
+                return false;
 
-		public virtual ModuleDefinition Module {
-			get { return declaring_type != null ? declaring_type.Module : null; }
-		}
+            return module.HasImage;
+        }
+    }
 
-		public virtual bool IsDefinition {
-			get { return false; }
-		}
+    public virtual ModuleDefinition Module => declaring_type != null ? declaring_type.Module : null;
 
-		public virtual bool ContainsGenericParameter {
-			get { return declaring_type != null && declaring_type.ContainsGenericParameter; }
-		}
+    public virtual bool IsDefinition => false;
 
-		internal MemberReference ()
-		{
-		}
+    public virtual bool ContainsGenericParameter => declaring_type != null && declaring_type.ContainsGenericParameter;
 
-		internal MemberReference (string name)
-		{
-			this.name = name ?? string.Empty;
-		}
+    public MetadataToken MetadataToken
+    {
+        get => token;
+        set => token = value;
+    }
 
-		internal string MemberFullName ()
-		{
-			if (declaring_type == null)
-				return name;
+    internal string MemberFullName()
+    {
+        if (declaring_type == null)
+            return name;
 
-			return declaring_type.FullName + "::" + name;
-		}
+        return declaring_type.FullName + "::" + name;
+    }
 
-		public IMemberDefinition Resolve ()
-		{
-			return ResolveDefinition ();
-		}
+    public IMemberDefinition Resolve()
+    {
+        return ResolveDefinition();
+    }
 
-		protected abstract IMemberDefinition ResolveDefinition ();
+    protected abstract IMemberDefinition ResolveDefinition();
 
-		public override string ToString ()
-		{
-			return FullName;
-		}
-	}
+    public override string ToString()
+    {
+        return FullName;
+    }
 }

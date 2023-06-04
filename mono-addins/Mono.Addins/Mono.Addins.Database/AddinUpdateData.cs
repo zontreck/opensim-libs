@@ -29,282 +29,329 @@
 
 using System;
 using System.Collections;
-using Mono.Addins.Description;
 using System.Collections.Generic;
-using System.Linq;
+using Mono.Addins.Description;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AddinUpdateData
 {
-	class AddinUpdateData
-	{
-		// This table collects information about extensions. Each path (key)
-		// has a RootExtensionPoint object with information about the addin that
-		// defines the extension point and the addins which extend it
-		Dictionary<string,List<RootExtensionPoint>> pathHash = new Dictionary<string,List<RootExtensionPoint>> ();
-		
-		// Collects globally defined node sets. Key is node set name. Value is
-		// a RootExtensionPoint
-		Dictionary<string,List<RootExtensionPoint>> nodeSetHash = new Dictionary<string,List<RootExtensionPoint>> ();
-		
-		Dictionary<string,List<ExtensionPoint>> objectTypeExtensions = new Dictionary<string,List<ExtensionPoint>> ();
-		
-		Dictionary<string,List<ExtensionNodeType>> customAttributeTypeExtensions = new Dictionary<string,List<ExtensionNodeType>> ();
-		
-		internal int RelExtensionPoints;
-		internal int RelExtensions;
-		internal int RelNodeSetTypes;
-		internal int RelExtensionNodes;
-		
-		class RootExtensionPoint
-		{
-			public AddinDescription Description;
-			public ExtensionPoint ExtensionPoint;
-		}
-		
-		IProgressStatus monitor;
-		
-		public AddinUpdateData (AddinDatabase database, IProgressStatus monitor)
-		{
-			this.monitor = monitor;
-		}
-		
-		public void RegisterNodeSet (AddinDescription description, ExtensionNodeSet nset)
-		{
-			List<RootExtensionPoint> extensions;
-			if (nodeSetHash.TryGetValue (nset.Id, out extensions)) {
-				// Extension point already registered
-				List<ExtensionPoint> compatExtensions = GetCompatibleExtensionPoints (nset.Id, description, description.MainModule, extensions);
-				if (compatExtensions.Count > 0) {
-					foreach (ExtensionPoint einfo in compatExtensions)
-						einfo.NodeSet.MergeWith (null, nset);
-					return;
-				}
-			}
-			// Create a new extension set
-			RootExtensionPoint rep = new RootExtensionPoint ();
-			rep.ExtensionPoint = new ExtensionPoint ();
-			rep.ExtensionPoint.SetNodeSet (nset);
-			rep.ExtensionPoint.RootAddin = description.AddinId;
-			rep.ExtensionPoint.Path = nset.Id;
-			rep.Description = description;
-			if (extensions == null) {
-				extensions = new List<RootExtensionPoint> ();
-				nodeSetHash [nset.Id] = extensions;
-			}
-			extensions.Add (rep);
-		}
-		
-		public void RegisterExtensionPoint (AddinDescription description, ExtensionPoint ep)
-		{
-			List<RootExtensionPoint> extensions;
-			if (pathHash.TryGetValue (ep.Path, out extensions)) {
-				// Extension point already registered
-				List<ExtensionPoint> compatExtensions = GetCompatibleExtensionPoints (ep.Path, description, description.MainModule, extensions);
-				if (compatExtensions.Count > 0) {
-					foreach (ExtensionPoint einfo in compatExtensions)
-						einfo.MergeWith (null, ep);
-					RegisterObjectTypes (ep);
-					return;
-				}
-			}
-			// Create a new extension
-			RootExtensionPoint rep = new RootExtensionPoint ();
-			rep.ExtensionPoint = ep;
-			rep.ExtensionPoint.RootAddin = description.AddinId;
-			rep.Description = description;
-			if (extensions == null) {
-				extensions = new List<RootExtensionPoint> ();
-				pathHash [ep.Path] = extensions;
-			}
-			extensions.Add (rep);
-			RegisterObjectTypes (ep);
-		}
-			
-		void RegisterObjectTypes (ExtensionPoint ep)
-		{
-			// Register extension points bound to a node type
-			
-			foreach (ExtensionNodeType nt in ep.NodeSet.NodeTypes) {
-				if (nt.ObjectTypeName.Length > 0) {
-					if (Util.TryParseTypeName (nt.ObjectTypeName, out var typeName, out var _)) {
-						List<ExtensionPoint> list;
-						if (!objectTypeExtensions.TryGetValue (typeName, out list)) {
-							list = new List<ExtensionPoint> ();
-							objectTypeExtensions [typeName] = list;
-						}
-						list.Add (ep);
-					}
-				}
-				if (nt.ExtensionAttributeTypeName.Length > 0) {
-					List<ExtensionNodeType> list;
-					if (Util.TryParseTypeName (nt.ExtensionAttributeTypeName, out var tname, out _)) {
-						if (!customAttributeTypeExtensions.TryGetValue (tname, out list)) {
-							list = new List<ExtensionNodeType> ();
-							customAttributeTypeExtensions [tname] = list;
-						}
-						list.Add (nt);
-					}
-				}
-			}
-		}
+    private readonly Dictionary<string, List<ExtensionNodeType>> customAttributeTypeExtensions = new();
 
-		public void RegisterExtension (AddinDescription description, ModuleDescription module, Extension extension)
-		{
-			if (extension.Path.StartsWith ("$")) {
-				string[] objectTypes = extension.Path.Substring (1).Split (',');
-				bool found = false;
-				foreach (string s in objectTypes) {
-					if (Util.TryParseTypeName (s, out var typeName, out var _)) {
-						List<ExtensionPoint> list;
-						if (objectTypeExtensions.TryGetValue (typeName, out list)) {
-							found = true;
-							foreach (ExtensionPoint ep in list) {
-								if (IsAddinCompatible (ep.ParentAddinDescription, description, module)) {
-									extension.Path = ep.Path;
-									RegisterExtension (description, module, ep.Path);
-								}
-							}
-						}
-					}
-				}
-				if (!found)
-					monitor.ReportWarning ("The add-in '" + description.AddinId + "' is trying to register the class '" + extension.Path.Substring (1) + "', but there isn't any add-in defining a suitable extension point");
-			}
-			else if (extension.Path.StartsWith ("%", StringComparison.Ordinal)) {
-				string[] objectTypes = extension.Path.Substring (1).Split (',');
-				bool found = false;
-				foreach (string s in objectTypes) {
-					List<ExtensionNodeType> list;
-					if (customAttributeTypeExtensions.TryGetValue (s, out list)) {
-						found = true;
-						foreach (ExtensionNodeType nt in list) {
-							ExtensionPoint ep = (ExtensionPoint) ((ExtensionNodeSet)nt.Parent).Parent;
-							if (IsAddinCompatible (ep.ParentAddinDescription, description, module)) {
-								extension.Path = ep.Path;
-								foreach (ExtensionNodeDescription node in GetNodesIgnoringConditions (extension)) {
-									node.NodeName = nt.NodeName;
-								}
-								RegisterExtension (description, module, ep.Path);
-							}
-						}
-					}
-				}
-				if (!found)
-					monitor.ReportWarning ("The add-in '" + description.AddinId + "' is trying to register the class '" + extension.Path.Substring (1) + "', but there isn't any add-in defining a suitable extension point");
-			}
-		}
+    private readonly IProgressStatus monitor;
 
-		static IEnumerable<ExtensionNodeDescription> GetNodesIgnoringConditions (Extension extension)
-		{
-			foreach (ExtensionNodeDescription node in extension.ExtensionNodes) {
-				if (node.IsCondition) {
-					//first node in a complex condition is the actual condition
-					bool skipFirst = node.NodeName == "ComplexCondition";
-					foreach (ExtensionNodeDescription child in node.ChildNodes) {
-						if (skipFirst) {
-							skipFirst = false;
-							continue;
-						}
-						yield return child;
-					}
-				} else {
-					yield return node;
-				}
-			}
-		}
-		
-		public void RegisterExtension (AddinDescription description, ModuleDescription module, string path)
-		{
-			List<RootExtensionPoint> extensions;
-			if (!pathHash.TryGetValue (path, out extensions)) {
-				// Root add-in extension points are registered before any other kind of extension,
-				// so we should find it now.
-				extensions = GetParentExtensionInfo (path);
-			}
-			if (extensions == null) {
-				monitor.ReportWarning ("The add-in '" + description.AddinId + "' is trying to extend '" + path + "', but there isn't any add-in defining this extension point");
-				return;
-			}
-			
-			bool found = false;
-			foreach (RootExtensionPoint einfo in extensions) {
-				if (IsAddinCompatible (einfo.Description, description, module)) {
-					if (!einfo.ExtensionPoint.Addins.Contains (description.AddinId))
-						einfo.ExtensionPoint.Addins.Add (description.AddinId);
-					found = true;
-					if (monitor.LogLevel > 2) {
-						monitor.Log ("  * " + einfo.Description.AddinId + "(" + einfo.Description.Domain + ") <- " + path);
-					}
-				}
-			}
-			if (!found)
-				monitor.ReportWarning ("The add-in '" + description.AddinId + "' is trying to extend '" + path + "', but there isn't any compatible add-in defining this extension point");
-		}
-		
-		List<ExtensionPoint> GetCompatibleExtensionPoints (string path, AddinDescription description, ModuleDescription module, List<RootExtensionPoint> rootExtensionPoints)
-		{
-			List<ExtensionPoint> list = new List<ExtensionPoint> ();
-			foreach (RootExtensionPoint rep in rootExtensionPoints) {
-				
-				// Find an extension point defined in a root add-in which is compatible with the version of the extender dependency
-				if (IsAddinCompatible (rep.Description, description, module))
-					list.Add (rep.ExtensionPoint);
-			}
-			return list;
-		}
-		
-		List<RootExtensionPoint> GetParentExtensionInfo (string path)
-		{
-			int i = path.LastIndexOf ('/');
-			if (i == -1)
-				return null;
-			string np = path.Substring (0, i);
-			List<RootExtensionPoint> ep;
-			if (pathHash.TryGetValue (np, out ep))
-				return ep;
-			else
-				return GetParentExtensionInfo (np);
-		}
-		
-		bool IsAddinCompatible (AddinDescription installedDescription, AddinDescription description, ModuleDescription module)
-		{
-			if (installedDescription == description)
-				return true;
-			if (installedDescription.Domain != AddinDatabase.GlobalDomain) {
-				if (description.Domain != AddinDatabase.GlobalDomain && description.Domain != installedDescription.Domain)
-					return false;
-			} else if (description.Domain != AddinDatabase.GlobalDomain)
-				return false;
-				
-			string addinId = Addin.GetFullId (installedDescription.Namespace, installedDescription.LocalId, null);
-			string requiredVersion = null;
-			
-			IEnumerable deps;
-			if (module == description.MainModule)
-				deps = module.Dependencies;
-			else {
-				var list = new List<Dependency> ();
-				list.AddRange (module.Dependencies);
-				list.AddRange (description.MainModule.Dependencies);
-				deps = list;
-			}
-			foreach (object dep in deps) {
-				AddinDependency adep = dep as AddinDependency;
-				if (adep != null && Addin.GetFullId (description.Namespace, adep.AddinId, null) == addinId) {
-					requiredVersion = adep.Version;
-					break;
-				}
-			}
-			if (requiredVersion == null)
-				return false;
+    // Collects globally defined node sets. Key is node set name. Value is
+    // a RootExtensionPoint
+    private readonly Dictionary<string, List<RootExtensionPoint>> nodeSetHash = new();
 
-			// Check if the required version is between rep.Description.CompatVersion and rep.Description.Version
-			if (Addin.CompareVersions (installedDescription.Version, requiredVersion) > 0)
-				return false;
-			if (installedDescription.CompatVersion.Length > 0 && Addin.CompareVersions (installedDescription.CompatVersion, requiredVersion) < 0)
-				return false;
-			
-			return true;
-		}
-	}
+    private readonly Dictionary<string, List<ExtensionPoint>> objectTypeExtensions = new();
+
+    // This table collects information about extensions. Each path (key)
+    // has a RootExtensionPoint object with information about the addin that
+    // defines the extension point and the addins which extend it
+    private readonly Dictionary<string, List<RootExtensionPoint>> pathHash = new();
+    internal int RelExtensionNodes;
+
+    internal int RelExtensionPoints;
+    internal int RelExtensions;
+    internal int RelNodeSetTypes;
+
+    public AddinUpdateData(AddinDatabase database, IProgressStatus monitor)
+    {
+        this.monitor = monitor;
+    }
+
+    public void RegisterNodeSet(AddinDescription description, ExtensionNodeSet nset)
+    {
+        List<RootExtensionPoint> extensions;
+        if (nodeSetHash.TryGetValue(nset.Id, out extensions))
+        {
+            // Extension point already registered
+            var compatExtensions =
+                GetCompatibleExtensionPoints(nset.Id, description, description.MainModule, extensions);
+            if (compatExtensions.Count > 0)
+            {
+                foreach (var einfo in compatExtensions)
+                    einfo.NodeSet.MergeWith(null, nset);
+                return;
+            }
+        }
+
+        // Create a new extension set
+        var rep = new RootExtensionPoint();
+        rep.ExtensionPoint = new ExtensionPoint();
+        rep.ExtensionPoint.SetNodeSet(nset);
+        rep.ExtensionPoint.RootAddin = description.AddinId;
+        rep.ExtensionPoint.Path = nset.Id;
+        rep.Description = description;
+        if (extensions == null)
+        {
+            extensions = new List<RootExtensionPoint>();
+            nodeSetHash[nset.Id] = extensions;
+        }
+
+        extensions.Add(rep);
+    }
+
+    public void RegisterExtensionPoint(AddinDescription description, ExtensionPoint ep)
+    {
+        List<RootExtensionPoint> extensions;
+        if (pathHash.TryGetValue(ep.Path, out extensions))
+        {
+            // Extension point already registered
+            var compatExtensions =
+                GetCompatibleExtensionPoints(ep.Path, description, description.MainModule, extensions);
+            if (compatExtensions.Count > 0)
+            {
+                foreach (var einfo in compatExtensions)
+                    einfo.MergeWith(null, ep);
+                RegisterObjectTypes(ep);
+                return;
+            }
+        }
+
+        // Create a new extension
+        var rep = new RootExtensionPoint();
+        rep.ExtensionPoint = ep;
+        rep.ExtensionPoint.RootAddin = description.AddinId;
+        rep.Description = description;
+        if (extensions == null)
+        {
+            extensions = new List<RootExtensionPoint>();
+            pathHash[ep.Path] = extensions;
+        }
+
+        extensions.Add(rep);
+        RegisterObjectTypes(ep);
+    }
+
+    private void RegisterObjectTypes(ExtensionPoint ep)
+    {
+        // Register extension points bound to a node type
+
+        foreach (ExtensionNodeType nt in ep.NodeSet.NodeTypes)
+        {
+            if (nt.ObjectTypeName.Length > 0)
+                if (Util.TryParseTypeName(nt.ObjectTypeName, out var typeName, out var _))
+                {
+                    List<ExtensionPoint> list;
+                    if (!objectTypeExtensions.TryGetValue(typeName, out list))
+                    {
+                        list = new List<ExtensionPoint>();
+                        objectTypeExtensions[typeName] = list;
+                    }
+
+                    list.Add(ep);
+                }
+
+            if (nt.ExtensionAttributeTypeName.Length > 0)
+            {
+                List<ExtensionNodeType> list;
+                if (Util.TryParseTypeName(nt.ExtensionAttributeTypeName, out var tname, out _))
+                {
+                    if (!customAttributeTypeExtensions.TryGetValue(tname, out list))
+                    {
+                        list = new List<ExtensionNodeType>();
+                        customAttributeTypeExtensions[tname] = list;
+                    }
+
+                    list.Add(nt);
+                }
+            }
+        }
+    }
+
+    public void RegisterExtension(AddinDescription description, ModuleDescription module, Extension extension)
+    {
+        if (extension.Path.StartsWith("$"))
+        {
+            var objectTypes = extension.Path.Substring(1).Split(',');
+            var found = false;
+            foreach (var s in objectTypes)
+                if (Util.TryParseTypeName(s, out var typeName, out var _))
+                {
+                    List<ExtensionPoint> list;
+                    if (objectTypeExtensions.TryGetValue(typeName, out list))
+                    {
+                        found = true;
+                        foreach (var ep in list)
+                            if (IsAddinCompatible(ep.ParentAddinDescription, description, module))
+                            {
+                                extension.Path = ep.Path;
+                                RegisterExtension(description, module, ep.Path);
+                            }
+                    }
+                }
+
+            if (!found)
+                monitor.ReportWarning("The add-in '" + description.AddinId + "' is trying to register the class '" +
+                                      extension.Path.Substring(1) +
+                                      "', but there isn't any add-in defining a suitable extension point");
+        }
+        else if (extension.Path.StartsWith("%", StringComparison.Ordinal))
+        {
+            var objectTypes = extension.Path.Substring(1).Split(',');
+            var found = false;
+            foreach (var s in objectTypes)
+            {
+                List<ExtensionNodeType> list;
+                if (customAttributeTypeExtensions.TryGetValue(s, out list))
+                {
+                    found = true;
+                    foreach (var nt in list)
+                    {
+                        var ep = (ExtensionPoint)((ExtensionNodeSet)nt.Parent).Parent;
+                        if (IsAddinCompatible(ep.ParentAddinDescription, description, module))
+                        {
+                            extension.Path = ep.Path;
+                            foreach (var node in GetNodesIgnoringConditions(extension)) node.NodeName = nt.NodeName;
+                            RegisterExtension(description, module, ep.Path);
+                        }
+                    }
+                }
+            }
+
+            if (!found)
+                monitor.ReportWarning("The add-in '" + description.AddinId + "' is trying to register the class '" +
+                                      extension.Path.Substring(1) +
+                                      "', but there isn't any add-in defining a suitable extension point");
+        }
+    }
+
+    private static IEnumerable<ExtensionNodeDescription> GetNodesIgnoringConditions(Extension extension)
+    {
+        foreach (ExtensionNodeDescription node in extension.ExtensionNodes)
+            if (node.IsCondition)
+            {
+                //first node in a complex condition is the actual condition
+                var skipFirst = node.NodeName == "ComplexCondition";
+                foreach (ExtensionNodeDescription child in node.ChildNodes)
+                {
+                    if (skipFirst)
+                    {
+                        skipFirst = false;
+                        continue;
+                    }
+
+                    yield return child;
+                }
+            }
+            else
+            {
+                yield return node;
+            }
+    }
+
+    public void RegisterExtension(AddinDescription description, ModuleDescription module, string path)
+    {
+        List<RootExtensionPoint> extensions;
+        if (!pathHash.TryGetValue(path, out extensions))
+            // Root add-in extension points are registered before any other kind of extension,
+            // so we should find it now.
+            extensions = GetParentExtensionInfo(path);
+        if (extensions == null)
+        {
+            monitor.ReportWarning("The add-in '" + description.AddinId + "' is trying to extend '" + path +
+                                  "', but there isn't any add-in defining this extension point");
+            return;
+        }
+
+        var found = false;
+        foreach (var einfo in extensions)
+            if (IsAddinCompatible(einfo.Description, description, module))
+            {
+                if (!einfo.ExtensionPoint.Addins.Contains(description.AddinId))
+                    einfo.ExtensionPoint.Addins.Add(description.AddinId);
+                found = true;
+                if (monitor.LogLevel > 2)
+                    monitor.Log("  * " + einfo.Description.AddinId + "(" + einfo.Description.Domain + ") <- " + path);
+            }
+
+        if (!found)
+            monitor.ReportWarning("The add-in '" + description.AddinId + "' is trying to extend '" + path +
+                                  "', but there isn't any compatible add-in defining this extension point");
+    }
+
+    private List<ExtensionPoint> GetCompatibleExtensionPoints(string path, AddinDescription description,
+        ModuleDescription module, List<RootExtensionPoint> rootExtensionPoints)
+    {
+        var list = new List<ExtensionPoint>();
+        foreach (var rep in rootExtensionPoints)
+            // Find an extension point defined in a root add-in which is compatible with the version of the extender dependency
+            if (IsAddinCompatible(rep.Description, description, module))
+                list.Add(rep.ExtensionPoint);
+        return list;
+    }
+
+    private List<RootExtensionPoint> GetParentExtensionInfo(string path)
+    {
+        var i = path.LastIndexOf('/');
+        if (i == -1)
+            return null;
+        var np = path.Substring(0, i);
+        List<RootExtensionPoint> ep;
+        if (pathHash.TryGetValue(np, out ep))
+            return ep;
+        return GetParentExtensionInfo(np);
+    }
+
+    private bool IsAddinCompatible(AddinDescription installedDescription, AddinDescription description,
+        ModuleDescription module)
+    {
+        if (installedDescription == description)
+            return true;
+        if (installedDescription.Domain != AddinDatabase.GlobalDomain)
+        {
+            if (description.Domain != AddinDatabase.GlobalDomain && description.Domain != installedDescription.Domain)
+                return false;
+        }
+        else if (description.Domain != AddinDatabase.GlobalDomain)
+        {
+            return false;
+        }
+
+        var addinId = Addin.GetFullId(installedDescription.Namespace, installedDescription.LocalId, null);
+        string requiredVersion = null;
+
+        IEnumerable deps;
+        if (module == description.MainModule)
+        {
+            deps = module.Dependencies;
+        }
+        else
+        {
+            var list = new List<Dependency>();
+            list.AddRange(module.Dependencies);
+            list.AddRange(description.MainModule.Dependencies);
+            deps = list;
+        }
+
+        foreach (var dep in deps)
+        {
+            var adep = dep as AddinDependency;
+            if (adep != null && Addin.GetFullId(description.Namespace, adep.AddinId, null) == addinId)
+            {
+                requiredVersion = adep.Version;
+                break;
+            }
+        }
+
+        if (requiredVersion == null)
+            return false;
+
+        // Check if the required version is between rep.Description.CompatVersion and rep.Description.Version
+        if (Addin.CompareVersions(installedDescription.Version, requiredVersion) > 0)
+            return false;
+        if (installedDescription.CompatVersion.Length > 0 &&
+            Addin.CompareVersions(installedDescription.CompatVersion, requiredVersion) < 0)
+            return false;
+
+        return true;
+    }
+
+    private class RootExtensionPoint
+    {
+        public AddinDescription Description;
+        public ExtensionPoint ExtensionPoint;
+    }
 }

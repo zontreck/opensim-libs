@@ -8,37 +8,38 @@
 // Licensed under the MIT/X11 license.
 //
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public interface IConstantProvider : IMetadataTokenProvider {
+public interface IConstantProvider : IMetadataTokenProvider
+{
+    bool HasConstant { get; set; }
+    object Constant { get; set; }
+}
 
-		bool HasConstant { get; set; }
-		object Constant { get; set; }
-	}
+internal static partial class Mixin
+{
+    internal static object NoValue = new();
+    internal static object NotResolved = new();
 
-	static partial class Mixin {
+    public static void ResolveConstant(
+        this IConstantProvider self,
+        ref object constant,
+        ModuleDefinition module)
+    {
+        if (module == null)
+        {
+            constant = NoValue;
+            return;
+        }
 
-		internal static object NoValue = new object ();
-		internal static object NotResolved = new object ();
-
-		public static void ResolveConstant (
-			this IConstantProvider self,
-			ref object constant,
-			ModuleDefinition module)
-		{
-			if (module == null) {
-				constant = Mixin.NoValue;
-				return;
-			}
-
-			lock (module.SyncRoot) {
-				if (constant != Mixin.NotResolved)
-					return;
-				if (module.HasImage ())
-					constant = module.Read (self, (provider, reader) => reader.ReadConstant (provider));
-				else
-					constant = Mixin.NoValue;
-			}
-		}
-	}
+        lock (module.SyncRoot)
+        {
+            if (constant != NotResolved)
+                return;
+            if (module.HasImage())
+                constant = module.Read(self, (provider, reader) => reader.ReadConstant(provider));
+            else
+                constant = NoValue;
+        }
+    }
 }

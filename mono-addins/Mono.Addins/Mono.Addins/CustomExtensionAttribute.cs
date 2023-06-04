@@ -26,79 +26,58 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Base class for custom extension attributes.
+/// </summary>
+/// <remarks>
+///     Custom extension attributes can be used to declare extensions with custom metadata.
+///     All custom extension attributes must subclass CustomExtensionAttribute.
+/// </remarks>
+public class CustomExtensionAttribute : Attribute
 {
-	/// <summary>
-	/// Base class for custom extension attributes.
-	/// </summary>
-	/// <remarks>
-	/// Custom extension attributes can be used to declare extensions with custom metadata.
-	/// All custom extension attributes must subclass CustomExtensionAttribute.
-	/// </remarks>
-	public class CustomExtensionAttribute: Attribute
-	{
-		string id;
-		string insertBefore;
-		string insertAfter;
-		string path;
-		
-		internal const string PathFieldKey = "__path";
-		
-		/// <summary>
-		/// Identifier of the node
-		/// </summary>
-		[NodeAttributeAttribute ("id")]
-		public string Id {
-			get { return id; }
-			set { id = value; }
-		}
-		
-		/// <summary>
-		/// Identifier of the node before which this node has to be placed
-		/// </summary>
-		[NodeAttributeAttribute ("insertbefore")]
-		public string InsertBefore {
-			get { return insertBefore; }
-			set { insertBefore = value; }
-		}
-		
-		/// <summary>
-		/// Identifier of the node after which this node has to be placed
-		/// </summary>
-		[NodeAttributeAttribute ("insertafter")]
-		public string InsertAfter {
-			get { return insertAfter; }
-			set { insertAfter = value; }
-		}
-		
-		/// <summary>
-		/// Path of the extension point being extended.
-		/// </summary>
-		/// <remarks>
-		/// This property is optional and useful only when there are several extension points which allow
-		/// using this custom attribute to define extensions.
-		/// </remarks>
-		[NodeAttributeAttribute ("__path")]
-		public string Path {
-			get { return path; }
-			set { path = value; }
-		}
+    internal const string PathFieldKey = "__path";
 
-		/// <summary>
-		/// The extension node bound to this attribute
-		/// </summary>
-		public ExtensionNode ExtensionNode { get; internal set; }
+    /// <summary>
+    ///     Identifier of the node
+    /// </summary>
+    [NodeAttributeAttribute("id")]
+    public string Id { get; set; }
+
+    /// <summary>
+    ///     Identifier of the node before which this node has to be placed
+    /// </summary>
+    [NodeAttributeAttribute("insertbefore")]
+    public string InsertBefore { get; set; }
+
+    /// <summary>
+    ///     Identifier of the node after which this node has to be placed
+    /// </summary>
+    [NodeAttributeAttribute("insertafter")]
+    public string InsertAfter { get; set; }
+
+    /// <summary>
+    ///     Path of the extension point being extended.
+    /// </summary>
+    /// <remarks>
+    ///     This property is optional and useful only when there are several extension points which allow
+    ///     using this custom attribute to define extensions.
+    /// </remarks>
+    [NodeAttributeAttribute("__path")]
+    public string Path { get; set; }
+
+    /// <summary>
+    ///     The extension node bound to this attribute
+    /// </summary>
+    public ExtensionNode ExtensionNode { get; internal set; }
 
 
-		/// <summary>
-		/// The add-in that registered this extension node.
-		/// </summary>
-		/// <remarks>
-		/// This property provides access to the resources and types of the add-in that created this extension node.
-		/// </remarks>
-		public RuntimeAddin Addin {
-			get { return ExtensionNode?.Addin; }
-		}
-	}
+    /// <summary>
+    ///     The add-in that registered this extension node.
+    /// </summary>
+    /// <remarks>
+    ///     This property provides access to the resources and types of the add-in that created this extension node.
+    /// </remarks>
+    public RuntimeAddin Addin => ExtensionNode?.Addin;
 }
-

@@ -24,11 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Specialized;
-
-namespace Mono.Addins.Database
-{
+namespace Mono.Addins.Database;
 #if NET461
 	class SetupDomain: ISetupHandler
 	{
@@ -93,7 +89,8 @@ namespace Mono.Addins.Database
 					AppDomain.CurrentDomain.AssemblyResolve += MonoAddinsAssemblyResolve;
 					domain = AppDomain.CreateDomain ("SetupDomain", null, AppDomain.CurrentDomain.SetupInformation);
 					var type = typeof(RemoteSetupDomain);
-					remoteSetupDomain = (RemoteSetupDomain) domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName);
+					remoteSetupDomain =
+ (RemoteSetupDomain) domain.CreateInstanceFromAndUnwrap (type.Assembly.Location, type.FullName);
 				}
 				return remoteSetupDomain;
 			}
@@ -217,6 +214,4 @@ namespace Mono.Addins.Database
 			}
 		}
 	}
-
 #endif
-}

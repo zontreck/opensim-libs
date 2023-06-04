@@ -23,31 +23,31 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Type of the content of a string extension node attribute
+/// </summary>
+public enum ContentType
 {
 	/// <summary>
-	/// Type of the content of a string extension node attribute
+	///     Plain text
 	/// </summary>
-	public enum ContentType
-	{
-		/// <summary>
-		/// Plain text
-		/// </summary>
-		Text,
-		/// <summary>
-		/// A class name
-		/// </summary>
-		Class,
-		/// <summary>
-		/// A resource name
-		/// </summary>
-		Resource,
-		/// <summary>
-		/// A file name
-		/// </summary>
-		File
-	}
-}
+	Text,
 
+	/// <summary>
+	///     A class name
+	/// </summary>
+	Class,
+
+	/// <summary>
+	///     A resource name
+	/// </summary>
+	Resource,
+
+	/// <summary>
+	///     A file name
+	/// </summary>
+	File
+}

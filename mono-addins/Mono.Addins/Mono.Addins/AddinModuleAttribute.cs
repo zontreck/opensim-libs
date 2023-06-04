@@ -26,34 +26,33 @@
 
 using System;
 
-namespace Mono.Addins
-{
-	/// <summary>
-	/// Declares an optional add-in module
-	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple=true)]
-	public class AddinModuleAttribute: Attribute
-	{
-		string assemblyFile;
-		
-		/// <summary>
-		/// Initializes the instance.
-		/// </summary>
-		/// <param name="assemblyFile">
-		/// Relative path to the assembly that implements the optional module
-		/// </param>
-		public AddinModuleAttribute (string assemblyFile)
-		{
-			this.assemblyFile = assemblyFile;
-		}
-		
-		/// <summary>
-		/// Relative path to the assembly that implements the optional module
-		/// </summary>
-		public string AssemblyFile {
-			get { return this.assemblyFile ?? string.Empty; }
-			set { this.assemblyFile = value; }
-		}
-	}
-}
+namespace Mono.Addins;
 
+/// <summary>
+///     Declares an optional add-in module
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public class AddinModuleAttribute : Attribute
+{
+    private string assemblyFile;
+
+    /// <summary>
+    ///     Initializes the instance.
+    /// </summary>
+    /// <param name="assemblyFile">
+    ///     Relative path to the assembly that implements the optional module
+    /// </param>
+    public AddinModuleAttribute(string assemblyFile)
+    {
+        this.assemblyFile = assemblyFile;
+    }
+
+    /// <summary>
+    ///     Relative path to the assembly that implements the optional module
+    /// </summary>
+    public string AssemblyFile
+    {
+        get => assemblyFile ?? string.Empty;
+        set => assemblyFile = value;
+    }
+}

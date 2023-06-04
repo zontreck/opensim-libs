@@ -1,49 +1,44 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Xml.XPath;
 
-namespace DotNetOpenId.Yadis {
-	class UriElement : XrdsNode, IComparable<UriElement> {
-		public UriElement(XPathNavigator uriElement, ServiceElement service) :
-			base(uriElement, service) {
-		}
+namespace DotNetOpenId.Yadis;
 
-		public int? Priority {
-			get {
-				XPathNavigator n = Node.SelectSingleNode("@priority", XmlNamespaceResolver);
-				return n != null ? n.ValueAsInt : (int?)null;
-			}
-		}
+internal class UriElement : XrdsNode, IComparable<UriElement>
+{
+    public UriElement(XPathNavigator uriElement, ServiceElement service) :
+        base(uriElement, service)
+    {
+    }
 
-		public Uri Uri {
-			get { return new Uri(Node.Value); }
-		}
+    public int? Priority
+    {
+        get
+        {
+            var n = Node.SelectSingleNode("@priority", XmlNamespaceResolver);
+            return n != null ? n.ValueAsInt : null;
+        }
+    }
 
-		public ServiceElement Service {
-			get { return (ServiceElement)ParentNode; }
-		}
+    public Uri Uri => new(Node.Value);
 
-		#region IComparable<UriElement> Members
+    public ServiceElement Service => (ServiceElement)ParentNode;
 
-		public int CompareTo(UriElement other) {
-			if (other == null) return -1;
-			int compare = Service.CompareTo(other.Service);
-			if (compare != 0) return compare;
-	
-			if (Priority.HasValue && other.Priority.HasValue) {
-				return Priority.Value.CompareTo(other.Priority.Value);
-			} else {
-				if (Priority.HasValue) {
-					return -1;
-				} else if (other.Priority.HasValue) {
-					return 1;
-				} else {
-					return 0;
-				}
-			}
-		}
+    #region IComparable<UriElement> Members
 
-		#endregion
-	}
+    public int CompareTo(UriElement other)
+    {
+        if (other == null) return -1;
+        var compare = Service.CompareTo(other.Service);
+        if (compare != 0) return compare;
+
+        if (Priority.HasValue && other.Priority.HasValue) return Priority.Value.CompareTo(other.Priority.Value);
+
+        if (Priority.HasValue)
+            return -1;
+        if (other.Priority.HasValue)
+            return 1;
+        return 0;
+    }
+
+    #endregion
 }

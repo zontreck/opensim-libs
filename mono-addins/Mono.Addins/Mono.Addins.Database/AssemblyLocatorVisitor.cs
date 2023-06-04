@@ -23,111 +23,121 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Collections.Generic;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+internal class AssemblyLocatorVisitor : AddinFolderVisitor, IAssemblyLocator
 {
-	class AssemblyLocatorVisitor: AddinFolderVisitor, IAssemblyLocator
-	{
-		AddinRegistry registry;
-		AssemblyIndex index;
-		bool usePreScanDataFiles;
+    private AssemblyIndex index;
+    private readonly AddinRegistry registry;
+    private readonly bool usePreScanDataFiles;
 
-		public AssemblyLocatorVisitor (AddinDatabase database, AddinRegistry registry, bool usePreScanDataFiles): base (database)
-		{
-			this.registry = registry;
-			this.usePreScanDataFiles = usePreScanDataFiles;
-		}
+    public AssemblyLocatorVisitor(AddinDatabase database, AddinRegistry registry, bool usePreScanDataFiles) :
+        base(database)
+    {
+        this.registry = registry;
+        this.usePreScanDataFiles = usePreScanDataFiles;
+    }
 
-		public string GetAssemblyLocation (string fullName)
-		{
-			if (index == null) {
-				index = new AssemblyIndex ();
-				if (registry.StartupDirectory != null)
-					VisitFolder (null, registry.StartupDirectory, null, false);
-				foreach (string dir in registry.GlobalAddinDirectories)
-					VisitFolder (null, dir, AddinDatabase.GlobalDomain, true);
-			}
+    public string GetAssemblyLocation(string fullName)
+    {
+        if (index == null)
+        {
+            index = new AssemblyIndex();
+            if (registry.StartupDirectory != null)
+                VisitFolder(null, registry.StartupDirectory, null, false);
+            foreach (var dir in registry.GlobalAddinDirectories)
+                VisitFolder(null, dir, AddinDatabase.GlobalDomain, true);
+        }
 
-			return index.GetAssemblyLocation (fullName);
-		}
+        return index.GetAssemblyLocation(fullName);
+    }
 
-		protected override void OnVisitFolder (IProgressStatus monitor, string path, string domain, bool recursive)
-		{
-			if (usePreScanDataFiles) {
-				var scanDataIndex = AddinScanDataIndex.LoadFromFolder (monitor, path);
-				if (scanDataIndex != null) {
-					foreach (var file in scanDataIndex.Assemblies)
-						index.AddAssemblyLocation (file);
-					return;
-				}
-			}
-			base.OnVisitFolder (monitor, path, domain, recursive);
-		}
+    protected override void OnVisitFolder(IProgressStatus monitor, string path, string domain, bool recursive)
+    {
+        if (usePreScanDataFiles)
+        {
+            var scanDataIndex = AddinScanDataIndex.LoadFromFolder(monitor, path);
+            if (scanDataIndex != null)
+            {
+                foreach (var file in scanDataIndex.Assemblies)
+                    index.AddAssemblyLocation(file);
+                return;
+            }
+        }
 
-		protected override void OnVisitAssemblyFile (IProgressStatus monitor, string file)
-		{
-			index.AddAssemblyLocation (file);
-		}
-	}
+        base.OnVisitFolder(monitor, path, domain, recursive);
+    }
 
-	class AssemblyIndex: IAssemblyLocator
-	{
-		Dictionary<string,List<string>> assemblyLocations = new Dictionary<string, List<string>> ();
-		Dictionary<string,string> assemblyLocationsByFullName = new Dictionary<string, string> (); 
+    protected override void OnVisitAssemblyFile(IProgressStatus monitor, string file)
+    {
+        index.AddAssemblyLocation(file);
+    }
+}
 
-		public void AddAssemblyLocation (string file)
-		{
-			string name = Path.GetFileNameWithoutExtension (file);
-			if (!assemblyLocations.TryGetValue (name, out var list)) {
-				list = new List<string> ();
-				assemblyLocations [name] = list;
-			}
-			list.Add (file);
-		}
+internal class AssemblyIndex : IAssemblyLocator
+{
+    private readonly Dictionary<string, List<string>> assemblyLocations = new();
+    private readonly Dictionary<string, string> assemblyLocationsByFullName = new();
 
-		public string GetAssemblyLocation (string fullName)
-		{
-			if (assemblyLocationsByFullName.TryGetValue (fullName, out var loc))
-				return loc;
+    public string GetAssemblyLocation(string fullName)
+    {
+        if (assemblyLocationsByFullName.TryGetValue(fullName, out var loc))
+            return loc;
 
-			int i = fullName.IndexOf (',');
-			string name = fullName.Substring (0, i);
-			if (name == "Mono.Addins")
-				return typeof (AssemblyIndex).Assembly.Location;
+        var i = fullName.IndexOf(',');
+        var name = fullName.Substring(0, i);
+        if (name == "Mono.Addins")
+            return typeof(AssemblyIndex).Assembly.Location;
 
-			if (!assemblyLocations.TryGetValue (name, out var list))
-				return null;
+        if (!assemblyLocations.TryGetValue(name, out var list))
+            return null;
 
-			string lastAsm = null;
-			for (int n = list.Count - 1; n >= 0; --n) {
-				try {
-					var file = list[n];
-					list.RemoveAt(n);
+        string lastAsm = null;
+        for (var n = list.Count - 1; n >= 0; --n)
+            try
+            {
+                var file = list[n];
+                list.RemoveAt(n);
 
-					AssemblyName aname = AssemblyName.GetAssemblyName (file);
-					lastAsm = file;
-					assemblyLocationsByFullName [aname.FullName] = file;
-					if (aname.FullName == fullName)
-						return file;
-				} catch {
-					// Could not get the assembly name. The file either doesn't exist or it is not a valid assembly.
-					// In this case, just ignore it.
-				}
-			}
+                var aname = AssemblyName.GetAssemblyName(file);
+                lastAsm = file;
+                assemblyLocationsByFullName[aname.FullName] = file;
+                if (aname.FullName == fullName)
+                    return file;
+            }
+            catch
+            {
+                // Could not get the assembly name. The file either doesn't exist or it is not a valid assembly.
+                // In this case, just ignore it.
+            }
 
-			// If we got here, we removed all the list's items.
-			assemblyLocations.Remove (name);
+        // If we got here, we removed all the list's items.
+        assemblyLocations.Remove(name);
 
-			if (lastAsm != null) {
-				// If an exact version is not found, just take any of them
-				assemblyLocationsByFullName[fullName] = lastAsm;
-				return lastAsm;
-			}
-			return null;
-		}
-	}
+        if (lastAsm != null)
+        {
+            // If an exact version is not found, just take any of them
+            assemblyLocationsByFullName[fullName] = lastAsm;
+            return lastAsm;
+        }
+
+        return null;
+    }
+
+    public void AddAssemblyLocation(string file)
+    {
+        var name = Path.GetFileNameWithoutExtension(file);
+        if (!assemblyLocations.TryGetValue(name, out var list))
+        {
+            list = new List<string>();
+            assemblyLocations[name] = list;
+        }
+
+        list.Add(file);
+    }
 }

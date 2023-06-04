@@ -23,51 +23,50 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Sets the display name of an add-in
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public class AddinNameAttribute : Attribute
 {
 	/// <summary>
-	/// Sets the display name of an add-in
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinNameAttribute" /> class.
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple = true)]
-	public class AddinNameAttribute: Attribute
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinNameAttribute"/> class.
-		/// </summary>
-		/// <param name='name'>
-		/// Name of the add-in
-		/// </param>
-		public AddinNameAttribute (string name)
-		{
-			Name = name;
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinNameAttribute"/> class.
-		/// </summary>
-		/// <param name='name'>
-		/// Name of the add-in
-		/// </param>
-		/// <param name='locale'>
-		/// Locale of the name (for example, 'en-US', or 'en')
-		/// </param>
-		public AddinNameAttribute (string name, string locale)
-		{
-			Name = name;
-			Locale = locale;
-		}
-		
-		/// <value>
-		/// Name of the add-in
-		/// </value>
-		public string Name { get; set; }
+	/// <param name='name'>
+	///     Name of the add-in
+	/// </param>
+	public AddinNameAttribute(string name)
+    {
+        Name = name;
+    }
 
-		/// <summary>
-		/// Locale of the name (for example, 'en-US', or 'en')
-		/// </summary>
-		public string Locale { get; set; }
-	}
+	/// <summary>
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinNameAttribute" /> class.
+	/// </summary>
+	/// <param name='name'>
+	///     Name of the add-in
+	/// </param>
+	/// <param name='locale'>
+	///     Locale of the name (for example, 'en-US', or 'en')
+	/// </param>
+	public AddinNameAttribute(string name, string locale)
+    {
+        Name = name;
+        Locale = locale;
+    }
+
+	/// <value>
+	///     Name of the add-in
+	/// </value>
+	public string Name { get; set; }
+
+	/// <summary>
+	///     Locale of the name (for example, 'en-US', or 'en')
+	/// </summary>
+	public string Locale { get; set; }
 }
-

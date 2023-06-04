@@ -1,43 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using DotNetOpenId.RelyingParty;
 
-namespace DotNetOpenId {
-	/// <summary>
-	/// Wraps an existing Identifier and prevents it from performing discovery.
-	/// </summary>
-	class NoDiscoveryIdentifier : Identifier {
-		Identifier wrappedIdentifier ;
-		internal NoDiscoveryIdentifier(Identifier wrappedIdentifier)
-			: base(false) {
-			if (wrappedIdentifier == null) throw new ArgumentNullException("wrappedIdentifier");
+namespace DotNetOpenId;
 
-			this.wrappedIdentifier = wrappedIdentifier;
-		}
+/// <summary>
+///     Wraps an existing Identifier and prevents it from performing discovery.
+/// </summary>
+internal class NoDiscoveryIdentifier : Identifier
+{
+    private readonly Identifier wrappedIdentifier;
 
-		internal override IEnumerable<ServiceEndpoint> Discover() {
-			return new ServiceEndpoint[0];
-		}
+    internal NoDiscoveryIdentifier(Identifier wrappedIdentifier)
+        : base(false)
+    {
+        if (wrappedIdentifier == null) throw new ArgumentNullException("wrappedIdentifier");
 
-		internal override Identifier TrimFragment() {
-			return new NoDiscoveryIdentifier(wrappedIdentifier.TrimFragment());
-		}
+        this.wrappedIdentifier = wrappedIdentifier;
+    }
 
-		internal override bool TryRequireSsl(out Identifier secureIdentifier) {
-			return wrappedIdentifier.TryRequireSsl(out secureIdentifier);
-		}
+    internal override IEnumerable<ServiceEndpoint> Discover()
+    {
+        return new ServiceEndpoint[0];
+    }
 
-		public override string ToString() {
-			return wrappedIdentifier.ToString();
-		}
+    internal override Identifier TrimFragment()
+    {
+        return new NoDiscoveryIdentifier(wrappedIdentifier.TrimFragment());
+    }
 
-		public override bool Equals(object obj) {
-			return wrappedIdentifier.Equals(obj);
-		}
+    internal override bool TryRequireSsl(out Identifier secureIdentifier)
+    {
+        return wrappedIdentifier.TryRequireSsl(out secureIdentifier);
+    }
 
-		public override int GetHashCode() {
-			return wrappedIdentifier.GetHashCode();
-		}
-	}
+    public override string ToString()
+    {
+        return wrappedIdentifier.ToString();
+    }
+
+    public override bool Equals(object obj)
+    {
+        return wrappedIdentifier.Equals(obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return wrappedIdentifier.GetHashCode();
+    }
 }

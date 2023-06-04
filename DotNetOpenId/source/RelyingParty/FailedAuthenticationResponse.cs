@@ -1,47 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
+using DotNetOpenId.Extensions;
 
-namespace DotNetOpenId.RelyingParty {
-	[DebuggerDisplay("{Exception.Message}")]
-	class FailedAuthenticationResponse : IAuthenticationResponse {
-		public FailedAuthenticationResponse(Exception exception) {
-			Exception = exception;
-		}
+namespace DotNetOpenId.RelyingParty;
 
-		#region IAuthenticationResponse Members
+[DebuggerDisplay("{Exception.Message}")]
+internal class FailedAuthenticationResponse : IAuthenticationResponse
+{
+    public FailedAuthenticationResponse(Exception exception)
+    {
+        Exception = exception;
+    }
 
-		public IDictionary<string, string> GetCallbackArguments() {
-			return new Dictionary<string, string>();
-		}
+    #region IAuthenticationResponse Members
 
-		public string GetCallbackArgument(string key) {
-			return null;
-		}
+    public IDictionary<string, string> GetCallbackArguments()
+    {
+        return new Dictionary<string, string>();
+    }
 
-		public T GetExtension<T>() where T : DotNetOpenId.Extensions.IExtensionResponse, new() {
-			return default(T);
-		}
+    public string GetCallbackArgument(string key)
+    {
+        return null;
+    }
 
-		public DotNetOpenId.Extensions.IExtensionResponse GetExtension(Type extensionType) {
-			return null;
-		}
+    public T GetExtension<T>() where T : IExtensionResponse, new()
+    {
+        return default;
+    }
 
-		public Identifier ClaimedIdentifier {
-			get { return null; }
-		}
+    public IExtensionResponse GetExtension(Type extensionType)
+    {
+        return null;
+    }
 
-		public string FriendlyIdentifierForDisplay {
-			get { return null; }
-		}
+    public Identifier ClaimedIdentifier => null;
 
-		public AuthenticationStatus Status {
-			get { return AuthenticationStatus.Failed; }
-		}
+    public string FriendlyIdentifierForDisplay => null;
 
-		public Exception Exception { get; private set; }
+    public AuthenticationStatus Status => AuthenticationStatus.Failed;
 
-		#endregion
-	}
+    public Exception Exception { get; private set; }
+
+    #endregion
 }

@@ -27,13 +27,10 @@
 //
 
 
-using System;
+namespace Mono.Addins.Serialization;
 
-namespace Mono.Addins.Serialization
+internal interface IBinaryXmlElement
 {
-	internal interface IBinaryXmlElement
-	{
-		void Read (BinaryXmlReader reader);
-		void Write (BinaryXmlWriter writer);
-	}
+    void Read(BinaryXmlReader reader);
+    void Write(BinaryXmlWriter writer);
 }

@@ -29,77 +29,87 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Declares allowed children of an extension node type.
+/// </summary>
+/// <remarks>
+///     This attribute allows declaring the type of children that an extension node can have.
+/// </remarks>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class ExtensionNodeChildAttribute : Attribute
 {
-	/// <summary>
-	/// Declares allowed children of an extension node type.
-	/// </summary>
-	/// <remarks>
-	/// This attribute allows declaring the type of children that an extension node can have.
-	/// </remarks>
-	[AttributeUsage (AttributeTargets.Class, AllowMultiple=true)]
-	public class ExtensionNodeChildAttribute: Attribute
-	{
-		string nodeName;
-		Type extensionNodeType;
-		string extensionNodeTypeName;
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="nodeName">
-		/// Name of the allowed child extension node.
-		/// </param>
-		public ExtensionNodeChildAttribute (string nodeName)
-			: this (typeof(TypeExtensionNode), nodeName)
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="extensionNodeType">
-		/// Type of the allowed child extension node.
-		/// </param>
-		public ExtensionNodeChildAttribute (Type extensionNodeType)
-			: this (extensionNodeType, null)
-		{
-		}
-		
-		/// <summary>
-		/// Initializes a new instance
-		/// </summary>
-		/// <param name="extensionNodeType">
-		/// Type of the allowed child extension node.
-		/// </param>
-		/// <param name="nodeName">
-		/// Name of the allowed child extension node.
-		/// </param>
-		public ExtensionNodeChildAttribute (Type extensionNodeType, string nodeName)
-		{
-			ExtensionNodeType = extensionNodeType;
-			this.nodeName = nodeName;
-		}
-		
-		/// <summary>
-		/// Name of the allowed child extension node.
-		/// </summary>
-		public string NodeName {
-			get { return nodeName != null ? nodeName : string.Empty; }
-			set { nodeName = value; }
-		}
-		
-		/// <summary>
-		/// Type of the allowed child extension node.
-		/// </summary>
-		public Type ExtensionNodeType {
-			get { return extensionNodeType; }
-			set { extensionNodeType = value; extensionNodeTypeName = value.AssemblyQualifiedName; }
-		}
-		
-		internal string ExtensionNodeTypeName {
-			get { return extensionNodeTypeName; }
-			set { extensionNodeTypeName = value; extensionNodeType = null; }
-		}
-	}
+    private Type extensionNodeType;
+    private string extensionNodeTypeName;
+    private string nodeName;
+
+    /// <summary>
+    ///     Initializes a new instance
+    /// </summary>
+    /// <param name="nodeName">
+    ///     Name of the allowed child extension node.
+    /// </param>
+    public ExtensionNodeChildAttribute(string nodeName)
+        : this(typeof(TypeExtensionNode), nodeName)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance
+    /// </summary>
+    /// <param name="extensionNodeType">
+    ///     Type of the allowed child extension node.
+    /// </param>
+    public ExtensionNodeChildAttribute(Type extensionNodeType)
+        : this(extensionNodeType, null)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance
+    /// </summary>
+    /// <param name="extensionNodeType">
+    ///     Type of the allowed child extension node.
+    /// </param>
+    /// <param name="nodeName">
+    ///     Name of the allowed child extension node.
+    /// </param>
+    public ExtensionNodeChildAttribute(Type extensionNodeType, string nodeName)
+    {
+        ExtensionNodeType = extensionNodeType;
+        this.nodeName = nodeName;
+    }
+
+    /// <summary>
+    ///     Name of the allowed child extension node.
+    /// </summary>
+    public string NodeName
+    {
+        get => nodeName != null ? nodeName : string.Empty;
+        set => nodeName = value;
+    }
+
+    /// <summary>
+    ///     Type of the allowed child extension node.
+    /// </summary>
+    public Type ExtensionNodeType
+    {
+        get => extensionNodeType;
+        set
+        {
+            extensionNodeType = value;
+            extensionNodeTypeName = value.AssemblyQualifiedName;
+        }
+    }
+
+    internal string ExtensionNodeTypeName
+    {
+        get => extensionNodeTypeName;
+        set
+        {
+            extensionNodeTypeName = value;
+            extensionNodeType = null;
+        }
+    }
 }

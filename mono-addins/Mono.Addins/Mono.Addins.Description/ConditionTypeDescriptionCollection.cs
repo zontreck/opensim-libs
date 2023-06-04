@@ -27,37 +27,32 @@
 //
 
 
-using System;
+namespace Mono.Addins.Description;
 
-namespace Mono.Addins.Description
+/// <summary>
+///     A collection of condition types
+/// </summary>
+public class ConditionTypeDescriptionCollection : ObjectDescriptionCollection<ConditionTypeDescription>
 {
 	/// <summary>
-	/// A collection of condition types
+	///     Initializes a new instance of the <see cref="Mono.Addins.Description.ConditionTypeDescriptionCollection" /> class.
 	/// </summary>
-	public class ConditionTypeDescriptionCollection: ObjectDescriptionCollection<ConditionTypeDescription>
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.Description.ConditionTypeDescriptionCollection"/> class.
-		/// </summary>
-		public ConditionTypeDescriptionCollection ()
-		{
-		}
-		
-		internal ConditionTypeDescriptionCollection (object owner): base (owner)
-		{
-		}
-		
-		/// <summary>
-		/// Gets the <see cref="Mono.Addins.Description.ConditionTypeDescription"/> at the specified index.
-		/// </summary>
-		/// <param name='n'>
-		/// Index.
-		/// </param>
-		/// <returns>
-		/// The condition.
-		/// </returns>
-		public ConditionTypeDescription this [int n] {
-			get { return (ConditionTypeDescription) List [n]; }
-		}
-	}
+	public ConditionTypeDescriptionCollection()
+    {
+    }
+
+    internal ConditionTypeDescriptionCollection(object owner) : base(owner)
+    {
+    }
+
+    /// <summary>
+    ///     Gets the <see cref="Mono.Addins.Description.ConditionTypeDescription" /> at the specified index.
+    /// </summary>
+    /// <param name='n'>
+    ///     Index.
+    /// </param>
+    /// <returns>
+    ///     The condition.
+    /// </returns>
+    public ConditionTypeDescription this[int n] => (ConditionTypeDescription)List[n];
 }

@@ -23,35 +23,35 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Mono.Addins.Database
+namespace Mono.Addins.Database;
+
+[Serializable]
+internal class ScanOptions
 {
-	[Serializable]
-	class ScanOptions
-	{
-		public List<string> FilesToIgnore { get; set; } = new List<string> ();
-		public bool CleanGeneratedAddinScanDataFiles { get; set; }
-		public AddinFileSystemExtension FileSystemExtension { get; set; }
+    public List<string> FilesToIgnore { get; set; } = new();
+    public bool CleanGeneratedAddinScanDataFiles { get; set; }
+    public AddinFileSystemExtension FileSystemExtension { get; set; }
 
-		public IEnumerable<string> Write ()
-		{
-			yield return FilesToIgnore.Count.ToString ();
-			foreach (var file in FilesToIgnore)
-				yield return file;
-			
-			yield return CleanGeneratedAddinScanDataFiles.ToString ();
-		}
+    public IEnumerable<string> Write()
+    {
+        yield return FilesToIgnore.Count.ToString();
+        foreach (var file in FilesToIgnore)
+            yield return file;
 
-		public void Read (TextReader reader)
-		{
-			int filesToIgnoreCount = int.Parse (reader.ReadLine ());
-			for (int n = 0; n < filesToIgnoreCount; n++)
-				FilesToIgnore.Add (reader.ReadLine ());
-			
-			CleanGeneratedAddinScanDataFiles = bool.Parse (Console.In.ReadLine ());
-		}
-	}
+        yield return CleanGeneratedAddinScanDataFiles.ToString();
+    }
+
+    public void Read(TextReader reader)
+    {
+        var filesToIgnoreCount = int.Parse(reader.ReadLine());
+        for (var n = 0; n < filesToIgnoreCount; n++)
+            FilesToIgnore.Add(reader.ReadLine());
+
+        CleanGeneratedAddinScanDataFiles = bool.Parse(Console.In.ReadLine());
+    }
 }

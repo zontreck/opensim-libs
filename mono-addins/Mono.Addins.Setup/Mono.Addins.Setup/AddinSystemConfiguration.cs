@@ -26,39 +26,20 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections;
 using System.Collections.Specialized;
-using System.Xml;
 using System.Xml.Serialization;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+internal class AddinSystemConfiguration
 {
-	internal class AddinSystemConfiguration
-	{
-		ArrayList repositories = new ArrayList ();
-		int repositoryIdCount = 0;
-		StringCollection disabledAddins = new StringCollection ();
-		StringCollection addinPaths = new StringCollection ();
-		
-		[XmlArrayItem ("Repository", typeof(RepositoryRecord))]
-		public ArrayList Repositories {
-			get { return repositories; }
-		}
-		
-		public int RepositoryIdCount {
-			get { return repositoryIdCount; }
-			set { repositoryIdCount = value; }
-		}
-		
-		[XmlArrayItem ("Addin")]
-		public StringCollection DisabledAddins {
-			get { return disabledAddins; }
-		}
-		
-		[XmlArrayItem ("Addin")]
-		public StringCollection AddinPaths {
-			get { return addinPaths; }
-		}
-	}
+    [XmlArrayItem("Repository", typeof(RepositoryRecord))]
+    public ArrayList Repositories { get; } = new();
+
+    public int RepositoryIdCount { get; set; } = 0;
+
+    [XmlArrayItem("Addin")] public StringCollection DisabledAddins { get; } = new();
+
+    [XmlArrayItem("Addin")] public StringCollection AddinPaths { get; } = new();
 }

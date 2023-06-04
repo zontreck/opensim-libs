@@ -23,11 +23,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
-namespace Mono.Addins.Setup
+
+namespace Mono.Addins.Setup;
+
+public abstract class AddinRepositoryProvider
 {
-	public abstract class AddinRepositoryProvider
-	{
-		public abstract Repository DownloadRepository (IProgressMonitor monitor, Uri absUri, AddinRepository rr);
-	}
+    public abstract Repository DownloadRepository(IProgressMonitor monitor, Uri absUri, AddinRepository rr);
 }

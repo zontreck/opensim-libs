@@ -26,47 +26,56 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Declares a custom localizer for an add-in.
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public class AddinLocalizerAttribute : Attribute
 {
-	/// <summary>
-	/// Declares a custom localizer for an add-in.
-	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly)]
-	public class AddinLocalizerAttribute: Attribute
-	{
-		Type type;
-		string typeName;
+    private Type type;
+    private string typeName;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerAttribute"/> class.
-		/// </summary>
-		public AddinLocalizerAttribute ()
-		{
-		}
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerAttribute" /> class.
+    /// </summary>
+    public AddinLocalizerAttribute()
+    {
+    }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerAttribute"/> class.
-		/// </summary>
-		/// <param name='type'>
-		/// The type of the localizer. This type must implement the
-		/// <see cref="Mono.Addins.Localization.IAddinLocalizerFactory"/> interface.
-		/// </param>
-		public AddinLocalizerAttribute (Type type)
-		{
-			Type = type;
-		}
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="Mono.Addins.AddinLocalizerAttribute" /> class.
+    /// </summary>
+    /// <param name='type'>
+    ///     The type of the localizer. This type must implement the
+    ///     <see cref="Mono.Addins.Localization.IAddinLocalizerFactory" /> interface.
+    /// </param>
+    public AddinLocalizerAttribute(Type type)
+    {
+        Type = type;
+    }
 
-		/// <summary>
-		/// Type of the localizer.
-		/// </summary>
-		public Type Type {
-			get { return type; }
-			set { type = value; typeName = value.AssemblyQualifiedName; }
-		}
+    /// <summary>
+    ///     Type of the localizer.
+    /// </summary>
+    public Type Type
+    {
+        get => type;
+        set
+        {
+            type = value;
+            typeName = value.AssemblyQualifiedName;
+        }
+    }
 
-		internal string TypeName {
-			get { return typeName; }
-			set { typeName = value; type = null; }
-		}
-	}
+    internal string TypeName
+    {
+        get => typeName;
+        set
+        {
+            typeName = value;
+            type = null;
+        }
+    }
 }

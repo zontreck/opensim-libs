@@ -24,14 +24,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
+namespace Mono.Addins.Database;
 
-namespace Mono.Addins.Database
+internal interface ISetupHandler
 {
-	internal interface ISetupHandler
-	{
-		void Scan (IProgressStatus monitor, AddinRegistry registry, string scanFolder, ScanOptions context);
-		void GenerateScanDataFiles (IProgressStatus monitor, AddinRegistry registry, string scanFolder, bool recursive);
-		void GetAddinDescription (IProgressStatus monitor, AddinRegistry registry, string file, string outFile);
-	}
+    void Scan(IProgressStatus monitor, AddinRegistry registry, string scanFolder, ScanOptions context);
+    void GenerateScanDataFiles(IProgressStatus monitor, AddinRegistry registry, string scanFolder, bool recursive);
+    void GetAddinDescription(IProgressStatus monitor, AddinRegistry registry, string file, string outFile);
 }

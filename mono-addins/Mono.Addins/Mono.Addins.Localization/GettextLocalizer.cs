@@ -25,38 +25,33 @@
 //
 //
 
-using System;
-using Mono.Addins;
+namespace Mono.Addins.Localization;
 
-namespace Mono.Addins.Localization
+internal class GettextLocalizer : IAddinLocalizerFactory, IAddinLocalizer, IPluralAddinLocalizer
 {
-	class GettextLocalizer: IAddinLocalizerFactory, IAddinLocalizer, IPluralAddinLocalizer
-	{
-		GettextDomain domain;
-		
-		public IAddinLocalizer CreateLocalizer (RuntimeAddin addin, NodeElement element)
-		{
-			string pkg = element.GetAttribute ("catalog");
-			if (pkg.Length == 0)
-				pkg = addin.Id;
-			string dir = element.GetAttribute ("location");
-			if (dir.Length == 0)
-				dir = "locale";
-			dir = addin.GetFilePath (dir);
-			domain = new GettextDomain ();
-			domain.Init (pkg, dir);
-			return this;
-		}
+    private GettextDomain domain;
 
-		public string GetString (string msgid)
-		{
-			return domain.GetString (msgid);
-		}
-		
-		public string GetPluralString (string singular, string defaultPlural, int n)
-		{
-			return domain.GetPluralString (singular, defaultPlural, n);
-		}
+    public string GetString(string msgid)
+    {
+        return domain.GetString(msgid);
+    }
 
-	}
+    public IAddinLocalizer CreateLocalizer(RuntimeAddin addin, NodeElement element)
+    {
+        var pkg = element.GetAttribute("catalog");
+        if (pkg.Length == 0)
+            pkg = addin.Id;
+        var dir = element.GetAttribute("location");
+        if (dir.Length == 0)
+            dir = "locale";
+        dir = addin.GetFilePath(dir);
+        domain = new GettextDomain();
+        domain.Init(pkg, dir);
+        return this;
+    }
+
+    public string GetPluralString(string singular, string defaultPlural, int n)
+    {
+        return domain.GetPluralString(singular, defaultPlural, n);
+    }
 }

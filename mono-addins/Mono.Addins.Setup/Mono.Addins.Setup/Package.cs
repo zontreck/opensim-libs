@@ -26,91 +26,88 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.IO;
 using Mono.Addins.Description;
 
-namespace Mono.Addins.Setup
-{
-	/// <summary>
-	/// An add-in package
-	/// </summary>
-	public abstract class Package
-	{
-		internal Package ()
-		{
-		}
-		
-		/// <summary>
-		/// Name of the package
-		/// </summary>
-		public abstract string Name { get; }
-		
-		/// <summary>
-		/// Returns true if the package will be installed in the shared directory, 
-		/// false if it will be installed in the user directory.
-		/// </summary>
-		public virtual bool SharedInstall {
-			get { return false; }
-		}
+namespace Mono.Addins.Setup;
 
-		/// <summary>
-		/// Creates a package object for an add-in available in an on-line repository
-		/// </summary>
-		/// <param name="repAddin">
-		/// An add-in reference
-		/// </param>
-		/// <returns>
-		/// The package
-		/// </returns>
-		public static Package FromRepository (AddinRepositoryEntry repAddin)
-		{
-			return AddinPackage.PackageFromRepository (repAddin);
-		}
-		
-		/// <summary>
-		/// Creates a package object for a local package file
-		/// </summary>
-		/// <param name="file">
-		/// Package file path
-		/// </param>
-		/// <returns>
-		/// The package
-		/// </returns>
-		public static Package FromFile (string file)
-		{
-			return AddinPackage.PackageFromFile (file);
-		}
-		
-		
-		internal abstract void Resolve (IProgressMonitor monitor, AddinStore service, PackageCollection toInstall, PackageCollection toUninstall, PackageCollection required, DependencyCollection unresolved);
-		
-		internal abstract void PrepareInstall (IProgressMonitor monitor, AddinStore service);
-		internal abstract void CommitInstall (IProgressMonitor monitor, AddinStore service);
-		internal abstract void RollbackInstall (IProgressMonitor monitor, AddinStore service);
-		
-		internal abstract void PrepareUninstall (IProgressMonitor monitor, AddinStore service);
-		internal abstract void CommitUninstall (IProgressMonitor monitor, AddinStore service);
-		internal abstract void RollbackUninstall (IProgressMonitor monitor, AddinStore service);
-		
-		internal abstract bool IsUpgradeOf (Package p);
-		
-		internal virtual void EndInstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal virtual void EndUninstall (IProgressMonitor monitor, AddinStore service)
-		{
-		}
-		
-		internal string CreateTempFolder ()
-		{
-			string bname = Path.Combine (Path.GetTempPath (), "mdtmp");
-			string tempFolder = bname;
-			int n = 0;
-			while (Directory.Exists (tempFolder))
-				tempFolder = bname + (++n);
-			return tempFolder;
-		}
-	}
+/// <summary>
+///     An add-in package
+/// </summary>
+public abstract class Package
+{
+    internal Package()
+    {
+    }
+
+    /// <summary>
+    ///     Name of the package
+    /// </summary>
+    public abstract string Name { get; }
+
+    /// <summary>
+    ///     Returns true if the package will be installed in the shared directory,
+    ///     false if it will be installed in the user directory.
+    /// </summary>
+    public virtual bool SharedInstall => false;
+
+    /// <summary>
+    ///     Creates a package object for an add-in available in an on-line repository
+    /// </summary>
+    /// <param name="repAddin">
+    ///     An add-in reference
+    /// </param>
+    /// <returns>
+    ///     The package
+    /// </returns>
+    public static Package FromRepository(AddinRepositoryEntry repAddin)
+    {
+        return AddinPackage.PackageFromRepository(repAddin);
+    }
+
+    /// <summary>
+    ///     Creates a package object for a local package file
+    /// </summary>
+    /// <param name="file">
+    ///     Package file path
+    /// </param>
+    /// <returns>
+    ///     The package
+    /// </returns>
+    public static Package FromFile(string file)
+    {
+        return AddinPackage.PackageFromFile(file);
+    }
+
+
+    internal abstract void Resolve(IProgressMonitor monitor, AddinStore service, PackageCollection toInstall,
+        PackageCollection toUninstall, PackageCollection required, DependencyCollection unresolved);
+
+    internal abstract void PrepareInstall(IProgressMonitor monitor, AddinStore service);
+    internal abstract void CommitInstall(IProgressMonitor monitor, AddinStore service);
+    internal abstract void RollbackInstall(IProgressMonitor monitor, AddinStore service);
+
+    internal abstract void PrepareUninstall(IProgressMonitor monitor, AddinStore service);
+    internal abstract void CommitUninstall(IProgressMonitor monitor, AddinStore service);
+    internal abstract void RollbackUninstall(IProgressMonitor monitor, AddinStore service);
+
+    internal abstract bool IsUpgradeOf(Package p);
+
+    internal virtual void EndInstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal virtual void EndUninstall(IProgressMonitor monitor, AddinStore service)
+    {
+    }
+
+    internal string CreateTempFolder()
+    {
+        var bname = Path.Combine(Path.GetTempPath(), "mdtmp");
+        var tempFolder = bname;
+        var n = 0;
+        while (Directory.Exists(tempFolder))
+            tempFolder = bname + ++n;
+        return tempFolder;
+    }
 }

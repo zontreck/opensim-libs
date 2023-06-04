@@ -1,86 +1,85 @@
-using System;
-using System.Collections;
-using System.Collections.Specialized;
-using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 
-namespace DotNetOpenId.Provider {
-	/// <summary>
-	/// A request to verify the validity of a previous response.
-	/// </summary>
-	internal class CheckAuthRequest : AssociatedRequest {
-		string signature;
-		IDictionary<string, string> signedFields;
-		IList<string> signedKeyOrder;
+namespace DotNetOpenId.Provider;
 
-		public CheckAuthRequest(OpenIdProvider provider)
-			: base(provider) {
-			AssociationHandle = Util.GetRequiredArg(Query, Protocol.openid.assoc_handle);
-			signature = Util.GetRequiredArg(Query, Protocol.openid.sig);
-			signedKeyOrder = Util.GetRequiredArg(Query, Protocol.openid.signed).Split(',');
+/// <summary>
+///     A request to verify the validity of a previous response.
+/// </summary>
+internal class CheckAuthRequest : AssociatedRequest
+{
+    private readonly string signature;
+    private readonly IDictionary<string, string> signedFields;
+    private readonly IList<string> signedKeyOrder;
 
-			signedFields = new Dictionary<string, string>();
-			Debug.Assert(!signedKeyOrder.Contains(Protocol.openidnp.mode), "openid.mode must not be included in signature because it necessarily changes in checkauth requests.");
-			foreach (string key in signedKeyOrder) {
-				signedFields.Add(key, Util.GetRequiredArgAllowEmptyValue(Query, Protocol.openid.Prefix + key));
-			}
-		}
+    public CheckAuthRequest(OpenIdProvider provider)
+        : base(provider)
+    {
+        AssociationHandle = Util.GetRequiredArg(Query, Protocol.openid.assoc_handle);
+        signature = Util.GetRequiredArg(Query, Protocol.openid.sig);
+        signedKeyOrder = Util.GetRequiredArg(Query, Protocol.openid.signed).Split(',');
 
-		public override bool IsResponseReady {
-			// This type of request can always be responded to immediately.
-			get { return true; }
-		}
+        signedFields = new Dictionary<string, string>();
+        Debug.Assert(!signedKeyOrder.Contains(Protocol.openidnp.mode),
+            "openid.mode must not be included in signature because it necessarily changes in checkauth requests.");
+        foreach (var key in signedKeyOrder)
+            signedFields.Add(key, Util.GetRequiredArgAllowEmptyValue(Query, Protocol.openid.Prefix + key));
+    }
 
-		/// <summary>
-		/// Gets the string "check_authentication".
-		/// </summary>
-		internal override string Mode {
-			get { return Protocol.Args.Mode.check_authentication; }
-		}
+    public override bool IsResponseReady =>
+        // This type of request can always be responded to immediately.
+        true;
 
-		/// <summary>
-		/// Respond to this request.
-		/// </summary>
-		internal EncodableResponse Answer() {
-			EncodableResponse response = EncodableResponse.PrepareDirectMessage(Protocol);
+    /// <summary>
+    ///     Gets the string "check_authentication".
+    /// </summary>
+    internal override string Mode => Protocol.Args.Mode.check_authentication;
 
-			bool validSignature = Provider.Signatory.Verify(AssociationHandle, signature, signedFields, signedKeyOrder);
-			response.Fields[Protocol.openidnp.is_valid] = validSignature ?
-				Protocol.Args.IsValid.True : Protocol.Args.IsValid.False;
+    /// <summary>
+    ///     Respond to this request.
+    /// </summary>
+    internal EncodableResponse Answer()
+    {
+        var response = EncodableResponse.PrepareDirectMessage(Protocol);
 
-			// By invalidating our dumb association, we make it impossible to
-			// verify the same authentication again, making a response_nonce check
-			// to protect against replay attacks unnecessary.
-			Provider.Signatory.Invalidate(AssociationHandle, AssociationRelyingPartyType.Dumb);
+        var validSignature = Provider.Signatory.Verify(AssociationHandle, signature, signedFields, signedKeyOrder);
+        response.Fields[Protocol.openidnp.is_valid] =
+            validSignature ? Protocol.Args.IsValid.True : Protocol.Args.IsValid.False;
 
-			// The RP may be asking for confirmation that an association should
-			// be invalidated.  If so, double-check and send a reply in our response.
-			string invalidate_handle = Util.GetOptionalArg(Query, Protocol.openid.invalidate_handle);
-			if (invalidate_handle != null) {
-				Association assoc = Provider.Signatory.GetAssociation(invalidate_handle, AssociationRelyingPartyType.Smart);
+        // By invalidating our dumb association, we make it impossible to
+        // verify the same authentication again, making a response_nonce check
+        // to protect against replay attacks unnecessary.
+        Provider.Signatory.Invalidate(AssociationHandle, AssociationRelyingPartyType.Dumb);
 
-				if (assoc == null) {
-					Logger.Warn("No matching association found. Returning invalidate_handle. ");
-					response.Fields[Protocol.openidnp.invalidate_handle] = invalidate_handle;
-				}
-			}
+        // The RP may be asking for confirmation that an association should
+        // be invalidated.  If so, double-check and send a reply in our response.
+        var invalidate_handle = Util.GetOptionalArg(Query, Protocol.openid.invalidate_handle);
+        if (invalidate_handle != null)
+        {
+            var assoc = Provider.Signatory.GetAssociation(invalidate_handle, AssociationRelyingPartyType.Smart);
 
-			return response;
-		}
+            if (assoc == null)
+            {
+                Logger.Warn("No matching association found. Returning invalidate_handle. ");
+                response.Fields[Protocol.openidnp.invalidate_handle] = invalidate_handle;
+            }
+        }
 
-		protected override IEncodable CreateResponse() {
-			return Answer();
-		}
+        return response;
+    }
 
-		public override string ToString() {
-			string returnString = @"
+    protected override IEncodable CreateResponse()
+    {
+        return Answer();
+    }
+
+    public override string ToString()
+    {
+        var returnString = @"
 CheckAuthRequest._sig = '{0}'
 CheckAuthRequest.AssocHandle = '{1}'";
-			return base.ToString() + string.Format(CultureInfo.CurrentCulture, 
-				returnString, signature, AssociationHandle);
-		}
-
-	}
+        return base.ToString() + string.Format(CultureInfo.CurrentCulture,
+            returnString, signature, AssociationHandle);
+    }
 }

@@ -23,51 +23,50 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Describes the purpose of an add-in or add-in root
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public class AddinDescriptionAttribute : Attribute
 {
 	/// <summary>
-	/// Describes the purpose of an add-in or add-in root
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinDescriptionAttribute" /> class.
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple = true)]
-	public class AddinDescriptionAttribute: Attribute
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinDescriptionAttribute"/> class.
-		/// </summary>
-		/// <param name='description'>
-		/// Description of the add-in
-		/// </param>
-		public AddinDescriptionAttribute (string description)
-		{
-			Description = description;
-		}
-		
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.AddinDescriptionAttribute"/> class.
-		/// </summary>
-		/// <param name='description'>
-		/// Description of the add-in
-		/// </param>
-		/// <param name='locale'>
-		/// Locale of the description (for example, 'en-US', or 'en')
-		/// </param>
-		public AddinDescriptionAttribute (string description, string locale)
-		{
-			Description = description;
-			Locale = locale;
-		}
-		
-		/// <value>
-		/// Description of the add-in
-		/// </value>
-		public string Description { get; set; }
+	/// <param name='description'>
+	///     Description of the add-in
+	/// </param>
+	public AddinDescriptionAttribute(string description)
+    {
+        Description = description;
+    }
 
-		/// <summary>
-		/// Locale of the description (for example, 'en-US', or 'en')
-		/// </summary>
-		public string Locale { get; set; }
-	}
+	/// <summary>
+	///     Initializes a new instance of the <see cref="Mono.Addins.AddinDescriptionAttribute" /> class.
+	/// </summary>
+	/// <param name='description'>
+	///     Description of the add-in
+	/// </param>
+	/// <param name='locale'>
+	///     Locale of the description (for example, 'en-US', or 'en')
+	/// </param>
+	public AddinDescriptionAttribute(string description, string locale)
+    {
+        Description = description;
+        Locale = locale;
+    }
+
+	/// <value>
+	///     Description of the add-in
+	/// </value>
+	public string Description { get; set; }
+
+	/// <summary>
+	///     Locale of the description (for example, 'en-US', or 'en')
+	/// </summary>
+	public string Locale { get; set; }
 }
-

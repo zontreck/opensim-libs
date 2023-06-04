@@ -5,18 +5,20 @@
  * For news or support on this file: http://blog.nerdbank.net/
  ********************************************************/
 
-namespace DotNetOpenId.Extensions.SimpleRegistration {
+namespace DotNetOpenId.Extensions.SimpleRegistration;
+
+/// <summary>
+///     Indicates the gender of a user.
+/// </summary>
+public enum Gender
+{
 	/// <summary>
-	/// Indicates the gender of a user.
+	///     The user is male.
 	/// </summary>
-	public enum Gender {
-		/// <summary>
-		/// The user is male.
-		/// </summary>
-		Male,
-		/// <summary>
-		/// The user is female.
-		/// </summary>
-		Female,
-	}
+	Male,
+
+	/// <summary>
+	///     The user is female.
+	/// </summary>
+	Female
 }

@@ -26,82 +26,75 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
 using System.Collections;
-using System.Xml;
-using System.Xml.Serialization;
-using System.Collections.Specialized;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+/// <summary>
+///     A collection of packages
+/// </summary>
+public class PackageCollection : CollectionBase
 {
 	/// <summary>
-	/// A collection of packages
+	///     Initializes a new instance of the <see cref="Mono.Addins.Setup.PackageCollection" /> class.
 	/// </summary>
-	public class PackageCollection: CollectionBase
-	{
-		/// <summary>
-		/// Initializes a new instance of the <see cref="Mono.Addins.Setup.PackageCollection"/> class.
-		/// </summary>
-		public PackageCollection ()
-		{
-		}
-		
-		/// <summary>
-		/// Copy constructor
-		/// </summary>
-		/// <param name="col">
-		/// Collection where to copy from
-		/// </param>
-		public PackageCollection (ICollection col)
-		{
-			AddRange (col);
-		}
-		
-		/// <summary>
-		/// Gets a package
-		/// </summary>
-		/// <param name="n">
-		/// Package index
-		/// </param>
-		public Package this [int n] {
-			get { return (Package) List [n]; }
-		}
-		
-		/// <summary>
-		/// Adds a package
-		/// </summary>
-		/// <param name="p">
-		/// A package
-		/// </param>
-		public void Add (Package p)
-		{
-			List.Add (p);
-		}
-		
-		/// <summary>
-		/// Checks if a package is present in the collection
-		/// </summary>
-		/// <param name="p">
-		/// The package
-		/// </param>
-		/// <returns>
-		/// True if the package is preent
-		/// </returns>
-		public bool Contains (Package p)
-		{
-			return List.Contains (p);
-		}
-		
-		/// <summary>
-		/// Adds a list of packages to the collection
-		/// </summary>
-		/// <param name="col">
-		/// The list of packages to add
-		/// </param>
-		public void AddRange (ICollection col)
-		{
-			foreach (Package p in col)
-				Add (p);
-		}
-	}
+	public PackageCollection()
+    {
+    }
+
+	/// <summary>
+	///     Copy constructor
+	/// </summary>
+	/// <param name="col">
+	///     Collection where to copy from
+	/// </param>
+	public PackageCollection(ICollection col)
+    {
+        AddRange(col);
+    }
+
+	/// <summary>
+	///     Gets a package
+	/// </summary>
+	/// <param name="n">
+	///     Package index
+	/// </param>
+	public Package this[int n] => (Package)List[n];
+
+	/// <summary>
+	///     Adds a package
+	/// </summary>
+	/// <param name="p">
+	///     A package
+	/// </param>
+	public void Add(Package p)
+    {
+        List.Add(p);
+    }
+
+	/// <summary>
+	///     Checks if a package is present in the collection
+	/// </summary>
+	/// <param name="p">
+	///     The package
+	/// </param>
+	/// <returns>
+	///     True if the package is preent
+	/// </returns>
+	public bool Contains(Package p)
+    {
+        return List.Contains(p);
+    }
+
+	/// <summary>
+	///     Adds a list of packages to the collection
+	/// </summary>
+	/// <param name="col">
+	///     The list of packages to add
+	/// </param>
+	public void AddRange(ICollection col)
+    {
+        foreach (Package p in col)
+            Add(p);
+    }
 }

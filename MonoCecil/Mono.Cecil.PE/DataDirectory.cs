@@ -8,25 +8,20 @@
 // Licensed under the MIT/X11 license.
 //
 
-using System;
-
 using RVA = System.UInt32;
 
-namespace Mono.Cecil.PE {
+namespace Mono.Cecil.PE;
 
-	struct DataDirectory {
+internal struct DataDirectory
+{
+    public readonly uint VirtualAddress;
+    public readonly uint Size;
 
-		public readonly RVA VirtualAddress;
-		public readonly uint Size;
+    public bool IsZero => VirtualAddress == 0 && Size == 0;
 
-		public bool IsZero {
-			get { return VirtualAddress == 0 && Size == 0; }
-		}
-
-		public DataDirectory (RVA rva, uint size)
-		{
-			this.VirtualAddress = rva;
-			this.Size = size;
-		}
-	}
+    public DataDirectory(uint rva, uint size)
+    {
+        VirtualAddress = rva;
+        Size = size;
+    }
 }

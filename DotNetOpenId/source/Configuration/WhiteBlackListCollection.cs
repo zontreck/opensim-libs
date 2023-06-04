@@ -2,32 +2,33 @@
 using System.Configuration;
 using System.Text.RegularExpressions;
 
-namespace DotNetOpenId.Configuration {
-	internal class WhiteBlackListCollection : ConfigurationElementCollection {
-		public WhiteBlackListCollection() { }
+namespace DotNetOpenId.Configuration;
 
-		protected override ConfigurationElement CreateNewElement() {
-			return new WhiteBlackListElement();
-		}
+internal class WhiteBlackListCollection : ConfigurationElementCollection
+{
+    internal IEnumerable<string> KeysAsStrings
+    {
+        get
+        {
+            foreach (WhiteBlackListElement element in this) yield return element.Name;
+        }
+    }
 
-		protected override object GetElementKey(ConfigurationElement element) {
-			return ((WhiteBlackListElement)element).Name;
-		}
+    internal IEnumerable<Regex> KeysAsRegexs
+    {
+        get
+        {
+            foreach (WhiteBlackListElement element in this) yield return new Regex(element.Name);
+        }
+    }
 
-		internal IEnumerable<string> KeysAsStrings {
-			get {
-				foreach (WhiteBlackListElement element in this) {
-					yield return element.Name;
-				}
-			}
-		}
+    protected override ConfigurationElement CreateNewElement()
+    {
+        return new WhiteBlackListElement();
+    }
 
-		internal IEnumerable<Regex> KeysAsRegexs {
-			get {
-				foreach (WhiteBlackListElement element in this) {
-					yield return new Regex(element.Name);
-				}
-			}
-		}
-	}
+    protected override object GetElementKey(ConfigurationElement element)
+    {
+        return ((WhiteBlackListElement)element).Name;
+    }
 }

@@ -8,16 +8,16 @@
 // Licensed under the MIT/X11 license.
 //
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public enum MethodCallingConvention : byte {
-		Default		= 0x0,
-		C			= 0x1,
-		StdCall		= 0x2,
-		ThisCall	= 0x3,
-		FastCall	= 0x4,
-		VarArg		= 0x5,
-		Unmanaged	= 0x9,
-		Generic		= 0x10,
-	}
+public enum MethodCallingConvention : byte
+{
+    Default = 0x0,
+    C = 0x1,
+    StdCall = 0x2,
+    ThisCall = 0x3,
+    FastCall = 0x4,
+    VarArg = 0x5,
+    Unmanaged = 0x9,
+    Generic = 0x10
 }

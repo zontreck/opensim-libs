@@ -25,28 +25,25 @@
 //
 //
 
-using System;
-using Mono.Addins;
+using System.Threading;
 
-namespace Mono.Addins.Localization
+namespace Mono.Addins.Localization;
+
+internal class StringResourceLocalizer : IAddinLocalizerFactory, IAddinLocalizer
 {
-	class StringResourceLocalizer: IAddinLocalizerFactory, IAddinLocalizer
-	{
-		RuntimeAddin addin;
-		
-		public IAddinLocalizer CreateLocalizer (RuntimeAddin addin, NodeElement element)
-		{
-			this.addin = addin;
-			return this;
-		}
+    private RuntimeAddin addin;
 
-		public string GetString (string msgid)
-		{
-			string s = addin.GetResourceString (msgid, false, System.Threading.Thread.CurrentThread.CurrentCulture);
-			if (s == null)
-				return msgid;
-			else
-				return s;
-		}
-	}
+    public string GetString(string msgid)
+    {
+        var s = addin.GetResourceString(msgid, false, Thread.CurrentThread.CurrentCulture);
+        if (s == null)
+            return msgid;
+        return s;
+    }
+
+    public IAddinLocalizer CreateLocalizer(RuntimeAddin addin, NodeElement element)
+    {
+        this.addin = addin;
+        return this;
+    }
 }

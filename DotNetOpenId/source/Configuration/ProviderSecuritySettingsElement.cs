@@ -1,38 +1,44 @@
 ﻿using System.Configuration;
 using DotNetOpenId.Provider;
 
-namespace DotNetOpenId.Configuration {
-	internal class ProviderSecuritySettingsElement : ConfigurationElement {
-		public ProviderSecuritySettingsElement() {
-		}
+namespace DotNetOpenId.Configuration;
 
-		public ProviderSecuritySettings CreateSecuritySettings() {
-			ProviderSecuritySettings settings = new ProviderSecuritySettings();
-			settings.MinimumHashBitLength = MinimumHashBitLength;
-			settings.MaximumHashBitLength = MaximumHashBitLength;
-			settings.ProtectDownlevelReplayAttacks = ProtectDownlevelReplayAttacks;
-			return settings;
-		}
+internal class ProviderSecuritySettingsElement : ConfigurationElement
+{
+    private const string minimumHashBitLengthConfigName = "minimumHashBitLength";
 
-		const string minimumHashBitLengthConfigName = "minimumHashBitLength";
-		[ConfigurationProperty(minimumHashBitLengthConfigName, DefaultValue = DotNetOpenId.SecuritySettings.minimumHashBitLengthDefault)]
-		public int MinimumHashBitLength {
-			get { return (int)this[minimumHashBitLengthConfigName]; }
-			set { this[minimumHashBitLengthConfigName] = value; }
-		}
+    private const string maximumHashBitLengthConfigName = "maximumHashBitLength";
 
-		const string maximumHashBitLengthConfigName = "maximumHashBitLength";
-		[ConfigurationProperty(maximumHashBitLengthConfigName, DefaultValue = DotNetOpenId.SecuritySettings.maximumHashBitLengthRPDefault)]
-		public int MaximumHashBitLength {
-			get { return (int)this[maximumHashBitLengthConfigName]; }
-			set { this[maximumHashBitLengthConfigName] = value; }
-		}
+    private const string protectDownlevelReplayAttacksConfigName = "protectDownlevelReplayAttacks";
 
-		const string protectDownlevelReplayAttacksConfigName = "protectDownlevelReplayAttacks";
-		[ConfigurationProperty(protectDownlevelReplayAttacksConfigName, DefaultValue = false)]
-		public bool ProtectDownlevelReplayAttacks {
-			get { return (bool)this[protectDownlevelReplayAttacksConfigName]; }
-			set { this[protectDownlevelReplayAttacksConfigName] = value; }
-		}
-	}
+    [ConfigurationProperty(minimumHashBitLengthConfigName, DefaultValue = SecuritySettings.minimumHashBitLengthDefault)]
+    public int MinimumHashBitLength
+    {
+        get => (int)this[minimumHashBitLengthConfigName];
+        set => this[minimumHashBitLengthConfigName] = value;
+    }
+
+    [ConfigurationProperty(maximumHashBitLengthConfigName,
+        DefaultValue = SecuritySettings.maximumHashBitLengthRPDefault)]
+    public int MaximumHashBitLength
+    {
+        get => (int)this[maximumHashBitLengthConfigName];
+        set => this[maximumHashBitLengthConfigName] = value;
+    }
+
+    [ConfigurationProperty(protectDownlevelReplayAttacksConfigName, DefaultValue = false)]
+    public bool ProtectDownlevelReplayAttacks
+    {
+        get => (bool)this[protectDownlevelReplayAttacksConfigName];
+        set => this[protectDownlevelReplayAttacksConfigName] = value;
+    }
+
+    public ProviderSecuritySettings CreateSecuritySettings()
+    {
+        var settings = new ProviderSecuritySettings();
+        settings.MinimumHashBitLength = MinimumHashBitLength;
+        settings.MaximumHashBitLength = MaximumHashBitLength;
+        settings.ProtectDownlevelReplayAttacks = ProtectDownlevelReplayAttacks;
+        return settings;
+    }
 }

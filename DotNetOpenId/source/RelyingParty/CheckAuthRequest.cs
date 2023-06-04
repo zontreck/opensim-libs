@@ -1,54 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 
-namespace DotNetOpenId.RelyingParty {
-	class CheckAuthRequest : DirectRequest {
-		CheckAuthRequest(OpenIdRelyingParty relyingParty, ServiceEndpoint provider, IDictionary<string, string> args) :
-			base(relyingParty, provider, args) {
-		}
+namespace DotNetOpenId.RelyingParty;
 
-		public static CheckAuthRequest Create(OpenIdRelyingParty relyingParty, ServiceEndpoint provider, IDictionary<string, string> query) {
-			if (relyingParty == null) throw new ArgumentNullException("relyingParty");
-			Protocol protocol = provider.Protocol;
-			string signed = query[protocol.openid.signed];
+internal class CheckAuthRequest : DirectRequest
+{
+    private CheckAuthResponse response;
 
-			if (signed == null)
-				// #XXX: oidutil.log('No signature present; checkAuth aborted')
-				return null;
+    private CheckAuthRequest(OpenIdRelyingParty relyingParty, ServiceEndpoint provider,
+        IDictionary<string, string> args) :
+        base(relyingParty, provider, args)
+    {
+    }
 
-			// Arguments that are always passed to the server and not
-			// included in the signature.
-			string[] whitelist = new string[] { protocol.openidnp.assoc_handle, protocol.openidnp.sig, protocol.openidnp.signed, protocol.openidnp.invalidate_handle };
-			string[] splitted = signed.Split(',');
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] // getter executes code
+    public CheckAuthResponse Response
+    {
+        get
+        {
+            if (response == null) response = new CheckAuthResponse(RelyingParty, Provider, GetResponse());
+            return response;
+        }
+    }
 
-			// combine the previous 2 arrays (whitelist + splitted) into a new array: signed_array
-			string[] signed_array = new string[whitelist.Length + splitted.Length];
-			Array.Copy(whitelist, signed_array, whitelist.Length);
-			Array.Copy(splitted, 0, signed_array, whitelist.Length, splitted.Length);
+    public static CheckAuthRequest Create(OpenIdRelyingParty relyingParty, ServiceEndpoint provider,
+        IDictionary<string, string> query)
+    {
+        if (relyingParty == null) throw new ArgumentNullException("relyingParty");
+        var protocol = provider.Protocol;
+        var signed = query[protocol.openid.signed];
 
-			var check_args = new Dictionary<string, string>();
+        if (signed == null)
+            // #XXX: oidutil.log('No signature present; checkAuth aborted')
+            return null;
 
-			foreach (string key in query.Keys) {
-				if (key.StartsWith(protocol.openid.Prefix, StringComparison.OrdinalIgnoreCase)
-					&& Array.IndexOf(signed_array, key.Substring(protocol.openid.Prefix.Length)) > -1)
-					check_args[key] = query[key];
-			}
-			check_args[protocol.openid.mode] = protocol.Args.Mode.check_authentication;
+        // Arguments that are always passed to the server and not
+        // included in the signature.
+        string[] whitelist =
+        {
+            protocol.openidnp.assoc_handle, protocol.openidnp.sig, protocol.openidnp.signed,
+            protocol.openidnp.invalidate_handle
+        };
+        var splitted = signed.Split(',');
 
-			return new CheckAuthRequest(relyingParty, provider, check_args);
-		}
+        // combine the previous 2 arrays (whitelist + splitted) into a new array: signed_array
+        var signed_array = new string[whitelist.Length + splitted.Length];
+        Array.Copy(whitelist, signed_array, whitelist.Length);
+        Array.Copy(splitted, 0, signed_array, whitelist.Length, splitted.Length);
 
-		CheckAuthResponse response;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] // getter executes code
-		public CheckAuthResponse Response {
-			get {
-				if (response == null) {
-					response = new CheckAuthResponse(RelyingParty, Provider, GetResponse());
-				}
-				return response;
-			}
-		}
-	}
+        var check_args = new Dictionary<string, string>();
+
+        foreach (var key in query.Keys)
+            if (key.StartsWith(protocol.openid.Prefix, StringComparison.OrdinalIgnoreCase)
+                && Array.IndexOf(signed_array, key.Substring(protocol.openid.Prefix.Length)) > -1)
+                check_args[key] = query[key];
+        check_args[protocol.openid.mode] = protocol.Args.Mode.check_authentication;
+
+        return new CheckAuthRequest(relyingParty, provider, check_args);
+    }
 }

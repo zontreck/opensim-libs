@@ -31,121 +31,120 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Mono.Addins.Setup.ProgressMonitoring
-{
-	internal class ProgressStatusMonitor: MarshalByRefObject, IProgressMonitor
-	{
-		IProgressStatus status;
-		LogTextWriter logger;
-		ProgressTracker tracker = new ProgressTracker ();
-		StringBuilder logBuffer = new StringBuilder ();
-		
-		public ProgressStatusMonitor (IProgressStatus status)
-		{
-			this.status = status;
-			logger = new LogTextWriter ();
-			logger.TextWritten += new LogTextEventHandler (WriteLog);
-		}
-		
-		public static IProgressMonitor GetProgressMonitor (IProgressStatus status)
-		{
-			if (status == null)
-				return new NullProgressMonitor ();
-			else
-				return new ProgressStatusMonitor (status);
-		}
-		
-		public void BeginTask (string name, int totalWork)
-		{
-			FlushLog ();
-			tracker.BeginTask (name, totalWork);
-			status.SetMessage (tracker.CurrentTask);
-			status.SetProgress (tracker.GlobalWork);
-		}
-		
-		public void BeginStepTask (string name, int totalWork, int stepSize)
-		{
-			FlushLog ();
-			tracker.BeginStepTask (name, totalWork, stepSize);
-			status.SetMessage (tracker.CurrentTask);
-			status.SetProgress (tracker.GlobalWork);
-		}
-		
-		public void Step (int work)
-		{
-			FlushLog ();
-			tracker.Step (work);
-			status.SetProgress (tracker.GlobalWork);
-		}
-		
-		public void EndTask ()
-		{
-			FlushLog ();
-			tracker.EndTask ();
-			status.SetMessage (tracker.CurrentTask);
-			status.SetProgress (tracker.GlobalWork);
-		}
-		
-		void WriteLog (string text)
-		{
-			int pi = 0;
-			int i = text.IndexOf ('\n');
-			while (i != -1) {
-				string line = text.Substring (pi, i - pi);
-				if (logBuffer.Length > 0) {
-					logBuffer.Append (line);
-					status.Log (logBuffer.ToString ());
-					logBuffer.Clear ();
-				} else {
-					status.Log (line);
-				}
-				pi = i + 1;
-				i = text.IndexOf ('\n', pi);
-			}
-			logBuffer.Append (text, pi, text.Length - pi);
-		}
-		
-		public TextWriter Log {
-			get { return logger; }
-		}
-		
-		public void ReportWarning (string message)
-		{
-			FlushLog ();
-			status.ReportWarning (message);
-		}
-		
-		public void ReportError (string message, Exception ex)
-		{
-			FlushLog ();
-			status.ReportError (message, ex);
-		}
-		
-		public bool IsCancelRequested { 
-			get { return status.IsCanceled; }
-		}
-		
-		public void Cancel ()
-		{
-			FlushLog ();
-			status.Cancel ();
-		}
-		
-		public int LogLevel {
-			get { return status.LogLevel; }
-		}
+namespace Mono.Addins.Setup.ProgressMonitoring;
 
-		void FlushLog ()
-		{
-			if (logBuffer.Length > 0) {
-				status.Log (logBuffer.ToString ());
-				logBuffer.Clear ();
-			}
-		}
-		
-		public void Dispose ()
-		{
-			FlushLog ();
-		}
-	}
+internal class ProgressStatusMonitor : MarshalByRefObject, IProgressMonitor
+{
+    private readonly StringBuilder logBuffer = new();
+    private readonly LogTextWriter logger;
+    private readonly IProgressStatus status;
+    private readonly ProgressTracker tracker = new();
+
+    public ProgressStatusMonitor(IProgressStatus status)
+    {
+        this.status = status;
+        logger = new LogTextWriter();
+        logger.TextWritten += WriteLog;
+    }
+
+    public void BeginTask(string name, int totalWork)
+    {
+        FlushLog();
+        tracker.BeginTask(name, totalWork);
+        status.SetMessage(tracker.CurrentTask);
+        status.SetProgress(tracker.GlobalWork);
+    }
+
+    public void BeginStepTask(string name, int totalWork, int stepSize)
+    {
+        FlushLog();
+        tracker.BeginStepTask(name, totalWork, stepSize);
+        status.SetMessage(tracker.CurrentTask);
+        status.SetProgress(tracker.GlobalWork);
+    }
+
+    public void Step(int work)
+    {
+        FlushLog();
+        tracker.Step(work);
+        status.SetProgress(tracker.GlobalWork);
+    }
+
+    public void EndTask()
+    {
+        FlushLog();
+        tracker.EndTask();
+        status.SetMessage(tracker.CurrentTask);
+        status.SetProgress(tracker.GlobalWork);
+    }
+
+    public TextWriter Log => logger;
+
+    public void ReportWarning(string message)
+    {
+        FlushLog();
+        status.ReportWarning(message);
+    }
+
+    public void ReportError(string message, Exception ex)
+    {
+        FlushLog();
+        status.ReportError(message, ex);
+    }
+
+    public bool IsCancelRequested => status.IsCanceled;
+
+    public void Cancel()
+    {
+        FlushLog();
+        status.Cancel();
+    }
+
+    public int LogLevel => status.LogLevel;
+
+    public void Dispose()
+    {
+        FlushLog();
+    }
+
+    public static IProgressMonitor GetProgressMonitor(IProgressStatus status)
+    {
+        if (status == null)
+            return new NullProgressMonitor();
+        return new ProgressStatusMonitor(status);
+    }
+
+    private void WriteLog(string text)
+    {
+        var pi = 0;
+        var i = text.IndexOf('\n');
+        while (i != -1)
+        {
+            var line = text.Substring(pi, i - pi);
+            if (logBuffer.Length > 0)
+            {
+                logBuffer.Append(line);
+                status.Log(logBuffer.ToString());
+                logBuffer.Clear();
+            }
+            else
+            {
+                status.Log(line);
+            }
+
+            pi = i + 1;
+            i = text.IndexOf('\n', pi);
+        }
+
+        logBuffer.Append(text, pi, text.Length - pi);
+    }
+
+    private void FlushLog()
+    {
+        if (logBuffer.Length > 0)
+        {
+            status.Log(logBuffer.ToString());
+            logBuffer.Clear();
+        }
+    }
 }

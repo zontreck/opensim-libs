@@ -28,34 +28,33 @@
 
 using System;
 
-namespace Mono.Addins.Setup
+namespace Mono.Addins.Setup;
+
+/// <summary>
+///     An installation exception
+/// </summary>
+public class InstallException : Exception
 {
 	/// <summary>
-	/// An installation exception
+	///     Initializes the exception
 	/// </summary>
-	public class InstallException: Exception
-	{
-		/// <summary>
-		/// Initializes the exception
-		/// </summary>
-		/// <param name="msg">
-		/// Error message
-		/// </param>
-		public InstallException (string msg): base (msg)
-		{
-		}
-		
-		/// <summary>
-		/// Initializes the exception
-		/// </summary>
-		/// <param name="msg">
-		/// Error message
-		/// </param>
-		/// <param name="ex">
-		/// Inner exception
-		/// </param>
-		public InstallException (string msg, Exception ex): base (msg, ex)
-		{
-		}
-	}
+	/// <param name="msg">
+	///     Error message
+	/// </param>
+	public InstallException(string msg) : base(msg)
+    {
+    }
+
+	/// <summary>
+	///     Initializes the exception
+	/// </summary>
+	/// <param name="msg">
+	///     Error message
+	/// </param>
+	/// <param name="ex">
+	///     Inner exception
+	/// </param>
+	public InstallException(string msg, Exception ex) : base(msg, ex)
+    {
+    }
 }

@@ -28,139 +28,132 @@
 
 
 using System;
-using System.Collections;
-using System.Threading;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 
-namespace Mono.Addins.Setup.ProgressMonitoring
+namespace Mono.Addins.Setup.ProgressMonitoring;
+
+internal class NullProgressMonitor : MarshalByRefObject, IProgressMonitor
 {
-	internal class NullProgressMonitor: MarshalByRefObject, IProgressMonitor
-	{
-		bool done, canceled;
-		List<ProgressError> errors;
-		List<string> warnings;
-		List<string> messages;
-		
-		public string[] Messages {
-			get {
-				if (messages != null)
-					return messages.ToArray ();
-				else
-					return new string [0];
-			}
-		}
-		
-		public string[] Warnings {
-			get {
-				if (warnings != null)
-					return warnings.ToArray ();
-				else
-					return new string [0];
-			}
-		}
-		
-		public ProgressError[] Errors {
-			get {
-				if (errors != null)
-					return errors.ToArray ();
-				else
-					return new ProgressError [0];
-			}
-		}
-		
-		public virtual void BeginTask (string name, int totalWork)
-		{
-		}
-		
-		public virtual void EndTask ()
-		{
-		}
-		
-		public virtual void BeginStepTask (string name, int totalWork, int stepSize)
-		{
-		}
-		
-		public virtual void Step (int work)
-		{
-		}
-		
-		public virtual TextWriter Log {
-			get { return TextWriter.Null; }
-		}
-		
-		public virtual void ReportSuccess (string message)
-		{
-			if (messages == null)
-				messages = new List<string> ();
-			messages.Add (message);
-		}
-		
-		public virtual void ReportWarning (string message)
-		{
-			if (warnings == null)
-				warnings = new List<string> ();
-			messages.Add (message);
-		}
-		
-		public virtual void ReportError (string message, Exception ex)
-		{
-			if (errors == null)
-				errors = new List<ProgressError> ();
+    private bool done;
+    private List<ProgressError> errors;
+    private List<string> messages;
+    private List<string> warnings;
 
-			if (message == null && ex != null)
-				message = ex.Message;
-			else if (message != null && ex != null) {
-				if (!message.EndsWith (".")) message += ".";
-				message += " " + ex.Message;
-			}
-			
-			errors.Add (new ProgressError (message, ex));
-		}
-		
-		public bool IsCancelRequested {
-			get { return canceled; }
-		}
-		
-		public void Cancel ()
-		{
-			canceled = true;
-		}
-		
-		public virtual int LogLevel {
-			get { return 1; }
-		}
-		
-		public virtual void Dispose ()
-		{
-			lock (this) {
-				if (done) return;
-				done = true;
-			}
-			OnCompleted ();
-		}
-		
-		protected virtual void OnCompleted ()
-		{
-		}
-	}
-	
-	internal class ProgressError
-	{
-		Exception ex;
-		string message;
-		
-		public ProgressError (string message, Exception ex)
-		{
-			this.ex = ex;
-			this.message = message;
-		}
-		
-		public string Message {
-			get { return message; }
-		}
-		
-		public Exception Exception {
-			get { return ex; }		}
-	}
+    public string[] Messages
+    {
+        get
+        {
+            if (messages != null)
+                return messages.ToArray();
+            return new string [0];
+        }
+    }
+
+    public string[] Warnings
+    {
+        get
+        {
+            if (warnings != null)
+                return warnings.ToArray();
+            return new string [0];
+        }
+    }
+
+    public ProgressError[] Errors
+    {
+        get
+        {
+            if (errors != null)
+                return errors.ToArray();
+            return new ProgressError [0];
+        }
+    }
+
+    public virtual void BeginTask(string name, int totalWork)
+    {
+    }
+
+    public virtual void EndTask()
+    {
+    }
+
+    public virtual void BeginStepTask(string name, int totalWork, int stepSize)
+    {
+    }
+
+    public virtual void Step(int work)
+    {
+    }
+
+    public virtual TextWriter Log => TextWriter.Null;
+
+    public virtual void ReportWarning(string message)
+    {
+        if (warnings == null)
+            warnings = new List<string>();
+        messages.Add(message);
+    }
+
+    public virtual void ReportError(string message, Exception ex)
+    {
+        if (errors == null)
+            errors = new List<ProgressError>();
+
+        if (message == null && ex != null)
+        {
+            message = ex.Message;
+        }
+        else if (message != null && ex != null)
+        {
+            if (!message.EndsWith(".")) message += ".";
+            message += " " + ex.Message;
+        }
+
+        errors.Add(new ProgressError(message, ex));
+    }
+
+    public bool IsCancelRequested { get; private set; }
+
+    public void Cancel()
+    {
+        IsCancelRequested = true;
+    }
+
+    public virtual int LogLevel => 1;
+
+    public virtual void Dispose()
+    {
+        lock (this)
+        {
+            if (done) return;
+            done = true;
+        }
+
+        OnCompleted();
+    }
+
+    public virtual void ReportSuccess(string message)
+    {
+        if (messages == null)
+            messages = new List<string>();
+        messages.Add(message);
+    }
+
+    protected virtual void OnCompleted()
+    {
+    }
+}
+
+internal class ProgressError
+{
+    public ProgressError(string message, Exception ex)
+    {
+        Exception = ex;
+        Message = message;
+    }
+
+    public string Message { get; }
+
+    public Exception Exception { get; }
 }

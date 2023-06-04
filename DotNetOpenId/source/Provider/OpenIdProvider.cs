@@ -1,180 +1,194 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Configuration;
 using System.Diagnostics;
-using System.Web;
+using DotNetOpenId.Configuration;
 using IProviderAssociationStore = DotNetOpenId.IAssociationStore<DotNetOpenId.AssociationRelyingPartyType>;
 using ProviderMemoryStore = DotNetOpenId.AssociationMemoryStore<DotNetOpenId.AssociationRelyingPartyType>;
-using DotNetOpenId.Configuration;
 
-namespace DotNetOpenId.Provider {
-	/// <summary>
-	/// Offers services for a web page that is acting as an OpenID identity server.
-	/// </summary>
-	[DebuggerDisplay("Endpoint: {Endpoint}, OpenId Request: {Query.ContainsKey(\"openid.mode\")}")]
-	public class OpenIdProvider {
-		internal Signatory Signatory { get; private set; }
-		internal MessageEncoder Encoder;
-		/// <summary>
-		/// The incoming request's Url.
-		/// </summary>
-		/// <remarks>
-		/// This is used for certain security checks internally.  It should not
-		/// be used for its Query property, as it will be irrelevant on POST requests.
-		/// Instead, use the OpenIdProvider.Query field.
-		/// </remarks>
-		internal Uri RequestUrl;
-		/// <summary>
-		/// The query of the incoming request.
-		/// </summary>
-		internal IDictionary<string, string> Query;
-		/// <summary>
-		/// The version of OpenId being used by the Relying Party
-		/// sending the incoming request.
-		/// </summary>
-		internal Protocol Protocol { get; private set; }
+namespace DotNetOpenId.Provider;
 
-		/// <summary>
-		/// Constructs an OpenId server that uses the HttpApplication dictionary as
-		/// its association store and detects common settings.
-		/// </summary>
-		/// <remarks>
-		/// This method requires a current ASP.NET HttpContext.
-		/// </remarks>
-		public OpenIdProvider()
-			 { }
-		/// <summary>
-		/// Constructs an OpenId server that uses a given query and IAssociationStore.
-		/// </summary>
-		/// <param name="store">
-		/// The application-level store where associations with OpenId consumers will be preserved.
-		/// </param>
-		/// <param name="providerEndpoint">
-		/// The Internet-facing URL that responds to OpenID requests.
-		/// </param>
-		/// <param name="requestUrl">The incoming request URL.</param>
-		/// <param name="query">
-		/// The name/value pairs that came in on the 
-		/// QueryString of a GET request or in the entity of a POST request.
-		/// For example: (Request.HttpMethod == "GET" ? Request.QueryString : Request.Form).
-		/// </param>
-		public OpenIdProvider(IProviderAssociationStore store, Uri providerEndpoint, Uri requestUrl, NameValueCollection query)
-			: this(store, providerEndpoint, requestUrl, Util.NameValueCollectionToDictionary(query)) { }
-		OpenIdProvider(IProviderAssociationStore store, Uri providerEndpoint, Uri requestUrl, IDictionary<string, string> query) {
-			if (store == null) throw new ArgumentNullException("store");
-			if (providerEndpoint == null) throw new ArgumentNullException("providerEndpoint");
-			if (requestUrl == null) throw new ArgumentNullException("requestUrl");
-			if (query == null) throw new ArgumentNullException("query");
-			Settings = new ProviderSecuritySettings();
-			Endpoint = providerEndpoint;
-			RequestUrl = requestUrl;
-			Query = query;
-			Signatory = new Signatory(store);
-			Encoder = new SigningMessageEncoder(Signatory);
-			store.ClearExpiredAssociations(); // every so often we should do this.
-		}
+/// <summary>
+///     Offers services for a web page that is acting as an OpenID identity server.
+/// </summary>
+[DebuggerDisplay("Endpoint: {Endpoint}, OpenId Request: {Query.ContainsKey(\"openid.mode\")}")]
+public class OpenIdProvider
+{
+    private const string associationStoreKey = "DotNetOpenId.Provider.OpenIdProvider.AssociationStore";
+    internal MessageEncoder Encoder;
 
-		/// <summary>
-		/// The provider URL that responds to OpenID requests.
-		/// </summary>
-		/// <remarks>
-		/// An auto-detect attempt is made if an ASP.NET HttpContext is available.
-		/// </remarks>
-		internal Uri Endpoint { get; private set; }
+    /// <summary>
+    ///     The query of the incoming request.
+    /// </summary>
+    internal IDictionary<string, string> Query;
 
-		// TODO: make this property public WHEN its security settings are actually supported.
-		/// <summary>
-		/// Provides access to the adjustable security settings of this instance
-		/// of <see cref="OpenIdProvider"/>.
-		/// </summary>
-		internal ProviderSecuritySettings Settings { get; private set; }
+    private Request request;
 
-		bool requestProcessed;
-		Request request;
-		/// <summary>
-		/// Gets the incoming OpenID request if there is one, or null if none was detected.
-		/// </summary>
-		/// <remarks>
-		/// Requests may be infrastructural to OpenID and allow auto-responses, or they may
-		/// be authentication requests where the Provider site has to make decisions based
-		/// on its own user database and policies.
-		/// </remarks>
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] // this property getter executes code
-		public IRequest Request {
-			get {
-				if (!requestProcessed) {
-					request = decodeRequest();
-					requestProcessed = true;
-				}
-				return request;
-			}
-		}
+    private bool requestProcessed;
 
-		/// <summary>
-		/// Decodes an incoming web request in to a <see cref="Request"/>.
-		/// </summary>
-		/// <returns>A Request object, or null if the given query doesn't represent an OpenId request.</returns>
-		Request decodeRequest() {
-			if (!Provider.Request.IsOpenIdRequest(Query)) {
-				return null;
-			}
+    /// <summary>
+    ///     The incoming request's Url.
+    /// </summary>
+    /// <remarks>
+    ///     This is used for certain security checks internally.  It should not
+    ///     be used for its Query property, as it will be irrelevant on POST requests.
+    ///     Instead, use the OpenIdProvider.Query field.
+    /// </remarks>
+    internal Uri RequestUrl;
 
-			Protocol = Protocol.Detect(Query);
-			Request req = Provider.Request.CreateRequest(this);
+    /// <summary>
+    ///     Constructs an OpenId server that uses the HttpApplication dictionary as
+    ///     its association store and detects common settings.
+    /// </summary>
+    /// <remarks>
+    ///     This method requires a current ASP.NET HttpContext.
+    /// </remarks>
+    public OpenIdProvider()
+    {
+    }
 
-			Logger.InfoFormat("Received OpenID {0} request.{1}{2}", req.Mode, Environment.NewLine,
-				Util.ToString(Query));
+    /// <summary>
+    ///     Constructs an OpenId server that uses a given query and IAssociationStore.
+    /// </summary>
+    /// <param name="store">
+    ///     The application-level store where associations with OpenId consumers will be preserved.
+    /// </param>
+    /// <param name="providerEndpoint">
+    ///     The Internet-facing URL that responds to OpenID requests.
+    /// </param>
+    /// <param name="requestUrl">The incoming request URL.</param>
+    /// <param name="query">
+    ///     The name/value pairs that came in on the
+    ///     QueryString of a GET request or in the entity of a POST request.
+    ///     For example: (Request.HttpMethod == "GET" ? Request.QueryString : Request.Form).
+    /// </param>
+    public OpenIdProvider(IProviderAssociationStore store, Uri providerEndpoint, Uri requestUrl,
+        NameValueCollection query)
+        : this(store, providerEndpoint, requestUrl, Util.NameValueCollectionToDictionary(query))
+    {
+    }
 
-			return req;
-		}
+    private OpenIdProvider(IProviderAssociationStore store, Uri providerEndpoint, Uri requestUrl,
+        IDictionary<string, string> query)
+    {
+        if (store == null) throw new ArgumentNullException("store");
+        if (providerEndpoint == null) throw new ArgumentNullException("providerEndpoint");
+        if (requestUrl == null) throw new ArgumentNullException("requestUrl");
+        if (query == null) throw new ArgumentNullException("query");
+        Settings = new ProviderSecuritySettings();
+        Endpoint = providerEndpoint;
+        RequestUrl = requestUrl;
+        Query = query;
+        Signatory = new Signatory(store);
+        Encoder = new SigningMessageEncoder(Signatory);
+        store.ClearExpiredAssociations(); // every so often we should do this.
+    }
 
-		/// <summary>
-		/// Allows a Provider to send an identity assertion on behalf of one
-		/// of its members in order to redirect the member to a relying party
-		/// web site and log him/her in immediately in one uninterrupted step.
-		/// </summary>
-		/// <param name="relyingParty">
-		/// The URL of the relying party web site.
-		/// This will typically be the home page, but may be a longer URL if
-		/// that Relying Party considers the scope of its realm to be more specific.
-		/// The URL provided here must allow discovery of the Relying Party's
-		/// XRDS document that advertises its OpenID RP endpoint.
-		/// </param>
-		/// <param name="claimedIdentifier">
-		/// The Identifier you are asserting your member controls.
-		/// </param>
-		/// <param name="localIdentifier">
-		/// The Identifier you know your user by internally.  This will typically
-		/// be the same as <paramref name="claimedIdentifier"/>.
-		/// </param>
-		/// <returns>
-		/// An <see cref="IResponse"/> object describing the HTTP response to send
-		/// the user agent to allow the redirect with assertion to happen.
-		/// </returns>
-		public IResponse PrepareUnsolicitedAssertion(Realm relyingParty, 
-			Identifier claimedIdentifier, Identifier localIdentifier) {
-			if (relyingParty == null) throw new ArgumentNullException("relyingParty");
-			if (claimedIdentifier == null) throw new ArgumentNullException("claimedIdentifier");
-			if (localIdentifier == null) throw new ArgumentNullException("localIdentifier");
+    internal Signatory Signatory { get; }
 
-			Logger.InfoFormat("Preparing unsolicited assertion for {0}", claimedIdentifier);
-			return AssertionMessage.CreateUnsolicitedAssertion(this, 
-				relyingParty, claimedIdentifier, localIdentifier);
-		}
+    /// <summary>
+    ///     The version of OpenId being used by the Relying Party
+    ///     sending the incoming request.
+    /// </summary>
+    internal Protocol Protocol { get; private set; }
 
-		const string associationStoreKey = "DotNetOpenId.Provider.OpenIdProvider.AssociationStore";
-		
+    /// <summary>
+    ///     The provider URL that responds to OpenID requests.
+    /// </summary>
+    /// <remarks>
+    ///     An auto-detect attempt is made if an ASP.NET HttpContext is available.
+    /// </remarks>
+    internal Uri Endpoint { get; private set; }
 
-		/// <summary>
-		/// Gets the relevant Configuration section for this OpenIdRelyingParty.
-		/// </summary>
-		/// <remarks>
-		/// This is not a static member because depending on the context within which we are
-		/// invoked, the configuration section might be different. (location tag, for example).
-		/// </remarks>
-		internal static ProviderSection Configuration {
-			get { return ProviderSection.Configuration; }
-		}
-	}
+    // TODO: make this property public WHEN its security settings are actually supported.
+    /// <summary>
+    ///     Provides access to the adjustable security settings of this instance
+    ///     of <see cref="OpenIdProvider" />.
+    /// </summary>
+    internal ProviderSecuritySettings Settings { get; private set; }
+
+    /// <summary>
+    ///     Gets the incoming OpenID request if there is one, or null if none was detected.
+    /// </summary>
+    /// <remarks>
+    ///     Requests may be infrastructural to OpenID and allow auto-responses, or they may
+    ///     be authentication requests where the Provider site has to make decisions based
+    ///     on its own user database and policies.
+    /// </remarks>
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] // this property getter executes code
+    public IRequest Request
+    {
+        get
+        {
+            if (!requestProcessed)
+            {
+                request = decodeRequest();
+                requestProcessed = true;
+            }
+
+            return request;
+        }
+    }
+
+
+    /// <summary>
+    ///     Gets the relevant Configuration section for this OpenIdRelyingParty.
+    /// </summary>
+    /// <remarks>
+    ///     This is not a static member because depending on the context within which we are
+    ///     invoked, the configuration section might be different. (location tag, for example).
+    /// </remarks>
+    internal static ProviderSection Configuration => ProviderSection.Configuration;
+
+    /// <summary>
+    ///     Decodes an incoming web request in to a <see cref="Request" />.
+    /// </summary>
+    /// <returns>A Request object, or null if the given query doesn't represent an OpenId request.</returns>
+    private Request decodeRequest()
+    {
+        if (!Provider.Request.IsOpenIdRequest(Query)) return null;
+
+        Protocol = Protocol.Detect(Query);
+        var req = Provider.Request.CreateRequest(this);
+
+        Logger.InfoFormat("Received OpenID {0} request.{1}{2}", req.Mode, Environment.NewLine,
+            Util.ToString(Query));
+
+        return req;
+    }
+
+    /// <summary>
+    ///     Allows a Provider to send an identity assertion on behalf of one
+    ///     of its members in order to redirect the member to a relying party
+    ///     web site and log him/her in immediately in one uninterrupted step.
+    /// </summary>
+    /// <param name="relyingParty">
+    ///     The URL of the relying party web site.
+    ///     This will typically be the home page, but may be a longer URL if
+    ///     that Relying Party considers the scope of its realm to be more specific.
+    ///     The URL provided here must allow discovery of the Relying Party's
+    ///     XRDS document that advertises its OpenID RP endpoint.
+    /// </param>
+    /// <param name="claimedIdentifier">
+    ///     The Identifier you are asserting your member controls.
+    /// </param>
+    /// <param name="localIdentifier">
+    ///     The Identifier you know your user by internally.  This will typically
+    ///     be the same as <paramref name="claimedIdentifier" />.
+    /// </param>
+    /// <returns>
+    ///     An <see cref="IResponse" /> object describing the HTTP response to send
+    ///     the user agent to allow the redirect with assertion to happen.
+    /// </returns>
+    public IResponse PrepareUnsolicitedAssertion(Realm relyingParty,
+        Identifier claimedIdentifier, Identifier localIdentifier)
+    {
+        if (relyingParty == null) throw new ArgumentNullException("relyingParty");
+        if (claimedIdentifier == null) throw new ArgumentNullException("claimedIdentifier");
+        if (localIdentifier == null) throw new ArgumentNullException("localIdentifier");
+
+        Logger.InfoFormat("Preparing unsolicited assertion for {0}", claimedIdentifier);
+        return AssertionMessage.CreateUnsolicitedAssertion(this,
+            relyingParty, claimedIdentifier, localIdentifier);
+    }
 }

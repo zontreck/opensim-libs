@@ -13,190 +13,181 @@ using System.Text;
 using System.Threading;
 using Mono.Collections.Generic;
 
-namespace Mono.Cecil {
+namespace Mono.Cecil;
 
-	public class MethodReference : MemberReference, IMethodSignature, IGenericParameterProvider, IGenericContext {
+public class MethodReference : MemberReference, IMethodSignature, IGenericParameterProvider, IGenericContext
+{
+    internal Collection<GenericParameter> generic_parameters;
 
-		internal ParameterDefinitionCollection parameters;
-		MethodReturnType return_type;
+    internal ParameterDefinitionCollection parameters;
+    private MethodReturnType return_type;
 
-		bool has_this;
-		bool explicit_this;
-		MethodCallingConvention calling_convention;
-		internal Collection<GenericParameter> generic_parameters;
+    internal MethodReference()
+    {
+        return_type = new MethodReturnType(this);
+        token = new MetadataToken(TokenType.MemberRef);
+    }
 
-		public virtual bool HasThis {
-			get { return has_this; }
-			set { has_this = value; }
-		}
+    public MethodReference(string name, TypeReference returnType)
+        : base(name)
+    {
+        Mixin.CheckType(returnType, Mixin.Argument.returnType);
 
-		public virtual bool ExplicitThis {
-			get { return explicit_this; }
-			set { explicit_this = value; }
-		}
+        return_type = new MethodReturnType(this);
+        return_type.ReturnType = returnType;
+        token = new MetadataToken(TokenType.MemberRef);
+    }
 
-		public virtual MethodCallingConvention CallingConvention {
-			get { return calling_convention; }
-			set { calling_convention = value; }
-		}
+    public MethodReference(string name, TypeReference returnType, TypeReference declaringType)
+        : this(name, returnType)
+    {
+        Mixin.CheckType(declaringType, Mixin.Argument.declaringType);
 
-		public virtual bool HasParameters {
-			get { return !parameters.IsNullOrEmpty (); }
-		}
+        DeclaringType = declaringType;
+    }
 
-		public virtual Collection<ParameterDefinition> Parameters {
-			get {
-				if (parameters == null)
-					Interlocked.CompareExchange (ref parameters, new ParameterDefinitionCollection (this), null);
+    public override string FullName
+    {
+        get
+        {
+            var builder = new StringBuilder();
+            builder.Append(ReturnType.FullName)
+                .Append(" ")
+                .Append(MemberFullName());
+            this.MethodSignatureFullName(builder);
+            return builder.ToString();
+        }
+    }
 
-				return parameters;
-			}
-		}
+    public virtual bool IsGenericInstance => false;
 
-		IGenericParameterProvider IGenericContext.Type {
-			get {
-				var declaring_type = this.DeclaringType;
-				var instance = declaring_type as GenericInstanceType;
-				if (instance != null)
-					return instance.ElementType;
+    public override bool ContainsGenericParameter
+    {
+        get
+        {
+            if (ReturnType.ContainsGenericParameter || base.ContainsGenericParameter)
+                return true;
 
-				return declaring_type;
-			}
-		}
+            if (!HasParameters)
+                return false;
 
-		IGenericParameterProvider IGenericContext.Method {
-			get { return this; }
-		}
+            var parameters = Parameters;
 
-		GenericParameterType IGenericParameterProvider.GenericParameterType {
-			get { return GenericParameterType.Method; }
-		}
+            for (var i = 0; i < parameters.Count; i++)
+                if (parameters[i].ParameterType.ContainsGenericParameter)
+                    return true;
 
-		public virtual bool HasGenericParameters {
-			get { return !generic_parameters.IsNullOrEmpty (); }
-		}
+            return false;
+        }
+    }
 
-		public virtual Collection<GenericParameter> GenericParameters {
-			get {
-				if (generic_parameters == null)
-					Interlocked.CompareExchange (ref generic_parameters, new GenericParameterCollection (this), null);
+    IGenericParameterProvider IGenericContext.Type
+    {
+        get
+        {
+            var declaring_type = DeclaringType;
+            var instance = declaring_type as GenericInstanceType;
+            if (instance != null)
+                return instance.ElementType;
 
-				return generic_parameters;
-			}
-		}
+            return declaring_type;
+        }
+    }
 
-		public TypeReference ReturnType {
-			get {
-				var return_type = MethodReturnType;
-				return return_type != null ? return_type.ReturnType : null;
-			}
-			set {
-				var return_type = MethodReturnType;
-				if (return_type != null)
-					return_type.ReturnType = value;
-			}
-		}
+    IGenericParameterProvider IGenericContext.Method => this;
 
-		public virtual MethodReturnType MethodReturnType {
-			get { return return_type; }
-			set { return_type = value; }
-		}
+    GenericParameterType IGenericParameterProvider.GenericParameterType => GenericParameterType.Method;
 
-		public override string FullName {
-			get {
-				var builder = new StringBuilder ();
-				builder.Append (ReturnType.FullName)
-					.Append (" ")
-					.Append (MemberFullName ());
-				this.MethodSignatureFullName (builder);
-				return builder.ToString ();
-			}
-		}
+    public virtual bool HasGenericParameters => !generic_parameters.IsNullOrEmpty();
 
-		public virtual bool IsGenericInstance {
-			get { return false; }
-		}
+    public virtual Collection<GenericParameter> GenericParameters
+    {
+        get
+        {
+            if (generic_parameters == null)
+                Interlocked.CompareExchange(ref generic_parameters, new GenericParameterCollection(this), null);
 
-		public override bool ContainsGenericParameter {
-			get {
-				if (this.ReturnType.ContainsGenericParameter || base.ContainsGenericParameter)
-					return true;
+            return generic_parameters;
+        }
+    }
 
-				if (!HasParameters)
-					return false;
+    public virtual bool HasThis { get; set; }
 
-				var parameters = this.Parameters;
+    public virtual bool ExplicitThis { get; set; }
 
-				for (int i = 0; i < parameters.Count; i++)
-					if (parameters [i].ParameterType.ContainsGenericParameter)
-						return true;
+    public virtual MethodCallingConvention CallingConvention { get; set; }
 
-				return false;
-			}
-		}
+    public virtual bool HasParameters => !parameters.IsNullOrEmpty();
 
-		internal MethodReference ()
-		{
-			this.return_type = new MethodReturnType (this);
-			this.token = new MetadataToken (TokenType.MemberRef);
-		}
+    public virtual Collection<ParameterDefinition> Parameters
+    {
+        get
+        {
+            if (parameters == null)
+                Interlocked.CompareExchange(ref parameters, new ParameterDefinitionCollection(this), null);
 
-		public MethodReference (string name, TypeReference returnType)
-			: base (name)
-		{
-			Mixin.CheckType (returnType, Mixin.Argument.returnType);
+            return parameters;
+        }
+    }
 
-			this.return_type = new MethodReturnType (this);
-			this.return_type.ReturnType = returnType;
-			this.token = new MetadataToken (TokenType.MemberRef);
-		}
+    public TypeReference ReturnType
+    {
+        get
+        {
+            var return_type = MethodReturnType;
+            return return_type != null ? return_type.ReturnType : null;
+        }
+        set
+        {
+            var return_type = MethodReturnType;
+            if (return_type != null)
+                return_type.ReturnType = value;
+        }
+    }
 
-		public MethodReference (string name, TypeReference returnType, TypeReference declaringType)
-			: this (name, returnType)
-		{
-			Mixin.CheckType (declaringType, Mixin.Argument.declaringType);
+    public virtual MethodReturnType MethodReturnType
+    {
+        get => return_type;
+        set => return_type = value;
+    }
 
-			this.DeclaringType = declaringType;
-		}
+    public virtual MethodReference GetElementMethod()
+    {
+        return this;
+    }
 
-		public virtual MethodReference GetElementMethod ()
-		{
-			return this;
-		}
+    protected override IMemberDefinition ResolveDefinition()
+    {
+        return Resolve();
+    }
 
-		protected override IMemberDefinition ResolveDefinition ()
-		{
-			return this.Resolve ();
-		}
+    public new virtual MethodDefinition Resolve()
+    {
+        var module = Module;
+        if (module == null)
+            throw new NotSupportedException();
 
-		public new virtual MethodDefinition Resolve ()
-		{
-			var module = this.Module;
-			if (module == null)
-				throw new NotSupportedException ();
+        return module.Resolve(this);
+    }
+}
 
-			return module.Resolve (this);
-		}
-	}
+internal static partial class Mixin
+{
+    public static bool IsVarArg(this IMethodSignature self)
+    {
+        return self.CallingConvention == MethodCallingConvention.VarArg;
+    }
 
-	static partial class Mixin {
+    public static int GetSentinelPosition(this IMethodSignature self)
+    {
+        if (!self.HasParameters)
+            return -1;
 
-		public static bool IsVarArg (this IMethodSignature self)
-		{
-			return self.CallingConvention == MethodCallingConvention.VarArg;
-		}
+        var parameters = self.Parameters;
+        for (var i = 0; i < parameters.Count; i++)
+            if (parameters[i].ParameterType.IsSentinel)
+                return i;
 
-		public static int GetSentinelPosition (this IMethodSignature self)
-		{
-			if (!self.HasParameters)
-				return -1;
-
-			var parameters = self.Parameters;
-			for (int i = 0; i < parameters.Count; i++)
-				if (parameters [i].ParameterType.IsSentinel)
-					return i;
-
-			return -1;
-		}
-	}
+        return -1;
+    }
 }

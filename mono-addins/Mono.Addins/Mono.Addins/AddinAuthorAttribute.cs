@@ -26,34 +26,27 @@
 
 using System;
 
-namespace Mono.Addins
+namespace Mono.Addins;
+
+/// <summary>
+///     Declares an author of the add-in
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public class AddinAuthorAttribute : Attribute
 {
 	/// <summary>
-	/// Declares an author of the add-in
+	///     Initializes the attribute
 	/// </summary>
-	[AttributeUsage (AttributeTargets.Assembly, AllowMultiple=true)]
-	public class AddinAuthorAttribute: Attribute
-	{
-		string name;
-		
-		/// <summary>
-		/// Initializes the attribute
-		/// </summary>
-		/// <param name="name">
-		/// Name of the author
-		/// </param>
-		public AddinAuthorAttribute (string name)
-		{
-			this.name = name;
-		}
+	/// <param name="name">
+	///     Name of the author
+	/// </param>
+	public AddinAuthorAttribute(string name)
+    {
+        this.Name = name;
+    }
 
-		/// <summary>
-		/// Author name
-		/// </summary>
-		public string Name {
-			get { return this.name; }
-			set { this.name = value; }
-		}
-	}
+	/// <summary>
+	///     Author name
+	/// </summary>
+	public string Name { get; set; }
 }
-

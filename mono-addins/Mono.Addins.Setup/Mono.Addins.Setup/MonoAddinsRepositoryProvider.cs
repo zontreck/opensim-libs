@@ -23,21 +23,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
-namespace Mono.Addins.Setup
+
+namespace Mono.Addins.Setup;
+
+internal class MonoAddinsRepositoryProvider : AddinRepositoryProvider
 {
-	class MonoAddinsRepositoryProvider : AddinRepositoryProvider
-	{
-		private readonly SetupService service;
+    private readonly SetupService service;
 
-		public MonoAddinsRepositoryProvider (SetupService service)
-		{
-			this.service = service;
-		}
+    public MonoAddinsRepositoryProvider(SetupService service)
+    {
+        this.service = service;
+    }
 
-		public override Repository DownloadRepository (IProgressMonitor monitor, Uri absUri, AddinRepository rr)
-		{
-			return (Repository)service.Store.DownloadObject (monitor, absUri.ToString (), typeof (Repository));
-		}
-	}
+    public override Repository DownloadRepository(IProgressMonitor monitor, Uri absUri, AddinRepository rr)
+    {
+        return (Repository)service.Store.DownloadObject(monitor, absUri.ToString(), typeof(Repository));
+    }
 }

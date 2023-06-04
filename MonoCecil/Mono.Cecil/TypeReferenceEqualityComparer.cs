@@ -1,253 +1,282 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Mono.Cecil {
-	internal sealed class TypeReferenceEqualityComparer : EqualityComparer<TypeReference> {
-		public override bool Equals (TypeReference x, TypeReference y)
-		{
-			return AreEqual (x, y);
-		}
+namespace Mono.Cecil;
 
-		public override int GetHashCode (TypeReference obj)
-		{
-			return GetHashCodeFor (obj);
-		}
+internal sealed class TypeReferenceEqualityComparer : EqualityComparer<TypeReference>
+{
+    public override bool Equals(TypeReference x, TypeReference y)
+    {
+        return AreEqual(x, y);
+    }
 
-		public static bool AreEqual (TypeReference a, TypeReference b, TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
-		{
-			if (ReferenceEquals (a, b))
-				return true;
+    public override int GetHashCode(TypeReference obj)
+    {
+        return GetHashCodeFor(obj);
+    }
 
-			if (a == null || b == null)
-				return false;
+    public static bool AreEqual(TypeReference a, TypeReference b,
+        TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
 
-			var aMetadataType = a.MetadataType;
-			var bMetadataType = b.MetadataType;
+        if (a == null || b == null)
+            return false;
 
-			if (aMetadataType == MetadataType.GenericInstance || bMetadataType == MetadataType.GenericInstance) {
-				if (aMetadataType != bMetadataType)
-					return false;
+        var aMetadataType = a.MetadataType;
+        var bMetadataType = b.MetadataType;
 
-				return AreEqual ((GenericInstanceType)a, (GenericInstanceType)b, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.GenericInstance || bMetadataType == MetadataType.GenericInstance)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.Array || bMetadataType == MetadataType.Array) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual((GenericInstanceType)a, (GenericInstanceType)b, comparisonMode);
+        }
 
-				var a1 = (ArrayType)a;
-				var b1 = (ArrayType)b;
-				if (a1.Rank != b1.Rank)
-					return false;
+        if (aMetadataType == MetadataType.Array || bMetadataType == MetadataType.Array)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-				return AreEqual (a1.ElementType, b1.ElementType, comparisonMode);
-			}
+            var a1 = (ArrayType)a;
+            var b1 = (ArrayType)b;
+            if (a1.Rank != b1.Rank)
+                return false;
 
-			if (aMetadataType == MetadataType.Var || bMetadataType == MetadataType.Var) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(a1.ElementType, b1.ElementType, comparisonMode);
+        }
 
-				return AreEqual ((GenericParameter)a, (GenericParameter)b, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.Var || bMetadataType == MetadataType.Var)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.MVar || bMetadataType == MetadataType.MVar) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual((GenericParameter)a, (GenericParameter)b, comparisonMode);
+        }
 
-				return AreEqual ((GenericParameter)a, (GenericParameter)b, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.MVar || bMetadataType == MetadataType.MVar)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.ByReference || bMetadataType == MetadataType.ByReference) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual((GenericParameter)a, (GenericParameter)b, comparisonMode);
+        }
 
-				return AreEqual (((ByReferenceType)a).ElementType, ((ByReferenceType)b).ElementType, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.ByReference || bMetadataType == MetadataType.ByReference)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.Pointer || bMetadataType == MetadataType.Pointer) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(((ByReferenceType)a).ElementType, ((ByReferenceType)b).ElementType, comparisonMode);
+        }
 
-				return AreEqual (((PointerType)a).ElementType, ((PointerType)b).ElementType, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.Pointer || bMetadataType == MetadataType.Pointer)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.RequiredModifier || bMetadataType == MetadataType.RequiredModifier) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(((PointerType)a).ElementType, ((PointerType)b).ElementType, comparisonMode);
+        }
 
-				var a1 = (RequiredModifierType)a;
-				var b1 = (RequiredModifierType)b;
+        if (aMetadataType == MetadataType.RequiredModifier || bMetadataType == MetadataType.RequiredModifier)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-				return AreEqual (a1.ModifierType, b1.ModifierType, comparisonMode) && AreEqual (a1.ElementType, b1.ElementType, comparisonMode);
-			}
+            var a1 = (RequiredModifierType)a;
+            var b1 = (RequiredModifierType)b;
 
-			if (aMetadataType == MetadataType.OptionalModifier || bMetadataType == MetadataType.OptionalModifier) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(a1.ModifierType, b1.ModifierType, comparisonMode) &&
+                   AreEqual(a1.ElementType, b1.ElementType, comparisonMode);
+        }
 
-				var a1 = (OptionalModifierType)a;
-				var b1 = (OptionalModifierType)b;
+        if (aMetadataType == MetadataType.OptionalModifier || bMetadataType == MetadataType.OptionalModifier)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-				return AreEqual (a1.ModifierType, b1.ModifierType, comparisonMode) && AreEqual (a1.ElementType, b1.ElementType, comparisonMode);
-			}
+            var a1 = (OptionalModifierType)a;
+            var b1 = (OptionalModifierType)b;
 
-			if (aMetadataType == MetadataType.Pinned || bMetadataType == MetadataType.Pinned) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(a1.ModifierType, b1.ModifierType, comparisonMode) &&
+                   AreEqual(a1.ElementType, b1.ElementType, comparisonMode);
+        }
 
-				return AreEqual (((PinnedType)a).ElementType, ((PinnedType)b).ElementType, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.Pinned || bMetadataType == MetadataType.Pinned)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (aMetadataType == MetadataType.Sentinel || bMetadataType == MetadataType.Sentinel) {
-				if (aMetadataType != bMetadataType)
-					return false;
+            return AreEqual(((PinnedType)a).ElementType, ((PinnedType)b).ElementType, comparisonMode);
+        }
 
-				return AreEqual (((SentinelType)a).ElementType, ((SentinelType)b).ElementType, comparisonMode);
-			}
+        if (aMetadataType == MetadataType.Sentinel || bMetadataType == MetadataType.Sentinel)
+        {
+            if (aMetadataType != bMetadataType)
+                return false;
 
-			if (!a.Name.Equals (b.Name) || !a.Namespace.Equals (b.Namespace))
-				return false;
+            return AreEqual(((SentinelType)a).ElementType, ((SentinelType)b).ElementType, comparisonMode);
+        }
 
-			var xDefinition = a.Resolve ();
-			var yDefinition = b.Resolve ();
+        if (!a.Name.Equals(b.Name) || !a.Namespace.Equals(b.Namespace))
+            return false;
 
-			// For loose signature the types could be in different assemblies, as long as the type names match we will consider them equal
-			if (comparisonMode == TypeComparisonMode.SignatureOnlyLoose) {
-				if (xDefinition.Module.Name != yDefinition.Module.Name)
-					return false;
+        var xDefinition = a.Resolve();
+        var yDefinition = b.Resolve();
 
-				if (xDefinition.Module.Assembly.Name.Name != yDefinition.Module.Assembly.Name.Name)
-					return false;
+        // For loose signature the types could be in different assemblies, as long as the type names match we will consider them equal
+        if (comparisonMode == TypeComparisonMode.SignatureOnlyLoose)
+        {
+            if (xDefinition.Module.Name != yDefinition.Module.Name)
+                return false;
 
-				return xDefinition.FullName == yDefinition.FullName;
-			}
+            if (xDefinition.Module.Assembly.Name.Name != yDefinition.Module.Assembly.Name.Name)
+                return false;
 
-			return xDefinition == yDefinition;
-		}
+            return xDefinition.FullName == yDefinition.FullName;
+        }
 
-		static bool AreEqual (GenericParameter a, GenericParameter b, TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
-		{
-			if (ReferenceEquals (a, b))
-				return true;
+        return xDefinition == yDefinition;
+    }
 
-			if (a.Position != b.Position)
-				return false;
+    private static bool AreEqual(GenericParameter a, GenericParameter b,
+        TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
 
-			if (a.Type != b.Type)
-				return false;
+        if (a.Position != b.Position)
+            return false;
 
-			var aOwnerType = a.Owner as TypeReference;
-			if (aOwnerType != null && AreEqual (aOwnerType, b.Owner as TypeReference, comparisonMode))
-				return true;
+        if (a.Type != b.Type)
+            return false;
 
-			var aOwnerMethod = a.Owner as MethodReference;
-			if (aOwnerMethod != null && comparisonMode != TypeComparisonMode.SignatureOnlyLoose && MethodReferenceComparer.AreEqual (aOwnerMethod, b.Owner as MethodReference))
-				return true;
+        var aOwnerType = a.Owner as TypeReference;
+        if (aOwnerType != null && AreEqual(aOwnerType, b.Owner as TypeReference, comparisonMode))
+            return true;
 
-			return comparisonMode == TypeComparisonMode.SignatureOnly || comparisonMode == TypeComparisonMode.SignatureOnlyLoose;
-		}
+        var aOwnerMethod = a.Owner as MethodReference;
+        if (aOwnerMethod != null && comparisonMode != TypeComparisonMode.SignatureOnlyLoose &&
+            MethodReferenceComparer.AreEqual(aOwnerMethod, b.Owner as MethodReference))
+            return true;
 
-		static bool AreEqual (GenericInstanceType a, GenericInstanceType b, TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
-		{
-			if (ReferenceEquals (a, b))
-				return true;
+        return comparisonMode == TypeComparisonMode.SignatureOnly ||
+               comparisonMode == TypeComparisonMode.SignatureOnlyLoose;
+    }
 
-			var aGenericArgumentsCount = a.GenericArguments.Count;
-			if (aGenericArgumentsCount != b.GenericArguments.Count)
-				return false;
+    private static bool AreEqual(GenericInstanceType a, GenericInstanceType b,
+        TypeComparisonMode comparisonMode = TypeComparisonMode.Exact)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
 
-			if (!AreEqual (a.ElementType, b.ElementType, comparisonMode))
-				return false;
+        var aGenericArgumentsCount = a.GenericArguments.Count;
+        if (aGenericArgumentsCount != b.GenericArguments.Count)
+            return false;
 
-			for (int i = 0; i < aGenericArgumentsCount; i++)
-				if (!AreEqual (a.GenericArguments[i], b.GenericArguments[i], comparisonMode))
-					return false;
+        if (!AreEqual(a.ElementType, b.ElementType, comparisonMode))
+            return false;
 
-			return true;
-		}
+        for (var i = 0; i < aGenericArgumentsCount; i++)
+            if (!AreEqual(a.GenericArguments[i], b.GenericArguments[i], comparisonMode))
+                return false;
 
-		public static int GetHashCodeFor (TypeReference obj)
-		{
-			// a very good prime number
-			const int hashCodeMultiplier = 486187739;
-			// prime numbers
-			const int genericInstanceTypeMultiplier = 31;
-			const int byReferenceMultiplier = 37;
-			const int pointerMultiplier = 41;
-			const int requiredModifierMultiplier = 43;
-			const int optionalModifierMultiplier = 47;
-			const int pinnedMultiplier = 53;
-			const int sentinelMultiplier = 59;
+        return true;
+    }
 
-			var metadataType = obj.MetadataType;
+    public static int GetHashCodeFor(TypeReference obj)
+    {
+        // a very good prime number
+        const int hashCodeMultiplier = 486187739;
+        // prime numbers
+        const int genericInstanceTypeMultiplier = 31;
+        const int byReferenceMultiplier = 37;
+        const int pointerMultiplier = 41;
+        const int requiredModifierMultiplier = 43;
+        const int optionalModifierMultiplier = 47;
+        const int pinnedMultiplier = 53;
+        const int sentinelMultiplier = 59;
 
-			if (metadataType == MetadataType.GenericInstance) {
-				var genericInstanceType = (GenericInstanceType)obj;
-				var hashCode = GetHashCodeFor (genericInstanceType.ElementType) * hashCodeMultiplier + genericInstanceTypeMultiplier;
-				for (var i = 0; i < genericInstanceType.GenericArguments.Count; i++)
-					hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor (genericInstanceType.GenericArguments[i]);
-				return hashCode;
-			}
+        var metadataType = obj.MetadataType;
 
-			if (metadataType == MetadataType.Array) {
-				var arrayType = (ArrayType)obj;
-				return GetHashCodeFor (arrayType.ElementType) * hashCodeMultiplier + arrayType.Rank.GetHashCode ();
-			}
+        if (metadataType == MetadataType.GenericInstance)
+        {
+            var genericInstanceType = (GenericInstanceType)obj;
+            var hashCode = GetHashCodeFor(genericInstanceType.ElementType) * hashCodeMultiplier +
+                           genericInstanceTypeMultiplier;
+            for (var i = 0; i < genericInstanceType.GenericArguments.Count; i++)
+                hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor(genericInstanceType.GenericArguments[i]);
+            return hashCode;
+        }
 
-			if (metadataType == MetadataType.Var || metadataType == MetadataType.MVar) {
-				var genericParameter = (GenericParameter)obj;
-				var hashCode = genericParameter.Position.GetHashCode () * hashCodeMultiplier + ((int)metadataType).GetHashCode ();
+        if (metadataType == MetadataType.Array)
+        {
+            var arrayType = (ArrayType)obj;
+            return GetHashCodeFor(arrayType.ElementType) * hashCodeMultiplier + arrayType.Rank.GetHashCode();
+        }
 
-				var ownerTypeReference = genericParameter.Owner as TypeReference;
-				if (ownerTypeReference != null)
-					return hashCode * hashCodeMultiplier + GetHashCodeFor (ownerTypeReference);
+        if (metadataType == MetadataType.Var || metadataType == MetadataType.MVar)
+        {
+            var genericParameter = (GenericParameter)obj;
+            var hashCode = genericParameter.Position.GetHashCode() * hashCodeMultiplier +
+                           ((int)metadataType).GetHashCode();
 
-				var ownerMethodReference = genericParameter.Owner as MethodReference;
-				if (ownerMethodReference != null)
-					return hashCode * hashCodeMultiplier + MethodReferenceComparer.GetHashCodeFor (ownerMethodReference);
+            var ownerTypeReference = genericParameter.Owner as TypeReference;
+            if (ownerTypeReference != null)
+                return hashCode * hashCodeMultiplier + GetHashCodeFor(ownerTypeReference);
 
-				throw new InvalidOperationException ("Generic parameter encountered with invalid owner");
-			}
+            var ownerMethodReference = genericParameter.Owner as MethodReference;
+            if (ownerMethodReference != null)
+                return hashCode * hashCodeMultiplier + MethodReferenceComparer.GetHashCodeFor(ownerMethodReference);
 
-			if (metadataType == MetadataType.ByReference) {
-				var byReferenceType = (ByReferenceType)obj;
-				return GetHashCodeFor (byReferenceType.ElementType) * hashCodeMultiplier * byReferenceMultiplier;
-			}
+            throw new InvalidOperationException("Generic parameter encountered with invalid owner");
+        }
 
-			if (metadataType == MetadataType.Pointer) {
-				var pointerType = (PointerType)obj;
-				return GetHashCodeFor (pointerType.ElementType) * hashCodeMultiplier * pointerMultiplier;
-			}
+        if (metadataType == MetadataType.ByReference)
+        {
+            var byReferenceType = (ByReferenceType)obj;
+            return GetHashCodeFor(byReferenceType.ElementType) * hashCodeMultiplier * byReferenceMultiplier;
+        }
 
-			if (metadataType == MetadataType.RequiredModifier) {
-				var requiredModifierType = (RequiredModifierType)obj;
-				var hashCode = GetHashCodeFor (requiredModifierType.ElementType) * requiredModifierMultiplier;
-				hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor (requiredModifierType.ModifierType);
-				return hashCode;
-			}
+        if (metadataType == MetadataType.Pointer)
+        {
+            var pointerType = (PointerType)obj;
+            return GetHashCodeFor(pointerType.ElementType) * hashCodeMultiplier * pointerMultiplier;
+        }
 
-			if (metadataType == MetadataType.OptionalModifier) {
-				var optionalModifierType = (OptionalModifierType)obj;
-				var hashCode = GetHashCodeFor (optionalModifierType.ElementType) * optionalModifierMultiplier;
-				hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor (optionalModifierType.ModifierType);
-				return hashCode;
-			}
+        if (metadataType == MetadataType.RequiredModifier)
+        {
+            var requiredModifierType = (RequiredModifierType)obj;
+            var hashCode = GetHashCodeFor(requiredModifierType.ElementType) * requiredModifierMultiplier;
+            hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor(requiredModifierType.ModifierType);
+            return hashCode;
+        }
 
-			if (metadataType == MetadataType.Pinned) {
-				var pinnedType = (PinnedType)obj;
-				return GetHashCodeFor (pinnedType.ElementType) * hashCodeMultiplier * pinnedMultiplier;
-			}
+        if (metadataType == MetadataType.OptionalModifier)
+        {
+            var optionalModifierType = (OptionalModifierType)obj;
+            var hashCode = GetHashCodeFor(optionalModifierType.ElementType) * optionalModifierMultiplier;
+            hashCode = hashCode * hashCodeMultiplier + GetHashCodeFor(optionalModifierType.ModifierType);
+            return hashCode;
+        }
 
-			if (metadataType == MetadataType.Sentinel) {
-				var sentinelType = (SentinelType)obj;
-				return GetHashCodeFor (sentinelType.ElementType) * hashCodeMultiplier * sentinelMultiplier;
-			}
+        if (metadataType == MetadataType.Pinned)
+        {
+            var pinnedType = (PinnedType)obj;
+            return GetHashCodeFor(pinnedType.ElementType) * hashCodeMultiplier * pinnedMultiplier;
+        }
 
-			if (metadataType == MetadataType.FunctionPointer) {
-				throw new NotImplementedException ("We currently don't handle function pointer types.");
-			}
+        if (metadataType == MetadataType.Sentinel)
+        {
+            var sentinelType = (SentinelType)obj;
+            return GetHashCodeFor(sentinelType.ElementType) * hashCodeMultiplier * sentinelMultiplier;
+        }
 
-			return obj.Namespace.GetHashCode () * hashCodeMultiplier + obj.FullName.GetHashCode ();
-		}
-	}
+        if (metadataType == MetadataType.FunctionPointer)
+            throw new NotImplementedException("We currently don't handle function pointer types.");
+
+        return obj.Namespace.GetHashCode() * hashCodeMultiplier + obj.FullName.GetHashCode();
+    }
 }
